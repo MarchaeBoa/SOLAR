@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { calcularSimulacao, calcularPlacasNaArea, calculateSolarProduction } = require('../../services/solarCalculator');
+const { calcularSimulacao, calcularPlacasNaArea, calculateSolarProduction, calculateFinancialReturn } = require('../../services/solarCalculator');
 
 // POST /api/simulacao/calcular
 router.post('/calcular', (req, res) => {
@@ -51,6 +51,29 @@ router.post('/producao', (req, res) => {
     eficiencia,
     radiacaoCustom,
     horasSolCustom,
+  });
+
+  if (resultado.error) {
+    return res.status(400).json(resultado);
+  }
+
+  res.json(resultado);
+});
+
+// POST /api/simulacao/retorno-financeiro - Calcula retorno financeiro do sistema solar
+router.post('/retorno-financeiro', (req, res) => {
+  const { custoSistema, tarifaEnergia, geracaoMensalKWh, reajusteAnual, vidaUtilAnos } = req.body;
+
+  if (!custoSistema || !tarifaEnergia || !geracaoMensalKWh) {
+    return res.status(400).json({ error: 'Custo do sistema, tarifa de energia e geração mensal são obrigatórios.' });
+  }
+
+  const resultado = calculateFinancialReturn({
+    custoSistema,
+    tarifaEnergia,
+    geracaoMensalKWh,
+    reajusteAnual,
+    vidaUtilAnos,
   });
 
   if (resultado.error) {
