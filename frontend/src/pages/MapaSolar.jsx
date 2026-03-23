@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
-import { Map, Layers, Filter, ZoomIn, ZoomOut, Crosshair } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
+import L from 'leaflet';
+import { Search, Layers, Filter, Satellite, Map as MapIcon, Navigation } from 'lucide-react';
 import Card from '../components/Card';
 
+import 'leaflet/dist/leaflet.css';
+
+// Fix default marker icon issue with bundlers
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Custom gold marker for solar regions
+const solarIcon = new L.Icon({
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 const regioes = [
-  { nome: 'Norte', irradiacao: 5.5, cor: '#F0C96B', x: '40%', y: '22%' },
-  { nome: 'Nordeste', irradiacao: 5.8, cor: '#D4A843', x: '72%', y: '28%' },
-  { nome: 'Centro-Oeste', irradiacao: 5.4, cor: '#F0C96B', x: '48%', y: '48%' },
-  { nome: 'Sudeste', irradiacao: 4.8, cor: '#1FD8A4', x: '62%', y: '60%' },
-  { nome: 'Sul', irradiacao: 4.3, cor: '#4A9EFF', x: '50%', y: '78%' },
+  { nome: 'Norte', irradiacao: 5.5, cor: '#F0C96B', lat: -3.1, lng: -60.0 },
+  { nome: 'Nordeste', irradiacao: 5.8, cor: '#D4A843', lat: -8.0, lng: -37.0 },
+  { nome: 'Centro-Oeste', irradiacao: 5.4, cor: '#F0C96B', lat: -15.6, lng: -49.5 },
+  { nome: 'Sudeste', irradiacao: 4.8, cor: '#1FD8A4', lat: -20.5, lng: -44.0 },
+  { nome: 'Sul', irradiacao: 4.3, cor: '#4A9EFF', lat: -27.5, lng: -50.5 },
 ];
 
 const camadas = [
@@ -17,14 +40,133 @@ const camadas = [
   { id: 'topografia', label: 'Topografia', ativo: false },
 ];
 
+const TILES = {
+  street: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri &mdash; Earthstar Geographics',
+  },
+};
+
+// Component to handle map movements from parent
+function MapController({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, zoom || map.getZoom(), { duration: 1.2 });
+    }
+  }, [center, zoom, map]);
+  return null;
+}
+
+// Component to expose map ref
+function MapEvents({ onMapReady }) {
+  const map = useMap();
+  useEffect(() => {
+    onMapReady(map);
+  }, [map, onMapReady]);
+  return null;
+}
+
 export default function MapaSolar() {
   const [regiaoSelecionada, setRegiaoSelecionada] = useState(null);
   const [camadaAtiva, setCamadaAtiva] = useState(camadas);
+  const [tileMode, setTileMode] = useState('street');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchMarker, setSearchMarker] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [flyTo, setFlyTo] = useState(null);
+  const [flyZoom, setFlyZoom] = useState(null);
+  const mapRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
+
+  const BRASIL_CENTER = [-14.235, -51.925];
+  const INITIAL_ZOOM = 4;
+
+  const handleMapReady = useCallback((map) => {
+    mapRef.current = map;
+  }, []);
 
   const toggleCamada = (id) => {
     setCamadaAtiva(prev =>
       prev.map(c => c.id === id ? { ...c, ativo: !c.ativo } : c)
     );
+  };
+
+  // Geocoding search using Nominatim (free, no API key)
+  const searchAddress = async (query) => {
+    if (!query || query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=5`,
+        { headers: { 'Accept-Language': 'pt-BR' } }
+      );
+      const data = await response.json();
+      setSearchResults(data.map(item => ({
+        display: item.display_name,
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon),
+      })));
+    } catch (err) {
+      console.error('Erro na busca:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => searchAddress(value), 400);
+  };
+
+  const handleSelectResult = (result) => {
+    setSearchMarker({ lat: result.lat, lng: result.lng, label: result.display });
+    setFlyTo([result.lat, result.lng]);
+    setFlyZoom(15);
+    setSearchResults([]);
+    setSearchQuery(result.display.split(',')[0]);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchResults.length > 0) {
+      handleSelectResult(searchResults[0]);
+    } else {
+      searchAddress(searchQuery);
+    }
+  };
+
+  const goToRegion = (regiao) => {
+    setRegiaoSelecionada(regiao);
+    setFlyTo([regiao.lat, regiao.lng]);
+    setFlyZoom(6);
+  };
+
+  const resetView = () => {
+    setFlyTo(BRASIL_CENTER);
+    setFlyZoom(INITIAL_ZOOM);
+    setSearchMarker(null);
+    setRegiaoSelecionada(null);
+  };
+
+  const getIrradiacaoColor = (irradiacao) => {
+    if (irradiacao >= 5.5) return '#D4A843';
+    if (irradiacao >= 5.0) return '#F0C96B';
+    if (irradiacao >= 4.5) return '#1FD8A4';
+    return '#4A9EFF';
   };
 
   return (
@@ -36,82 +178,138 @@ export default function MapaSolar() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px' }}>
         {/* Map area */}
-        <Card style={{ position: 'relative', minHeight: '520px', overflow: 'hidden' }}>
-          {/* Map placeholder - visual representation */}
+        <Card style={{ position: 'relative', minHeight: '520px', overflow: 'hidden', padding: 0 }}>
+          {/* Search bar overlay */}
           <div style={{
             position: 'absolute',
-            inset: '24px',
-            background: 'linear-gradient(135deg, var(--bg-base) 0%, var(--bg-elevated) 100%)',
-            borderRadius: 'var(--r)',
-            border: '1px solid var(--border)',
-            overflow: 'hidden',
+            top: '12px',
+            left: '12px',
+            right: '80px',
+            zIndex: 1000,
           }}>
-            {/* Grid lines */}
-            <svg width="100%" height="100%" style={{ position: 'absolute', opacity: 0.1 }}>
-              {Array.from({ length: 20 }, (_, i) => (
-                <React.Fragment key={i}>
-                  <line x1={`${i * 5}%`} y1="0" x2={`${i * 5}%`} y2="100%" stroke="var(--text-1)" strokeWidth="0.5" />
-                  <line x1="0" y1={`${i * 5}%`} x2="100%" y2={`${i * 5}%`} stroke="var(--text-1)" strokeWidth="0.5" />
-                </React.Fragment>
-              ))}
-            </svg>
-
-            {/* Region markers */}
-            {regioes.map((r, i) => (
-              <button
-                key={i}
-                onClick={() => setRegiaoSelecionada(r)}
-                style={{
-                  position: 'absolute',
-                  left: r.x,
-                  top: r.y,
-                  transform: 'translate(-50%, -50%)',
-                  background: `${r.cor}22`,
-                  border: `2px solid ${r.cor}`,
-                  borderRadius: '50%',
-                  width: regiaoSelecionada?.nome === r.nome ? '54px' : '44px',
-                  height: regiaoSelecionada?.nome === r.nome ? '54px' : '44px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all var(--t)',
-                  zIndex: 2,
-                }}
-              >
-                <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 700, color: r.cor }}>
-                  {r.irradiacao}
-                </span>
-              </button>
-            ))}
-
-            {/* Label overlay */}
-            <div style={{
-              position: 'absolute',
-              bottom: '16px',
-              left: '16px',
+            <form onSubmit={handleSearchSubmit} style={{
               display: 'flex',
-              gap: '16px',
-              fontSize: '0.7rem',
-              color: 'var(--text-3)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-mid)',
+              borderRadius: 'var(--r-sm)',
+              overflow: 'hidden',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
             }}>
-              <span>Irradiação: kWh/m²/dia</span>
-              <span>Fonte: INPE/Atlas Solar</span>
-            </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchInput}
+                placeholder="Buscar endereço ou cidade..."
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-1)',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                }}
+              />
+              <button type="submit" style={{
+                padding: '10px 14px',
+                background: 'var(--gold-dim)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--gold)',
+              }}>
+                <Search size={16} />
+              </button>
+            </form>
+
+            {/* Search results dropdown */}
+            {searchResults.length > 0 && (
+              <div style={{
+                marginTop: '4px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-mid)',
+                borderRadius: 'var(--r-sm)',
+                overflow: 'hidden',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                maxHeight: '240px',
+                overflowY: 'auto',
+              }}>
+                {searchResults.map((r, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSelectResult(r)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '10px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: i < searchResults.length - 1 ? '1px solid var(--border)' : 'none',
+                      color: 'var(--text-2)',
+                      fontSize: '0.8rem',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.target.style.background = 'var(--bg-hover)'}
+                    onMouseLeave={e => e.target.style.background = 'transparent'}
+                  >
+                    {r.display}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isSearching && (
+              <div style={{
+                marginTop: '4px',
+                padding: '10px 14px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-mid)',
+                borderRadius: 'var(--r-sm)',
+                color: 'var(--text-3)',
+                fontSize: '0.8rem',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+              }}>
+                Buscando...
+              </div>
+            )}
           </div>
 
-          {/* Map controls */}
+          {/* Map controls overlay */}
           <div style={{
             position: 'absolute',
-            top: '36px',
-            right: '36px',
+            top: '12px',
+            right: '12px',
             display: 'flex',
             flexDirection: 'column',
             gap: '4px',
-            zIndex: 3,
+            zIndex: 1000,
           }}>
-            {[ZoomIn, ZoomOut, Crosshair].map((Icon, i) => (
-              <button key={i} style={{
+            <button
+              onClick={() => setTileMode(tileMode === 'street' ? 'satellite' : 'street')}
+              title={tileMode === 'street' ? 'Modo Satélite' : 'Modo Mapa'}
+              style={{
+                width: 36,
+                height: 36,
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-mid)',
+                borderRadius: 'var(--r-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: tileMode === 'satellite' ? 'var(--gold)' : 'var(--text-2)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              {tileMode === 'street' ? <Satellite size={16} /> : <MapIcon size={16} />}
+            </button>
+            <button
+              onClick={resetView}
+              title="Voltar ao Brasil"
+              style={{
                 width: 36,
                 height: 36,
                 background: 'var(--bg-card)',
@@ -122,10 +320,98 @@ export default function MapaSolar() {
                 justifyContent: 'center',
                 cursor: 'pointer',
                 color: 'var(--text-2)',
-              }}>
-                <Icon size={16} />
-              </button>
-            ))}
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              <Navigation size={16} />
+            </button>
+          </div>
+
+          {/* Leaflet Map */}
+          <MapContainer
+            center={BRASIL_CENTER}
+            zoom={INITIAL_ZOOM}
+            style={{ height: '520px', width: '100%', borderRadius: 'var(--r)' }}
+            zoomControl={true}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              key={tileMode}
+              url={TILES[tileMode].url}
+              attribution={TILES[tileMode].attribution}
+            />
+
+            <MapController center={flyTo} zoom={flyZoom} />
+            <MapEvents onMapReady={handleMapReady} />
+
+            {/* Region circles for irradiance overlay */}
+            {camadaAtiva.find(c => c.id === 'irradiacao')?.ativo &&
+              regioes.map((r, i) => (
+                <Circle
+                  key={i}
+                  center={[r.lat, r.lng]}
+                  radius={300000}
+                  pathOptions={{
+                    color: r.cor,
+                    fillColor: r.cor,
+                    fillOpacity: 0.15,
+                    weight: 2,
+                    opacity: 0.6,
+                  }}
+                  eventHandlers={{
+                    click: () => goToRegion(r),
+                  }}
+                >
+                  <Popup>
+                    <div style={{ fontFamily: 'Outfit, sans-serif', minWidth: '160px' }}>
+                      <strong style={{ fontSize: '0.95rem' }}>{r.nome}</strong>
+                      <br />
+                      <span style={{ color: r.cor, fontWeight: 700, fontSize: '1.1rem' }}>
+                        {r.irradiacao} kWh/m²/dia
+                      </span>
+                    </div>
+                  </Popup>
+                </Circle>
+              ))
+            }
+
+            {/* Search result marker */}
+            {searchMarker && (
+              <Marker position={[searchMarker.lat, searchMarker.lng]} icon={solarIcon}>
+                <Popup>
+                  <div style={{ fontFamily: 'Outfit, sans-serif', maxWidth: '240px' }}>
+                    <strong style={{ fontSize: '0.85rem' }}>{searchMarker.label}</strong>
+                    <br />
+                    <span style={{ fontSize: '0.75rem', color: '#666' }}>
+                      {searchMarker.lat.toFixed(5)}, {searchMarker.lng.toFixed(5)}
+                    </span>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+          </MapContainer>
+
+          {/* Info bar */}
+          <div style={{
+            position: 'absolute',
+            bottom: '12px',
+            left: '12px',
+            display: 'flex',
+            gap: '16px',
+            fontSize: '0.7rem',
+            color: 'var(--text-3)',
+            background: 'rgba(4,9,15,0.8)',
+            padding: '6px 12px',
+            borderRadius: 'var(--r-sm)',
+            zIndex: 1000,
+          }}>
+            <span>Irradiação: kWh/m²/dia</span>
+            <span>Fonte: INPE/Atlas Solar</span>
+            {searchMarker && (
+              <span style={{ color: 'var(--gold)' }}>
+                📍 {searchMarker.lat.toFixed(4)}, {searchMarker.lng.toFixed(4)}
+              </span>
+            )}
           </div>
         </Card>
 
@@ -181,6 +467,14 @@ export default function MapaSolar() {
                     {regiaoSelecionada.irradiacao} kWh/m²/dia
                   </div>
                 </div>
+                <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Coordenadas
+                  </div>
+                  <div className="mono" style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>
+                    {regiaoSelecionada.lat.toFixed(4)}, {regiaoSelecionada.lng.toFixed(4)}
+                  </div>
+                </div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', lineHeight: 1.6 }}>
                   A região {regiaoSelecionada.nome} possui uma irradiação média de{' '}
                   <strong style={{ color: 'var(--text-1)' }}>{regiaoSelecionada.irradiacao} kWh/m²/dia</strong>,
@@ -193,10 +487,34 @@ export default function MapaSolar() {
               </div>
             ) : (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-3)' }}>
-                Clique em um marcador no mapa para ver detalhes da região.
+                Clique em uma região no mapa ou busque um endereço para ver detalhes.
               </p>
             )}
           </Card>
+
+          {/* Search result info */}
+          {searchMarker && (
+            <Card>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Search size={18} color="var(--green)" />
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Local Selecionado</h3>
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', lineHeight: 1.6, wordBreak: 'break-word' }}>
+                {searchMarker.label}
+              </div>
+              <div className="mono" style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                background: 'var(--bg-elevated)',
+                borderRadius: 'var(--r-sm)',
+                fontSize: '0.78rem',
+                color: 'var(--green)',
+              }}>
+                Lat: {searchMarker.lat.toFixed(6)}<br />
+                Lng: {searchMarker.lng.toFixed(6)}
+              </div>
+            </Card>
+          )}
 
           {/* Legend */}
           <Card>
