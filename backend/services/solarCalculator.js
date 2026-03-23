@@ -123,9 +123,95 @@ function calcularPlacasNaArea({
   };
 }
 
+// Dados simulados de radiação solar por localização (kWh/m²/dia)
+const RADIACAO_POR_LOCALIZACAO = {
+  norte: { media: 5.5, horasSolDia: 5.0, meses: [5.2, 5.0, 4.8, 5.0, 5.3, 5.5, 5.8, 6.0, 5.9, 5.6, 5.3, 5.1] },
+  nordeste: { media: 5.8, horasSolDia: 5.8, meses: [6.0, 5.8, 5.5, 5.4, 5.2, 5.0, 5.3, 5.8, 6.2, 6.4, 6.3, 6.1] },
+  centro_oeste: { media: 5.4, horasSolDia: 5.2, meses: [5.0, 5.0, 5.2, 5.4, 5.3, 5.2, 5.5, 5.8, 5.6, 5.4, 5.1, 4.9] },
+  sudeste: { media: 4.8, horasSolDia: 4.6, meses: [5.2, 5.0, 4.8, 4.5, 4.2, 4.0, 4.2, 4.5, 4.8, 5.0, 5.2, 5.3] },
+  sul: { media: 4.3, horasSolDia: 4.2, meses: [5.0, 4.8, 4.5, 3.8, 3.5, 3.2, 3.4, 3.8, 4.2, 4.5, 5.0, 5.2] },
+};
+
+const DIAS_POR_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const NOMES_MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+/**
+ * Calcula a produção de energia solar (diária, mensal e anual).
+ *
+ * Fórmula: Energia = Potência(kWp) × Radiação(kWh/m²/dia) × PR(Performance Ratio)
+ *
+ * @param {Object} params
+ * @param {number} params.potenciaKWp - Potência instalada em kWp
+ * @param {string} [params.localizacao='sudeste'] - Região (norte, nordeste, centro_oeste, sudeste, sul)
+ * @param {number} [params.eficiencia=0.80] - Fator de eficiência do sistema (Performance Ratio, 0-1)
+ * @param {number} [params.radiacaoCustom] - Radiação solar customizada (kWh/m²/dia), sobrescreve a da localização
+ * @param {number} [params.horasSolCustom] - Horas de sol customizadas, sobrescreve a da localização
+ */
+function calculateSolarProduction({
+  potenciaKWp,
+  localizacao = 'sudeste',
+  eficiencia = 0.80,
+  radiacaoCustom = null,
+  horasSolCustom = null,
+}) {
+  const potencia = parseFloat(potenciaKWp);
+  if (!potencia || potencia <= 0) {
+    return { error: 'Potência (kWp) deve ser um número positivo.' };
+  }
+
+  const ef = Math.max(0, Math.min(1, parseFloat(eficiencia) || 0.80));
+  const dadosRegiao = RADIACAO_POR_LOCALIZACAO[localizacao] || RADIACAO_POR_LOCALIZACAO.sudeste;
+  const radiacaoMedia = radiacaoCustom != null ? parseFloat(radiacaoCustom) : dadosRegiao.media;
+  const horasSolDia = horasSolCustom != null ? parseFloat(horasSolCustom) : dadosRegiao.horasSolDia;
+
+  // Geração diária média: Potência × Radiação × Eficiência
+  const geracaoDiariaMedia = potencia * radiacaoMedia * ef;
+
+  // Geração mensal detalhada (considerando radiação variável por mês)
+  const radiacaoMensal = radiacaoCustom != null
+    ? DIAS_POR_MES.map(() => parseFloat(radiacaoCustom))
+    : dadosRegiao.meses;
+
+  const geracaoMensal = radiacaoMensal.map((radMes, i) => {
+    const radEfetiva = radiacaoCustom != null ? radMes : radMes;
+    const geracaoMes = potencia * radEfetiva * ef * DIAS_POR_MES[i];
+    return {
+      mes: NOMES_MESES[i],
+      dias: DIAS_POR_MES[i],
+      radiacao: parseFloat(radEfetiva.toFixed(2)),
+      geracaoKWh: parseFloat(geracaoMes.toFixed(1)),
+    };
+  });
+
+  const geracaoAnual = geracaoMensal.reduce((acc, m) => acc + m.geracaoKWh, 0);
+  const geracaoMediaMensal = geracaoAnual / 12;
+
+  return {
+    potenciaKWp: parseFloat(potencia.toFixed(2)),
+    localizacao,
+    nomeRegiao: dadosRegiao === RADIACAO_POR_LOCALIZACAO[localizacao]
+      ? localizacao.replace('_', '-')
+      : 'customizado',
+    parametros: {
+      radiacaoMedia: parseFloat(radiacaoMedia.toFixed(2)),
+      horasSolDia: parseFloat(horasSolDia.toFixed(1)),
+      eficiencia: parseFloat(ef.toFixed(2)),
+    },
+    producao: {
+      diaria: parseFloat(geracaoDiariaMedia.toFixed(2)),
+      mensal: parseFloat(geracaoMediaMensal.toFixed(1)),
+      anual: parseFloat(geracaoAnual.toFixed(1)),
+    },
+    detalhamentoMensal: geracaoMensal,
+    co2EvitadoAnual: parseFloat((geracaoAnual * 0.084 / 1000).toFixed(3)),
+    localizacoesDisponiveis: Object.keys(RADIACAO_POR_LOCALIZACAO),
+  };
+}
+
 module.exports = {
   calcularSimulacao,
   calcularPlacasNaArea,
+  calculateSolarProduction,
   getDashboardStats,
   getGeracaoMensal,
   getProjetosAtivos,
