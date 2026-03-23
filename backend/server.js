@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 
+const { getDb } = require('./database/setup');
+const { authenticateToken } = require('./middleware/auth');
+const authRoutes = require('./api/routes/auth');
 const dashboardRoutes = require('./api/routes/dashboard');
 const simulacaoRoutes = require('./api/routes/simulacao');
 const mapaRoutes = require('./api/routes/mapa');
@@ -9,15 +12,21 @@ const orcamentoRoutes = require('./api/routes/orcamento');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Initialize database
+getDb();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/simulacao', simulacaoRoutes);
-app.use('/api/mapa', mapaRoutes);
-app.use('/api/orcamento', orcamentoRoutes);
+// Public routes
+app.use('/api/auth', authRoutes);
+
+// Protected routes
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
+app.use('/api/simulacao', authenticateToken, simulacaoRoutes);
+app.use('/api/mapa', authenticateToken, mapaRoutes);
+app.use('/api/orcamento', authenticateToken, orcamentoRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
