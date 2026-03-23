@@ -1,0 +1,2182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarMap AI · Mapeamento Geoespacial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   SOLARMAP AI  ·  GEOSPATIAL INTELLIGENCE INTERFACE  ·  2027
+   Typography : Figtree (UI)  ·  DM Mono (data / coords)
+   Palette    : Void Black · Tactical Jade · Amber Signal · Chrome
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --void:   #010509;
+  --deep:   #030B14;
+  --base:   #060F1E;
+  --raised: #091527;
+  --lift:   #0C1C35;
+  --rim:    #102240;
+
+  --jade:     #00E5A0;
+  --jade-hi:  #60FFC8;
+  --jade-dim: rgba(0,229,160,.08);
+  --jade-bd:  rgba(0,229,160,.2);
+  --jade-glo: rgba(0,229,160,.35);
+
+  --amber:     #F5A623;
+  --amber-hi:  #FFD080;
+  --amber-dim: rgba(245,166,35,.10);
+  --amber-bd:  rgba(245,166,35,.22);
+  --amber-glo: rgba(245,166,35,.4);
+
+  --sky:    #2196F3;
+  --sky-lo: rgba(33,150,243,.08);
+
+  --chrome1: #E8F0FF;
+  --chrome2: rgba(232,240,255,.58);
+  --chrome3: rgba(232,240,255,.32);
+  --chrome4: rgba(232,240,255,.15);
+  --chrome5: rgba(232,240,255,.06);
+  --chrome6: rgba(232,240,255,.03);
+
+  --bd:    rgba(232,240,255,.055);
+  --bd-md: rgba(232,240,255,.10);
+  --bd-hi: rgba(232,240,255,.18);
+
+  --panel-l: 272px;
+  --panel-r: 288px;
+  --top-h:   56px;
+  --bot-h:   52px;
+
+  --ease-out: cubic-bezier(.22,1,.36,1);
+  --tf: .18s var(--ease-out);
+  --tm: .34s var(--ease-out);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Figtree',sans-serif;
+  background:var(--void);
+  color:var(--chrome1);
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+}
+.mono{font-family:'DM Mono',monospace}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--chrome5);border-radius:99px}
+
+/* ─── Grain overlay ─── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.025;background-size:220px;mix-blend-mode:overlay;
+}
+
+/* ════════════════════════════════════════════
+   LOADER
+════════════════════════════════════════════ */
+#loader{
+  position:fixed;inset:0;z-index:8000;background:var(--void);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .6s var(--ease-out),visibility .6s;
+}
+#loader.out{opacity:0;visibility:hidden;pointer-events:none}
+.ld-geo{
+  width:72px;height:72px;position:relative;
+}
+.ld-geo svg{animation:ldSpin 3s linear infinite}
+@keyframes ldSpin{to{transform:rotate(360deg)}}
+.ld-geo-inner{
+  position:absolute;inset:18px;border-radius:50%;
+  background:radial-gradient(circle at 38% 38%,var(--amber-hi),var(--amber) 50%,#8a5800);
+  box-shadow:0 0 28px var(--amber-glo);
+  animation:ldPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes ldPulse{from{box-shadow:0 0 20px var(--amber-glo)}to{box-shadow:0 0 45px var(--amber-glo)}}
+.ld-label{font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--chrome3)}
+.ld-bar{width:180px;height:1.5px;background:var(--chrome5);border-radius:99px;overflow:hidden}
+.ld-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--jade));animation:ldFill 1.2s var(--ease-out) forwards}
+@keyframes ldFill{from{width:0}to{width:100%}}
+.ld-status{font-size:.62rem;color:var(--chrome4);letter-spacing:.08em;font-family:'DM Mono',monospace}
+
+/* ════════════════════════════════════════════
+   APP SHELL
+════════════════════════════════════════════ */
+.shell{
+  display:grid;
+  grid-template-rows:var(--top-h) 1fr var(--bot-h);
+  grid-template-columns:var(--panel-l) 1fr var(--panel-r);
+  grid-template-areas:"top top top" "left map right" "bot bot bot";
+  height:100vh;
+}
+
+/* ════════════════════════════════════════════
+   TOPBAR
+════════════════════════════════════════════ */
+.topbar{
+  grid-area:top;z-index:500;
+  background:rgba(3,11,20,.92);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 20px;gap:14px;
+}
+.tb-brand{
+  display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0;
+}
+.tb-brand-mark{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--amber-hi),var(--amber));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;box-shadow:0 3px 14px var(--amber-glo);
+}
+.tb-brand-name{font-size:.9rem;font-weight:800;color:var(--chrome1);letter-spacing:-.01em}
+.tb-brand-name em{font-style:normal;color:var(--amber)}
+
+.tb-sep{width:1px;height:24px;background:var(--bd);flex-shrink:0}
+
+/* Breadcrumb */
+.tb-crumb{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--chrome3)}
+.tb-crumb a{color:var(--chrome3);text-decoration:none;transition:var(--tf)}
+.tb-crumb a:hover{color:var(--chrome1)}
+.tb-crumb .sep{color:var(--chrome4);font-size:.65rem}
+.tb-crumb .cur{color:var(--chrome2);font-weight:600}
+
+/* Title */
+.tb-title-wrap{margin-left:6px;padding-left:14px;border-left:1px solid var(--bd)}
+.tb-title{font-size:.86rem;font-weight:800;color:var(--chrome1);line-height:1.1;letter-spacing:-.01em}
+.tb-subtitle{font-size:.61rem;color:var(--chrome3);margin-top:1px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.tb-flex{flex:1}
+
+/* Session badge */
+.tb-session{
+  display:flex;align-items:center;gap:7px;
+  background:var(--chrome6);border:1px solid var(--bd);border-radius:7px;
+  padding:5px 12px;
+}
+.tb-session-dot{width:6px;height:6px;border-radius:50%;background:var(--jade);box-shadow:0 0 8px var(--jade-glo);animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tb-session-text{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--chrome3)}
+
+/* View selector */
+.view-selector{display:flex;background:var(--chrome6);border:1px solid var(--bd);border-radius:8px;padding:3px;gap:2px}
+.vs-opt{
+  font-size:.69rem;font-weight:700;letter-spacing:.03em;
+  padding:5px 12px;border-radius:6px;border:none;background:none;
+  color:var(--chrome3);cursor:pointer;transition:var(--tf);
+  font-family:'Figtree',sans-serif;
+}
+.vs-opt:hover{color:var(--chrome1)}
+.vs-opt.on{background:var(--amber-dim);color:var(--amber-hi);border:1px solid var(--amber-bd)}
+
+/* Top icon buttons */
+.tb-icons{display:flex;gap:5px}
+.tb-ico{
+  width:30px;height:30px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--chrome6);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--chrome3);font-size:.82rem;transition:var(--tf);flex-shrink:0;
+}
+.tb-ico:hover{border-color:var(--bd-md);color:var(--chrome1);background:var(--chrome5)}
+.tb-ico.active{background:var(--jade-dim);border-color:var(--jade-bd);color:var(--jade-hi)}
+
+/* Buttons */
+.btn-ghost{
+  display:flex;align-items:center;gap:6px;
+  background:var(--chrome6);border:1px solid var(--bd-md);color:var(--chrome2);
+  font-family:'Figtree',sans-serif;font-size:.73rem;font-weight:700;
+  border-radius:8px;padding:6px 14px;cursor:pointer;transition:var(--tf);white-space:nowrap;
+}
+.btn-ghost:hover{border-color:var(--bd-hi);color:var(--chrome1)}
+.btn-prime{
+  display:flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,var(--amber-hi),var(--amber));
+  color:var(--void);font-family:'Figtree',sans-serif;font-size:.73rem;font-weight:800;
+  border:none;border-radius:8px;padding:7px 16px;cursor:pointer;
+  transition:var(--tm);white-space:nowrap;letter-spacing:.01em;
+}
+.btn-prime:hover{box-shadow:0 0 26px var(--amber-glo);transform:translateY(-1px)}
+.btn-prime:active{transform:none}
+
+/* ════════════════════════════════════════════
+   LEFT PANEL
+════════════════════════════════════════════ */
+.panel-left{
+  grid-area:left;
+  background:var(--base);
+  border-right:1px solid var(--bd);
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+  z-index:200;
+}
+
+/* Section */
+.lp-sec{padding:14px 14px 0}
+.lp-sec+.lp-sec{border-top:1px solid var(--bd);padding-top:14px}
+.lp-sec-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.lp-sec-num{
+  width:19px;height:19px;border-radius:5px;flex-shrink:0;
+  background:var(--amber-dim);border:1px solid var(--amber-bd);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:.6rem;font-weight:500;color:var(--amber);
+}
+.lp-sec-label{font-size:.65rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--chrome3)}
+.lp-sec-tag{
+  margin-left:auto;font-size:.54rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--jade);background:var(--jade-dim);border:1px solid var(--jade-bd);
+  border-radius:99px;padding:2px 7px;
+}
+
+/* Fields */
+.lp-field{margin-bottom:8px}
+.lp-label{font-size:.61rem;font-weight:700;color:var(--chrome4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.lp-label .tip{
+  width:13px;height:13px;border-radius:50%;background:var(--chrome6);border:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:center;font-size:.52rem;color:var(--chrome4);cursor:help;
+}
+.lp-input,.lp-select{
+  width:100%;background:rgba(2,6,12,.85);border:1px solid var(--bd);
+  border-radius:7px;padding:7px 10px;
+  font-family:'Figtree',sans-serif;font-size:.78rem;color:var(--chrome1);
+  outline:none;transition:var(--tf);appearance:none;
+}
+.lp-input:focus,.lp-select:focus{
+  border-color:var(--amber-bd);
+  box-shadow:0 0 0 3px var(--amber-dim),inset 0 1px 0 rgba(245,166,35,.05);
+}
+.lp-input::placeholder{color:var(--chrome4)}
+.lp-select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(232,240,255,.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;padding-right:28px;cursor:pointer;
+}
+.lp-select option{background:var(--raised)}
+.coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+
+/* Input with icon prefix */
+.lp-input-wrap{position:relative}
+.lp-input-wrap .lp-input{padding-left:32px}
+.lp-input-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.82rem;color:var(--chrome4);pointer-events:none}
+
+/* Action buttons row */
+.lp-btn-row{display:flex;gap:5px;padding-bottom:14px;margin-top:10px}
+.lp-btn{
+  flex:1;padding:8px 4px;border-radius:7px;font-family:'Figtree',sans-serif;
+  font-size:.68rem;font-weight:700;cursor:pointer;transition:var(--tf);
+  display:flex;align-items:center;justify-content:center;gap:5px;border:none;
+}
+.lp-btn-a{background:linear-gradient(135deg,var(--amber-hi),var(--amber));color:var(--void)}
+.lp-btn-a:hover{box-shadow:0 4px 18px var(--amber-glo)}
+.lp-btn-b{background:var(--chrome6);border:1px solid var(--bd-md);color:var(--chrome2)}
+.lp-btn-b:hover{border-color:var(--bd-hi);color:var(--chrome1)}
+
+/* Selection type */
+.sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-bottom:14px}
+.sel-card{
+  padding:8px 6px;border-radius:8px;border:1px solid var(--bd);
+  background:var(--chrome6);cursor:pointer;transition:var(--tf);text-align:center;
+}
+.sel-card:hover{border-color:var(--bd-md);background:var(--chrome5)}
+.sel-card.on{background:var(--amber-dim);border-color:var(--amber-bd)}
+.sel-card.on .sc-lbl{color:var(--amber-hi)}
+.sc-ico{font-size:.95rem;display:block;margin-bottom:3px}
+.sc-lbl{font-size:.62rem;font-weight:700;color:var(--chrome3);line-height:1.2}
+
+/* Tool cluster */
+.tool-cluster{padding-bottom:14px}
+.tool-group{display:flex;gap:3px;margin-bottom:4px;background:var(--chrome6);border:1px solid var(--bd);border-radius:8px;padding:3px}
+.tool-btn{
+  flex:1;border-radius:6px;border:1px solid transparent;background:none;
+  cursor:pointer;transition:var(--tf);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:6px 2px;min-width:0;
+}
+.tool-btn:hover{background:var(--chrome5);border-color:var(--bd)}
+.tool-btn.on{background:var(--jade-dim);border-color:var(--jade-bd)}
+.tool-btn.on .t-ico{color:var(--jade-hi)}
+.tool-btn.on .t-lbl{color:var(--jade)}
+.t-ico{font-size:.82rem;color:var(--chrome3)}
+.t-lbl{font-size:.49rem;color:var(--chrome4);font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.tool-sep{width:1px;background:var(--bd);margin:2px 0;border-radius:99px}
+
+/* Layers */
+.layers{display:flex;flex-direction:column;gap:3px;padding-bottom:14px}
+.layer-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-radius:8px;border:1px solid var(--bd);background:var(--chrome6);
+  transition:var(--tf);
+}
+.layer-item:hover{border-color:var(--bd-md)}
+.layer-item.layer-on{border-color:var(--jade-bd);background:var(--jade-dim)}
+.layer-item.layer-on .li-name{color:var(--jade-hi)}
+.li-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--chrome4)}
+.layer-item.layer-on .li-dot{background:var(--jade);box-shadow:0 0 6px var(--jade-glo)}
+.li-body{flex:1;min-width:0}
+.li-name{font-size:.71rem;font-weight:600;color:var(--chrome2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-sub{font-size:.57rem;color:var(--chrome4);margin-top:1px}
+.li-badge{font-size:.51rem;font-weight:700;color:var(--amber);background:var(--amber-dim);border-radius:99px;padding:1px 6px;border:1px solid var(--amber-bd)}
+/* Toggle */
+.li-toggle{position:relative;width:28px;height:16px;flex-shrink:0}
+.li-toggle input{opacity:0;width:0;height:0}
+.lit-track{
+  position:absolute;inset:0;border-radius:99px;
+  background:var(--chrome5);border:1px solid var(--bd);cursor:pointer;transition:var(--tf);
+}
+.lit-track::after{
+  content:'';position:absolute;left:2px;top:2px;width:10px;height:10px;
+  border-radius:50%;background:var(--chrome3);transition:var(--tf);
+}
+.li-toggle input:checked+.lit-track{background:var(--jade-dim);border-color:var(--jade-bd)}
+.li-toggle input:checked+.lit-track::after{background:var(--jade);transform:translateX(12px)}
+
+/* ════════════════════════════════════════════
+   MAP — CENTER
+════════════════════════════════════════════ */
+.map-wrap{
+  grid-area:map;
+  position:relative;overflow:hidden;
+  background:var(--deep);
+  cursor:crosshair;
+}
+
+/* Canvas for satellite imagery */
+#mapCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* SVG overlays on top of canvas */
+#mapSVG{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;
+}
+
+/* Grid overlay */
+.map-grid-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,229,160,.022) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(0,229,160,.022) 1px, transparent 1px);
+  background-size:42px 42px;
+}
+
+/* Scan line effect */
+.scan-lines{
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);
+}
+
+/* Vignette */
+.map-vignette{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 100% 100% at 50% 50%,transparent 50%,rgba(1,5,9,.6) 100%);
+}
+
+/* ── Solar heat overlay ── */
+.solar-heat{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 35% 28% at 44% 36%, rgba(245,166,35,.22) 0%, transparent 70%),
+    radial-gradient(ellipse 25% 22% at 38% 32%, rgba(255,200,80,.15) 0%, transparent 60%);
+  opacity:0;transition:opacity .5s;
+  mix-blend-mode:screen;
+}
+.solar-heat.vis{opacity:1}
+
+/* ── Shadow overlay ── */
+.shadow-heat{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 18% 30% at 28% 60%, rgba(0,20,60,.6) 0%, transparent 70%),
+    radial-gradient(ellipse 12% 20% at 68% 42%, rgba(0,20,60,.4) 0%, transparent 60%);
+  opacity:0;transition:opacity .5s;
+}
+.shadow-heat.vis{opacity:1}
+
+/* ── Orientation overlay ── */
+.orient-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  opacity:0;transition:opacity .5s;
+}
+.orient-overlay.vis{opacity:1}
+
+/* ── Potential overlay ── */
+.potential-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 38% 30% at 43% 35%, rgba(0,229,160,.18) 0%, transparent 65%);
+  opacity:0;transition:opacity .5s;mix-blend-mode:screen;
+}
+.potential-overlay.vis{opacity:1}
+
+/* ─── SELECTION POLYGON ─── */
+.sel-zone{
+  position:absolute;
+  /* Positioned via JS */
+  pointer-events:auto;
+  cursor:move;
+}
+
+/* SVG polygon */
+#selPoly{fill:rgba(0,229,160,.07);stroke:var(--jade);stroke-width:1.5;transition:fill .2s}
+#selPoly:hover{fill:rgba(0,229,160,.12)}
+#selPolyGlow{fill:none;stroke:var(--jade-hi);stroke-width:3;opacity:.25;filter:blur(3px)}
+#selPolyHighlight{fill:none;stroke:rgba(255,255,255,.25);stroke-width:.75;stroke-dasharray:4 4}
+
+/* Panel rows (solar modules on roof) */
+#panelLayer{opacity:.65}
+
+/* Anchor nodes */
+.anchor{
+  position:absolute;width:11px;height:11px;border-radius:3px;
+  border:2px solid var(--jade);background:rgba(1,5,9,.9);
+  transform:translate(-50%,-50%);cursor:grab;transition:var(--tf);z-index:20;
+}
+.anchor:hover{background:var(--jade);box-shadow:0 0 14px var(--jade-glo);transform:translate(-50%,-50%) scale(1.35)}
+.anchor:active{cursor:grabbing}
+.anchor.mid{width:7px;height:7px;border-radius:50%;border-color:rgba(0,229,160,.45);background:rgba(0,229,160,.12);cursor:crosshair}
+
+/* Area label */
+.area-label{
+  position:absolute;transform:translateX(-50%);
+  background:rgba(2,6,12,.92);backdrop-filter:blur(14px);
+  border:1px solid var(--jade-bd);border-radius:99px;
+  padding:4px 12px;display:flex;align-items:center;gap:7px;
+  pointer-events:none;white-space:nowrap;z-index:30;
+  box-shadow:0 4px 20px rgba(0,0,0,.5),0 0 30px rgba(0,229,160,.08);
+}
+.al-pulse{width:5px;height:5px;border-radius:50%;background:var(--jade);animation:blink 1.5s infinite}
+.al-txt{font-size:.62rem;font-weight:700;color:var(--jade-hi)}
+
+/* Measurement callout */
+.meas-callout{
+  position:absolute;
+  background:rgba(2,6,12,.92);backdrop-filter:blur(14px);
+  border:1px solid var(--amber-bd);border-radius:10px;
+  padding:8px 12px;pointer-events:none;z-index:30;
+  box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 24px rgba(245,166,35,.08);
+}
+.mc-val{font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:var(--amber-hi);line-height:1}
+.mc-lbl{font-size:.57rem;color:var(--chrome3);margin-top:3px}
+.mc-detail{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--chrome3);margin-top:2px}
+
+/* ─── HUD OVERLAYS ─── */
+
+/* Top-left: Analysis tag */
+.hud-analysis{
+  position:absolute;top:14px;left:14px;z-index:40;
+  background:rgba(2,6,12,.88);backdrop-filter:blur(16px);
+  border:1px solid var(--amber-bd);border-radius:10px;
+  padding:8px 12px;display:flex;align-items:center;gap:10px;
+}
+.ha-icon{font-size:1rem}
+.ha-body{}
+.ha-title{font-size:.65rem;font-weight:700;color:var(--amber-hi)}
+.ha-sub{font-size:.56rem;color:var(--chrome3);margin-top:1px}
+
+/* Top-right: Compass */
+.hud-compass{
+  position:absolute;top:14px;right:14px;z-index:40;
+  width:56px;height:56px;
+  background:rgba(2,6,12,.88);backdrop-filter:blur(16px);
+  border:1px solid var(--bd-md);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.compass-svg{width:40px;height:40px}
+
+/* Solar position indicator */
+.hud-solar-pos{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:40;
+  background:rgba(2,6,12,.88);backdrop-filter:blur(16px);
+  border:1px solid var(--bd);border-radius:99px;
+  padding:5px 16px;display:flex;align-items:center;gap:12px;
+}
+.hsp-item{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.62rem}
+.hsp-item .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.hsp-item .dot.amber{background:var(--amber)}
+.hsp-item .dot.jade{background:var(--jade)}
+.hsp-val{color:var(--chrome2);font-weight:500}
+.hsp-lbl{color:var(--chrome4)}
+.hsp-divider{width:1px;height:14px;background:var(--bd)}
+
+/* Coordinate bar (bottom strip) */
+.hud-coord-bar{
+  position:absolute;bottom:0;left:0;right:0;height:22px;z-index:40;
+  background:rgba(2,6,12,.82);backdrop-filter:blur(12px);
+  border-top:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 12px;gap:0;
+}
+.coord-seg{
+  display:flex;align-items:center;gap:5px;padding:0 12px;
+  border-right:1px solid var(--bd);
+  font-family:'DM Mono',monospace;font-size:.58rem;color:var(--chrome3);
+}
+.coord-seg:first-child{padding-left:0}
+.coord-seg .c-lbl{color:var(--chrome4);font-size:.52rem}
+.coord-seg .c-val{color:rgba(0,229,160,.7)}
+
+/* Scale bar */
+.hud-scale{
+  position:absolute;bottom:32px;left:14px;z-index:40;
+  display:flex;flex-direction:column;gap:2px;
+}
+.scale-bar{display:flex;height:4px;width:80px}
+.sb-seg{flex:1}
+.sb-seg:nth-child(odd){background:rgba(232,240,255,.45)}
+.sb-seg:nth-child(even){background:transparent;border-top:1px solid rgba(232,240,255,.45);border-bottom:1px solid rgba(232,240,255,.45)}
+.scale-labels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.5rem;color:var(--chrome3);margin-top:1px}
+
+/* Mini map */
+.hud-minimap{
+  position:absolute;bottom:32px;right:14px;z-index:40;
+  width:108px;
+  background:rgba(2,6,12,.9);backdrop-filter:blur(16px);
+  border:1px solid var(--bd-md);border-radius:9px;overflow:hidden;
+}
+.mm-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4px 7px;border-bottom:1px solid var(--bd);
+}
+.mm-header span{font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--chrome3)}
+.mm-body{height:70px;position:relative}
+.mm-canvas{width:100%;height:100%;display:block}
+.mm-marker{position:absolute;top:35%;left:40%;width:5px;height:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber-glo)}
+.mm-zone{position:absolute;top:28%;left:33%;width:22px;height:18px;border:1.5px solid var(--jade);background:rgba(0,229,160,.12);border-radius:2px}
+
+/* Tooltip */
+.map-tip{
+  position:absolute;pointer-events:none;z-index:60;
+  background:rgba(2,6,12,.94);backdrop-filter:blur(14px);
+  border:1px solid var(--jade-bd);border-radius:7px;
+  padding:5px 10px;font-family:'DM Mono',monospace;font-size:.62rem;
+  color:var(--jade-hi);white-space:nowrap;display:none;
+  box-shadow:0 6px 24px rgba(0,0,0,.5);
+}
+
+/* Click spark */
+.click-spark{
+  position:absolute;pointer-events:none;z-index:50;
+  width:20px;height:20px;border-radius:50%;
+  border:1.5px solid var(--jade);background:rgba(0,229,160,.2);
+  transform:translate(-50%,-50%);
+  animation:sparkAnim .7s var(--ease-out) forwards;
+}
+@keyframes sparkAnim{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(3.5);opacity:0}
+}
+
+/* ════════════════════════════════════════════
+   RIGHT PANEL
+════════════════════════════════════════════ */
+.panel-right{
+  grid-area:right;
+  background:var(--base);
+  border-left:1px solid var(--bd);
+  overflow-y:auto;overflow-x:hidden;
+  z-index:200;
+}
+
+.rp-card{padding:14px;border-bottom:1px solid var(--bd)}
+.rp-card:last-child{border-bottom:none}
+
+.rp-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.rp-title{font-size:.72rem;font-weight:800;color:var(--chrome1);display:flex;align-items:center;gap:6px}
+.rp-title-ico{font-size:.82rem}
+.rp-tag{font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.tag-j{color:var(--jade);background:var(--jade-dim);border:1px solid var(--jade-bd)}
+.tag-a{color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-bd)}
+
+/* Stat row */
+.s-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd)}
+.s-row:last-child{border:none;padding-bottom:0}
+.s-k{font-size:.67rem;color:var(--chrome3)}
+.s-v{font-family:'DM Mono',monospace;font-size:.73rem;font-weight:500;color:var(--chrome1)}
+.s-v.j{color:var(--jade-hi)}.s-v.a{color:var(--amber-hi)}
+
+/* Progress bar */
+.prog-wrap{margin-top:8px}
+.prog-lbl{display:flex;justify-content:space-between;font-size:.59rem;color:var(--chrome4);margin-bottom:4px}
+.prog-track{height:4px;background:var(--chrome5);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;transition:width 1.4s var(--ease-out)}
+.pf-j{background:linear-gradient(90deg,var(--jade),var(--jade-hi))}
+.pf-a{background:linear-gradient(90deg,var(--amber),var(--amber-hi))}
+
+/* Gen cards */
+.gen-row{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:2px}
+.gen-c{
+  background:var(--chrome6);border:1px solid var(--bd);border-radius:8px;
+  padding:8px 6px;text-align:center;
+}
+.gen-v{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:var(--chrome1);line-height:1;margin-bottom:3px}
+.gen-l{font-size:.54rem;color:var(--chrome4)}
+
+/* Sparkline */
+.sparkline{display:flex;align-items:flex-end;gap:1.5px;height:32px;margin-top:7px}
+.sk-bar{flex:1;border-radius:1.5px 1.5px 0 0;min-height:2px;opacity:.8;transition:opacity .2s}
+.sk-bar:hover{opacity:1}
+
+/* Financial hero */
+.fin-hero{
+  display:flex;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(0,229,160,.06),rgba(245,166,35,.05));
+  border:1px solid var(--bd);border-radius:9px;padding:10px 12px;margin-bottom:8px;
+}
+.fh-side{}
+.fh-lbl{font-size:.58rem;color:var(--chrome3);margin-bottom:3px}
+.fh-val{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:500}
+.fh-val.j{color:var(--jade-hi)}.fh-val.a{color:var(--amber-hi)}
+
+/* ROI bars */
+.roi-rows{display:flex;flex-direction:column;gap:5px}
+.roi-r{display:flex;align-items:center;gap:7px}
+.roi-yr{font-family:'DM Mono',monospace;font-size:.57rem;color:var(--chrome4);width:22px}
+.roi-tr{flex:1;height:4px;background:var(--chrome5);border-radius:99px;overflow:hidden}
+.roi-fi{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--jade),var(--amber));animation:barFill 1.2s var(--ease-out) both}
+@keyframes barFill{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}
+.roi-va{font-family:'DM Mono',monospace;font-size:.6rem;font-weight:500;color:var(--jade-hi);width:38px;text-align:right}
+
+/* Status badges */
+.status-wrap{display:flex;flex-wrap:wrap;gap:4px}
+.s-badge{display:flex;align-items:center;gap:4px;font-size:.59rem;font-weight:700;padding:3px 8px;border-radius:99px}
+.sb-j{color:var(--jade-hi);background:var(--jade-dim);border:1px solid var(--jade-bd)}
+.sb-a{color:var(--amber-hi);background:var(--amber-dim);border:1px solid var(--amber-bd)}
+.sbd{width:4px;height:4px;border-radius:50%}
+.sbd-j{background:var(--jade)}.sbd-a{background:var(--amber)}
+
+/* ════════════════════════════════════════════
+   BOTTOM BAR
+════════════════════════════════════════════ */
+.bot-bar{
+  grid-area:bot;z-index:500;
+  background:rgba(3,11,20,.92);backdrop-filter:blur(24px);
+  border-top:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 16px;gap:0;
+}
+.bb-stat{display:flex;flex-direction:column;padding:0 14px;border-right:1px solid var(--bd)}
+.bb-stat:first-child{padding-left:0}
+.bb-lbl{font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--chrome4)}
+.bb-val{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:500;color:var(--chrome1);margin-top:1px}
+.bb-val.j{color:var(--jade-hi)}.bb-val.a{color:var(--amber-hi)}
+
+.bb-status{
+  display:flex;align-items:center;gap:7px;padding:0 14px;border-right:1px solid var(--bd);
+}
+.bbs-pulse{width:7px;height:7px;border-radius:50%;background:var(--jade);box-shadow:0 0 9px var(--jade-glo);animation:blink 1.8s infinite}
+.bbs-txt{font-size:.72rem;font-weight:700;color:var(--jade-hi)}
+.bbs-sub{font-size:.58rem;color:var(--chrome3);margin-top:1px}
+
+.bb-flex{flex:1}
+
+.bb-action-row{display:flex;gap:8px}
+.btn-bb-prime{
+  display:flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,var(--jade-hi),var(--jade));
+  color:var(--void);font-family:'Figtree',sans-serif;font-size:.72rem;font-weight:800;
+  border:none;border-radius:8px;padding:8px 18px;cursor:pointer;transition:var(--tm);
+}
+.btn-bb-prime:hover{box-shadow:0 0 22px var(--jade-glo);transform:translateY(-1px)}
+.btn-bb-sec{
+  display:flex;align-items:center;gap:6px;
+  background:var(--chrome6);border:1px solid var(--bd-md);color:var(--chrome2);
+  font-family:'Figtree',sans-serif;font-size:.72rem;font-weight:700;
+  border-radius:8px;padding:7px 14px;cursor:pointer;transition:var(--tf);
+}
+.btn-bb-sec:hover{border-color:var(--amber-bd);color:var(--amber-hi)}
+
+/* ════════════════════════════════════════════
+   ONBOARDING MODAL
+════════════════════════════════════════════ */
+.onboard-bg{
+  position:absolute;inset:0;z-index:80;
+  background:rgba(1,5,9,.7);backdrop-filter:blur(4px);
+}
+.onboard-card{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:81;
+  background:rgba(6,15,30,.97);backdrop-filter:blur(28px);
+  border:1px solid var(--jade-bd);border-radius:18px;
+  padding:28px 30px;width:360px;max-width:90vw;
+  box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 60px rgba(0,229,160,.06);
+  animation:cardIn .5s var(--ease-out);
+}
+@keyframes cardIn{from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.ob-icon{font-size:2rem;display:block;text-align:center;margin-bottom:14px}
+.ob-title{font-size:.95rem;font-weight:800;color:var(--chrome1);text-align:center;margin-bottom:6px}
+.ob-sub{font-size:.72rem;color:var(--chrome3);text-align:center;line-height:1.6;margin-bottom:16px}
+.ob-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.ob-step{display:flex;align-items:flex-start;gap:10px}
+.ob-step-n{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  background:var(--jade-dim);border:1px solid var(--jade-bd);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:.6rem;font-weight:500;color:var(--jade);
+}
+.ob-step-t{font-size:.73rem;color:var(--chrome2);line-height:1.5;padding-top:2px}
+.ob-step-t strong{color:var(--amber-hi)}
+.ob-btn{
+  width:100%;padding:11px;border-radius:10px;
+  background:linear-gradient(135deg,var(--jade-hi),var(--jade));
+  color:var(--void);font-family:'Figtree',sans-serif;font-size:.8rem;font-weight:800;
+  border:none;cursor:pointer;transition:var(--tm);letter-spacing:.01em;
+}
+.ob-btn:hover{box-shadow:0 6px 22px var(--jade-glo)}
+.ob-skip{text-align:center;margin-top:8px;font-size:.6rem;color:var(--chrome4);cursor:pointer}
+.ob-skip:hover{color:var(--chrome3)}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════ */
+@media(max-width:1050px){
+  :root{--panel-l:248px;--panel-r:260px}
+}
+@media(max-width:860px){
+  :root{--panel-l:0px;--panel-r:0px}
+  .shell{grid-template-columns:0 1fr 0}
+  .panel-left,.panel-right{
+    position:fixed;top:var(--top-h);bottom:var(--bot-h);
+    width:264px;transition:transform var(--tm);z-index:400;
+  }
+  .panel-left{left:0;transform:translateX(-100%)}
+  .panel-right{right:0;transform:translateX(100%)}
+  .panel-left.open{transform:translateX(0);box-shadow:6px 0 32px rgba(0,0,0,.6)}
+  .panel-right.open{transform:translateX(0);box-shadow:-6px 0 32px rgba(0,0,0,.6)}
+  .tb-title-wrap{display:none}
+  .hud-solar-pos{display:none}
+  .mob-toggle{display:flex}
+}
+.mob-toggle{display:none;gap:5px}
+.mob-t-btn{
+  width:30px;height:30px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--chrome6);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--chrome3);font-size:.82rem;transition:var(--tf);
+}
+.mob-t-btn:hover{border-color:var(--bd-md);color:var(--chrome1)}
+@media(max-width:500px){
+  .tb-session{display:none}
+  .bb-stat:nth-child(n+3){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── LOADER ─── -->
+<div id="loader">
+  <div class="ld-geo">
+    <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="36" cy="36" r="34" stroke="rgba(245,166,35,.15)" stroke-width="1.5"/>
+      <circle cx="36" cy="36" r="34" stroke="url(#lg)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="50 164"/>
+      <circle cx="36" cy="36" r="26" stroke="rgba(0,229,160,.1)" stroke-width="1"/>
+      <circle cx="36" cy="36" r="26" stroke="url(#lg2)" stroke-width="1" stroke-linecap="round" stroke-dasharray="30 133"/>
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#F5A623"/><stop offset="1" stop-color="#FFD080" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="lg2" x1="72" y1="0" x2="0" y2="72" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#00E5A0"/><stop offset="1" stop-color="#60FFC8" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="ld-geo-inner"></div>
+  </div>
+  <div class="ld-label">SolarMap AI · GeoIntelligence</div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+  <div class="ld-status" id="ldStatus">Inicializando módulo geoespacial...</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════════════════ -->
+<div class="shell">
+
+<!-- ─── TOPBAR ─── -->
+<header class="topbar">
+  <a href="dashboard.html" class="tb-brand">
+    <div class="tb-brand-mark">☀</div>
+    <span class="tb-brand-name">Solar<em>Map</em> AI</span>
+  </a>
+
+  <div class="tb-sep"></div>
+
+  <nav class="tb-crumb">
+    <a href="dashboard.html">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="#">Simulações</a>
+    <span class="sep">/</span>
+    <span class="cur">Mapa Solar</span>
+  </nav>
+
+  <div class="tb-title-wrap">
+    <div class="tb-title">Mapeamento Solar do Imóvel</div>
+    <div class="tb-subtitle">Selecione a área útil para análise de capacidade, geração e retorno energético</div>
+  </div>
+
+  <div class="tb-flex"></div>
+
+  <!-- Session -->
+  <div class="tb-session">
+    <div class="tb-session-dot"></div>
+    <span class="tb-session-text mono">SIM-2027-0482</span>
+  </div>
+
+  <!-- View selector -->
+  <div class="view-selector" style="margin-left:10px">
+    <button class="vs-opt on" onclick="setView(this,'sat')">Satélite</button>
+    <button class="vs-opt" onclick="setView(this,'str')">Mapa</button>
+    <button class="vs-opt" onclick="setView(this,'hyb')">Híbrido</button>
+  </div>
+
+  <!-- Icon buttons -->
+  <div class="tb-icons" style="margin-left:8px">
+    <div class="mob-toggle">
+      <div class="mob-t-btn" onclick="togglePanel('left')">☰</div>
+      <div class="mob-t-btn" onclick="togglePanel('right')">◧</div>
+    </div>
+    <div class="tb-ico" id="icoMeasure" title="Régua de medição" onclick="toggleMeasure()">📏</div>
+    <div class="tb-ico" id="icoFullscreen" title="Tela cheia" onclick="toggleFS()">⛶</div>
+    <div class="tb-ico" title="Tutorial" onclick="showOnboard()">❓</div>
+  </div>
+
+  <!-- Actions -->
+  <button class="btn-ghost" onclick="saveArea()" style="margin-left:8px">💾 Salvar</button>
+  <button class="btn-prime" onclick="confirmSel()" style="margin-left:6px">✓ Confirmar seleção</button>
+</header>
+
+<!-- ─── LEFT PANEL ─── -->
+<aside class="panel-left" id="panelLeft">
+
+  <!-- 01 BUSCA -->
+  <div class="lp-sec">
+    <div class="lp-sec-hd">
+      <div class="lp-sec-num">01</div>
+      <div class="lp-sec-label">Busca do imóvel</div>
+    </div>
+
+    <div class="lp-field">
+      <div class="lp-label">País · Região
+        <span class="tip" title="Selecione o país para ajustar tarifas e dados solares">?</span>
+      </div>
+      <!-- INTEGRAÇÃO FUTURA: seletor de país ativará i18n, moeda e dados solares regionais -->
+      <select class="lp-select" id="fPais">
+        <option>🇧🇷 Brasil</option>
+        <option>🇵🇹 Portugal</option>
+        <option>🇺🇸 Estados Unidos</option>
+        <option>🇪🇸 Espanha</option>
+        <option>🇲🇽 México</option>
+        <option>🌍 Outro</option>
+      </select>
+    </div>
+
+    <div class="lp-field">
+      <div class="lp-label">Endereço</div>
+      <!-- INTEGRAÇÃO FUTURA: Google Places Autocomplete / Mapbox Geocoder -->
+      <div class="lp-input-wrap">
+        <span class="lp-input-icon">📍</span>
+        <input class="lp-input" id="fAddr" type="text" value="Av. Brigadeiro Faria Lima, 3477" placeholder="Digite o endereço...">
+      </div>
+    </div>
+
+    <div class="lp-field" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+      <div>
+        <div class="lp-label">Cidade</div>
+        <input class="lp-input" id="fCity" type="text" value="São Paulo" placeholder="Cidade">
+      </div>
+      <div>
+        <div class="lp-label">CEP</div>
+        <input class="lp-input" id="fCep" type="text" value="04538-133" placeholder="CEP">
+      </div>
+    </div>
+
+    <div class="lp-field">
+      <div class="lp-label">Coordenadas
+        <span class="tip" title="Lat/Lon preenchidos automaticamente pelo geocoder">?</span>
+      </div>
+      <!-- INTEGRAÇÃO FUTURA: preenchimento automático via map.on('click') → lngLat -->
+      <div class="coord-grid">
+        <input class="lp-input mono" id="fLat" type="text" value="-23.56870" placeholder="Latitude">
+        <input class="lp-input mono" id="fLon" type="text" value="-46.69240" placeholder="Longitude">
+      </div>
+    </div>
+
+    <div class="lp-btn-row">
+      <!-- INTEGRAÇÃO FUTURA: Mapbox flyTo / Google Maps panTo após geocoding -->
+      <button class="lp-btn lp-btn-a" onclick="mockLocate()">🔍 Localizar</button>
+      <button class="lp-btn lp-btn-b" onclick="mockGPS()">🎯 GPS</button>
+    </div>
+  </div>
+
+  <!-- 02 TIPO DE SELEÇÃO -->
+  <div class="lp-sec">
+    <div class="lp-sec-hd">
+      <div class="lp-sec-num">02</div>
+      <div class="lp-sec-label">Tipo de seleção</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: cada modo ativará um DrawMode diferente no Mapbox GL Draw -->
+    <div class="sel-grid" id="selGrid">
+      <div class="sel-card on" onclick="setSelType(this,'Telhado residencial')">
+        <span class="sc-ico">🏠</span><div class="sc-lbl">Telhado</div>
+      </div>
+      <div class="sel-card" onclick="setSelType(this,'Terreno aberto')">
+        <span class="sc-ico">⬜</span><div class="sc-lbl">Terreno</div>
+      </div>
+      <div class="sel-card" onclick="setSelType(this,'Área mista')">
+        <span class="sc-ico">🗺</span><div class="sc-lbl">Área mista</div>
+      </div>
+      <div class="sel-card" onclick="setSelType(this,'Polígono livre')">
+        <span class="sc-ico">✏️</span><div class="sc-lbl">Polígono</div>
+      </div>
+      <div class="sel-card" onclick="setSelType(this,'Retângulo')">
+        <span class="sc-ico">▬</span><div class="sc-lbl">Retângulo</div>
+      </div>
+      <div class="sel-card" onclick="setSelType(this,'Ajuste manual')">
+        <span class="sc-ico">⊹</span><div class="sc-lbl">Manual</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 FERRAMENTAS -->
+  <div class="lp-sec">
+    <div class="lp-sec-hd">
+      <div class="lp-sec-num">03</div>
+      <div class="lp-sec-label">Ferramentas</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: ferramentas ativarão modos do Mapbox GL Draw / Leaflet Draw -->
+    <div class="tool-cluster">
+      <div class="tool-group" id="toolGroup">
+        <div class="tool-btn on" onclick="setTool(this,'move')" title="Mover">
+          <div class="t-ico">✋</div><div class="t-lbl">Mover</div>
+        </div>
+        <div class="tool-sep"></div>
+        <div class="tool-btn" onclick="setTool(this,'draw')" title="Desenhar">
+          <div class="t-ico">✏️</div><div class="t-lbl">Desenhar</div>
+        </div>
+        <div class="tool-btn" onclick="setTool(this,'edit')" title="Editar">
+          <div class="t-ico">⊹</div><div class="t-lbl">Editar</div>
+        </div>
+        <div class="tool-sep"></div>
+        <div class="tool-btn" onclick="setTool(this,'measure')" title="Medir">
+          <div class="t-ico">📐</div><div class="t-lbl">Medir</div>
+        </div>
+      </div>
+      <div class="tool-group" style="margin-bottom:0">
+        <div class="tool-btn" onclick="zoom(1)" title="Zoom +">
+          <div class="t-ico">＋</div><div class="t-lbl">Zoom+</div>
+        </div>
+        <div class="tool-btn" onclick="zoom(-1)" title="Zoom −">
+          <div class="t-ico">－</div><div class="t-lbl">Zoom−</div>
+        </div>
+        <div class="tool-sep"></div>
+        <div class="tool-btn" onclick="undoAct()" title="Desfazer">
+          <div class="t-ico">↩</div><div class="t-lbl">Desfazer</div>
+        </div>
+        <div class="tool-btn" onclick="redoAct()" title="Refazer">
+          <div class="t-ico">↪</div><div class="t-lbl">Refazer</div>
+        </div>
+        <div class="tool-sep"></div>
+        <div class="tool-btn" onclick="clearSel()" title="Limpar">
+          <div class="t-ico">⊗</div><div class="t-lbl">Limpar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 CAMADAS -->
+  <div class="lp-sec" style="padding-bottom:14px">
+    <div class="lp-sec-hd">
+      <div class="lp-sec-num">04</div>
+      <div class="lp-sec-label">Camadas de análise</div>
+      <div class="lp-sec-tag">Beta</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: cada toggle adiciona/remove layer no Mapbox / Google Maps -->
+    <div class="layers" id="layersList">
+      <div class="layer-item" data-layer="solar">
+        <div class="li-dot"></div>
+        <div class="li-body">
+          <div class="li-name">☀ Incidência solar</div>
+          <div class="li-sub">Heatmap · kWh/m²/dia</div>
+        </div>
+        <label class="li-toggle"><input type="checkbox" onchange="toggleLayer('solar',this.checked)"><div class="lit-track"></div></label>
+      </div>
+      <div class="layer-item" data-layer="shadow">
+        <div class="li-dot"></div>
+        <div class="li-body">
+          <div class="li-name">🌑 Análise de sombra</div>
+          <div class="li-sub">DSM + obstáculos</div>
+        </div>
+        <label class="li-toggle"><input type="checkbox" onchange="toggleLayer('shadow',this.checked)"><div class="lit-track"></div></label>
+      </div>
+      <div class="layer-item" data-layer="potential">
+        <div class="li-dot"></div>
+        <div class="li-body">
+          <div class="li-name">⚡ Potencial energético</div>
+          <div class="li-sub">kWp estimado / zona</div>
+        </div>
+        <label class="li-toggle"><input type="checkbox" onchange="toggleLayer('potential',this.checked)"><div class="lit-track"></div></label>
+      </div>
+      <div class="layer-item" data-layer="orient">
+        <div class="li-dot"></div>
+        <div class="li-body">
+          <div class="li-name">🧭 Orientação solar</div>
+          <div class="li-sub">Azimute do polígono</div>
+        </div>
+        <label class="li-toggle"><input type="checkbox" onchange="toggleLayer('orient',this.checked)"><div class="lit-track"></div></label>
+      </div>
+      <div class="layer-item">
+        <div class="li-dot"></div>
+        <div class="li-body">
+          <div class="li-name">🏗 Obstáculos <span class="li-badge">Breve</span></div>
+          <div class="li-sub">Chaminés, caixas d'água</div>
+        </div>
+        <label class="li-toggle"><input type="checkbox" disabled><div class="lit-track"></div></label>
+      </div>
+      <div class="layer-item">
+        <div class="li-dot"></div>
+        <div class="li-body">
+          <div class="li-name">⊞ Malha de módulos <span class="li-badge">Breve</span></div>
+          <div class="li-sub">Grid de instalação</div>
+        </div>
+        <label class="li-toggle"><input type="checkbox" disabled><div class="lit-track"></div></label>
+      </div>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ─── MAP CENTER ─── -->
+<main class="map-wrap" id="mapWrap">
+
+  <!-- Canvas: procedural satellite imagery -->
+  <canvas id="mapCanvas"></canvas>
+
+  <!-- SVG overlay: selection polygon + data layers -->
+  <svg id="mapSVG" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow-jade">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-amber">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <!-- Solar heat gradient -->
+      <radialGradient id="solarGrad" cx="44%" cy="36%" r="45%">
+        <stop offset="0%" stop-color="rgba(255,200,80,1)"/>
+        <stop offset="40%" stop-color="rgba(245,166,35,.7)"/>
+        <stop offset="100%" stop-color="rgba(245,166,35,0)"/>
+      </radialGradient>
+      <!-- Panel gradient -->
+      <linearGradient id="panelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0a2040"/>
+        <stop offset="100%" stop-color="#061428"/>
+      </linearGradient>
+      <pattern id="panelPat" x="0" y="0" width="14" height="10" patternUnits="userSpaceOnUse">
+        <rect width="14" height="10" fill="url(#panelGrad)"/>
+        <rect x="1" y="1" width="12" height="8" rx="1" fill="none" stroke="rgba(0,229,160,.35)" stroke-width=".7"/>
+        <line x1="7" y1="1" x2="7" y2="9" stroke="rgba(0,229,160,.15)" stroke-width=".4"/>
+        <line x1="1" y1="5" x2="13" y2="5" stroke="rgba(0,229,160,.15)" stroke-width=".4"/>
+      </pattern>
+    </defs>
+
+    <!-- Panel fill (inside selection) -->
+    <polygon id="panelFill" points="" fill="url(#panelPat)" opacity=".6"/>
+
+    <!-- Selection polygon layers -->
+    <polygon id="selGlow" points="" fill="none" stroke="rgba(0,229,160,.18)" stroke-width="6" filter="url(#glow-jade)"/>
+    <polygon id="selFill" points="" fill="rgba(0,229,160,.07)"/>
+    <polygon id="selStroke" points="" fill="none" stroke="rgba(0,229,160,.9)" stroke-width="1.4"/>
+    <polygon id="selDash" points="" fill="none" stroke="rgba(255,255,255,.22)" stroke-width=".8" stroke-dasharray="5 4"/>
+
+    <!-- Measurement lines (shown in measure mode) -->
+    <g id="measureLines" opacity="0" style="transition:opacity .3s">
+      <!-- dimension lines drawn dynamically -->
+    </g>
+
+    <!-- Anchor nodes rendered as SVG circles for crispness -->
+    <g id="anchors"></g>
+  </svg>
+
+  <!-- Grid overlay -->
+  <div class="map-grid-overlay"></div>
+  <div class="scan-lines"></div>
+  <div class="map-vignette"></div>
+
+  <!-- Layer overlays (CSS driven) -->
+  <div class="solar-heat" id="solarHeat"></div>
+  <div class="shadow-heat" id="shadowHeat"></div>
+  <div class="potential-overlay" id="potentialOv"></div>
+
+  <!-- ─── HUD ─── -->
+
+  <!-- Solar position strip (top center) -->
+  <div class="hud-solar-pos">
+    <div class="hsp-item">
+      <div class="dot amber"></div>
+      <span class="hsp-val">12h41</span>
+      <span class="hsp-lbl">Zênite</span>
+    </div>
+    <div class="hsp-divider"></div>
+    <div class="hsp-item">
+      <div class="dot jade"></div>
+      <span class="hsp-val">68.3°</span>
+      <span class="hsp-lbl">Altitude solar</span>
+    </div>
+    <div class="hsp-divider"></div>
+    <div class="hsp-item">
+      <div class="dot amber"></div>
+      <span class="hsp-val">0.0°</span>
+      <span class="hsp-lbl">Azimute</span>
+    </div>
+    <div class="hsp-divider"></div>
+    <div class="hsp-item">
+      <div class="dot jade"></div>
+      <span class="hsp-val mono" id="hspTime">13:22</span>
+      <span class="hsp-lbl">Agora</span>
+    </div>
+  </div>
+
+  <!-- Analysis badge (top left) -->
+  <div class="hud-analysis">
+    <div class="ha-icon">🛰</div>
+    <div class="ha-body">
+      <div class="ha-title">SolarMap GeoIntelligence™</div>
+      <div class="ha-sub">Resolução 15 cm/px · Precisão ±0,8 m · SP-BR</div>
+    </div>
+  </div>
+
+  <!-- Compass (top right) -->
+  <div class="hud-compass">
+    <svg class="compass-svg" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" stroke="rgba(232,240,255,.1)" stroke-width="1" fill="none"/>
+      <!-- N marker -->
+      <text x="20" y="8" text-anchor="middle" fill="var(--amber-hi)" font-size="5.5" font-weight="700" font-family="Figtree">N</text>
+      <text x="20" y="36" text-anchor="middle" fill="rgba(232,240,255,.3)" font-size="4.5" font-family="Figtree">S</text>
+      <text x="36" y="21" text-anchor="middle" fill="rgba(232,240,255,.3)" font-size="4.5" font-family="Figtree">L</text>
+      <text x="4" y="21" text-anchor="middle" fill="rgba(232,240,255,.3)" font-size="4.5" font-family="Figtree">O</text>
+      <!-- Arrows -->
+      <polygon points="20,11 22,20 20,18 18,20" fill="var(--amber)" opacity=".9"/>
+      <polygon points="20,29 22,20 20,22 18,20" fill="rgba(232,240,255,.2)"/>
+    </svg>
+  </div>
+
+  <!-- Scale -->
+  <div class="hud-scale">
+    <div class="scale-bar">
+      <div class="sb-seg"></div><div class="sb-seg"></div>
+      <div class="sb-seg"></div><div class="sb-seg"></div>
+    </div>
+    <div class="scale-labels"><span>0</span><span>10 m</span></div>
+  </div>
+
+  <!-- Coordinate bar (bottom) -->
+  <div class="hud-coord-bar">
+    <div class="coord-seg">
+      <span class="c-lbl">LAT</span>
+      <span class="c-val mono" id="coordLat">-23.56870°</span>
+    </div>
+    <div class="coord-seg">
+      <span class="c-lbl">LON</span>
+      <span class="c-val mono" id="coordLon">-46.69240°</span>
+    </div>
+    <div class="coord-seg">
+      <span class="c-lbl">ÁREA</span>
+      <span class="c-val mono" id="coordArea" style="color:var(--amber-hi)">64,2 m²</span>
+    </div>
+    <div class="coord-seg">
+      <span class="c-lbl">ZOOM</span>
+      <span class="c-val mono" id="coordZoom">18</span>
+    </div>
+    <div class="coord-seg" style="border:none">
+      <span class="c-lbl">PROJ</span>
+      <span class="c-val mono">WGS84/EPSG:4326</span>
+    </div>
+  </div>
+
+  <!-- Mini map -->
+  <div class="hud-minimap">
+    <div class="mm-header">
+      <span>Visão geral</span>
+      <span style="color:var(--jade);font-size:.5rem">● AO VIVO</span>
+    </div>
+    <div class="mm-body">
+      <canvas class="mm-canvas" id="miniCanvas"></canvas>
+      <div class="mm-zone"></div>
+      <div class="mm-marker"></div>
+    </div>
+  </div>
+
+  <!-- Cursor tooltip -->
+  <div class="map-tip" id="mapTip"></div>
+
+  <!-- Area label (attached to selection) -->
+  <div class="area-label" id="areaLabel" style="display:none">
+    <div class="al-pulse"></div>
+    <span class="al-txt">Área selecionada · 64,2 m² · Pronto para análise</span>
+  </div>
+
+  <!-- Measurement callout -->
+  <div class="meas-callout" id="measCallout" style="display:none">
+    <div class="mc-val" id="measVal">64,2 m²</div>
+    <div class="mc-lbl">Área útil detectada</div>
+    <div class="mc-detail" id="measDetail">32 módulos · 17,6 kWp · 34.848 kWh/a</div>
+  </div>
+
+  <!-- Onboarding -->
+  <div class="onboard-bg" id="obBg"></div>
+  <div class="onboard-card" id="obCard">
+    <span class="ob-icon">🛰</span>
+    <div class="ob-title">Bem-vindo ao Mapeamento Solar</div>
+    <div class="ob-sub">Selecione a área do telhado ou terreno para análise geoespacial de precisão</div>
+    <div class="ob-steps">
+      <div class="ob-step">
+        <div class="ob-step-n">1</div>
+        <div class="ob-step-t">Busque o endereço ou navegue pelo mapa até o imóvel</div>
+      </div>
+      <div class="ob-step">
+        <div class="ob-step-n">2</div>
+        <div class="ob-step-t">Escolha <strong>Telhado</strong> e use a ferramenta <strong>Desenhar</strong> para marcar os pontos</div>
+      </div>
+      <div class="ob-step">
+        <div class="ob-step-n">3</div>
+        <div class="ob-step-t">Arraste os <strong>nós de ancoragem</strong> para refinar o contorno da área</div>
+      </div>
+      <div class="ob-step">
+        <div class="ob-step-n">4</div>
+        <div class="ob-step-t">Ative camadas como <strong>Incidência Solar</strong> para análise avançada</div>
+      </div>
+    </div>
+    <button class="ob-btn" onclick="closeOnboard()">Começar mapeamento →</button>
+    <div class="ob-skip" onclick="closeOnboard()">Pular tutorial</div>
+  </div>
+
+</main>
+
+<!-- ─── RIGHT PANEL ─── -->
+<aside class="panel-right" id="panelRight">
+
+  <!-- CARD 1: RESUMO -->
+  <div class="rp-card">
+    <div class="rp-hd">
+      <div class="rp-title"><span class="rp-title-ico">📐</span>Resumo da Área</div>
+      <div class="rp-tag tag-j">Detectado</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: dados calculados automaticamente pelo Google Solar API + Turf.js -->
+    <div class="s-row"><span class="s-k">Tipo</span><span class="s-v" id="rType">Telhado residencial</span></div>
+    <div class="s-row"><span class="s-k">Área total</span><span class="s-v a" id="rAreaTot">78,4 m²</span></div>
+    <div class="s-row"><span class="s-k">Área útil</span><span class="s-v j" id="rAreaUtil">64,2 m²</span></div>
+    <div class="s-row"><span class="s-k">Perímetro</span><span class="s-v mono" id="rPerim">36,8 m</span></div>
+    <div class="s-row"><span class="s-k">Orientação</span><span class="s-v" id="rOrient">Norte-Nordeste</span></div>
+    <div class="s-row"><span class="s-k">Inclinação</span><span class="s-v" id="rSlope">22° — ótima</span></div>
+    <div class="s-row"><span class="s-k">Sombreamento</span><span class="s-v j" id="rShade">Baixo (8%)</span></div>
+    <div class="prog-wrap">
+      <div class="prog-lbl"><span>Qualidade geoespacial</span><span class="mono" style="color:var(--jade-hi)">Excelente</span></div>
+      <div class="prog-track"><div class="prog-fill pf-j" style="width:88%"></div></div>
+    </div>
+  </div>
+
+  <!-- CARD 2: CAPACIDADE -->
+  <div class="rp-card">
+    <div class="rp-hd">
+      <div class="rp-title"><span class="rp-title-ico">⚡</span>Capacidade Solar</div>
+      <div class="rp-tag tag-a">Estimado</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: Google Solar API → maxArrayPanelsCount, solarPanelConfigs -->
+    <div class="s-row"><span class="s-k">Módulos estimados</span><span class="s-v a mono" id="rPanels">32 módulos</span></div>
+    <div class="s-row"><span class="s-k">Área ocupada</span><span class="s-v mono" id="rOccupied">64,0 m²</span></div>
+    <div class="s-row"><span class="s-k">Potência instalada</span><span class="s-v j" id="rPower">17,6 kWp</span></div>
+    <div class="s-row"><span class="s-k">Eficiência</span><span class="s-v mono" id="rEff">91,4%</span></div>
+    <div class="prog-wrap">
+      <div class="prog-lbl"><span>Aproveitamento</span><span class="mono" style="color:var(--amber-hi)">91,4%</span></div>
+      <div class="prog-track"><div class="prog-fill pf-a" style="width:91%"></div></div>
+    </div>
+  </div>
+
+  <!-- CARD 3: PRODUÇÃO -->
+  <div class="rp-card">
+    <div class="rp-hd">
+      <div class="rp-title"><span class="rp-title-ico">🔆</span>Produção Potencial</div>
+      <div class="rp-tag tag-j">NASA POWER</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: geração calculada via NASA POWER API (irradiância) ou PVGIS -->
+    <div class="gen-row">
+      <div class="gen-c"><div class="gen-v mono j" id="rGenD">96 kWh</div><div class="gen-l">Diária</div></div>
+      <div class="gen-c"><div class="gen-v mono" id="rGenM">2.904 kWh</div><div class="gen-l">Mensal</div></div>
+      <div class="gen-c"><div class="gen-v mono a" id="rGenA">34.848 kWh</div><div class="gen-l">Anual</div></div>
+    </div>
+    <!-- Sparkline: monthly irradiance pattern -->
+    <div class="sparkline" id="sparkline"></div>
+  </div>
+
+  <!-- CARD 4: FINANCEIRO -->
+  <div class="rp-card">
+    <div class="rp-hd">
+      <div class="rp-title"><span class="rp-title-ico">💰</span>Financeiro</div>
+      <div class="rp-tag tag-a">Estimado</div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: motor financeiro + ANEEL API (tarifas) + marketplace de equipamentos -->
+    <div class="fin-hero">
+      <div class="fh-side">
+        <div class="fh-lbl">Investimento</div>
+        <div class="fh-val a" id="rInvest">R$ 44.400</div>
+      </div>
+      <div class="fh-side" style="text-align:right">
+        <div class="fh-lbl">Economia/ano</div>
+        <div class="fh-val j" id="rEconYear">R$ 29.621</div>
+      </div>
+    </div>
+    <div class="roi-rows">
+      <div class="roi-r">
+        <div class="roi-yr">5a</div>
+        <div class="roi-tr"><div class="roi-fi" style="width:28%;animation-delay:.1s"></div></div>
+        <div class="roi-va">R$148k</div>
+      </div>
+      <div class="roi-r">
+        <div class="roi-yr">10a</div>
+        <div class="roi-tr"><div class="roi-fi" style="width:55%;animation-delay:.2s"></div></div>
+        <div class="roi-va">R$296k</div>
+      </div>
+      <div class="roi-r">
+        <div class="roi-yr">25a</div>
+        <div class="roi-tr"><div class="roi-fi" style="width:100%;animation-delay:.3s"></div></div>
+        <div class="roi-va">R$740k</div>
+      </div>
+    </div>
+    <div class="s-row" style="margin-top:8px"><span class="s-k">Payback</span><span class="s-v a mono" id="rPayback">1,5 anos</span></div>
+  </div>
+
+  <!-- CARD 5: STATUS -->
+  <div class="rp-card" style="border-bottom:none">
+    <div class="rp-hd">
+      <div class="rp-title"><span class="rp-title-ico">✅</span>Status Técnico</div>
+    </div>
+    <div class="status-wrap">
+      <div class="s-badge sb-j"><div class="sbd sbd-j"></div>Incidência ótima</div>
+      <div class="s-badge sb-j"><div class="sbd sbd-j"></div>Baixo sombreamento</div>
+      <div class="s-badge sb-j"><div class="sbd sbd-j"></div>Orientação favorável</div>
+      <div class="s-badge sb-a"><div class="sbd sbd-a"></div>Expansão viável</div>
+      <div class="s-badge sb-j"><div class="sbd sbd-j"></div>Inclinação ótima</div>
+      <div class="s-badge sb-a"><div class="sbd sbd-a"></div>Verificar acesso</div>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ─── BOTTOM BAR ─── -->
+<footer class="bot-bar">
+  <div class="bb-stat">
+    <div class="bb-lbl">Área selecionada</div>
+    <div class="bb-val a mono" id="bbArea">64,2 m²</div>
+  </div>
+  <div class="bb-stat">
+    <div class="bb-lbl">Módulos</div>
+    <div class="bb-val j mono" id="bbMod">32 painéis</div>
+  </div>
+  <div class="bb-stat">
+    <div class="bb-lbl">Potência</div>
+    <div class="bb-val mono" id="bbPow">17,6 kWp</div>
+  </div>
+  <div class="bb-stat">
+    <div class="bb-lbl">Geração anual</div>
+    <div class="bb-val j mono" id="bbGen">34.848 kWh</div>
+  </div>
+  <div class="bb-status">
+    <div class="bbs-pulse"></div>
+    <div>
+      <div class="bbs-txt">Área confirmada</div>
+      <div class="bbs-sub">Pronto para simulação completa</div>
+    </div>
+  </div>
+  <div class="bb-flex"></div>
+  <div class="bb-action-row">
+    <!-- INTEGRAÇÃO FUTURA: passar dados do polígono para tela de simulação -->
+    <button class="btn-bb-prime" onclick="goSimulate()">⚡ Gerar simulação</button>
+    <button class="btn-bb-sec" onclick="flashMsg('Modo financeiro em breve')">💰 Modo financeiro</button>
+  </div>
+</footer>
+
+</div><!-- /shell -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT — CINEMATIC SATELLITE CANVAS + INTERACTIONS
+═══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+/* ─────────────────────────────────────────────────────────
+   LOADER sequence
+───────────────────────────────────────────────────────── */
+const ldMessages = [
+  'Inicializando módulo geoespacial...',
+  'Carregando imagery satelital...',
+  'Calibrando coordenadas WGS84...',
+  'Renderizando análise fotovoltaica...',
+  'Sistema pronto.',
+];
+let ldIdx = 0;
+const ldEl = document.getElementById('ldStatus');
+const ldInt = setInterval(() => {
+  ldIdx++;
+  if (ldIdx < ldMessages.length) ldEl.textContent = ldMessages[ldIdx];
+  else clearInterval(ldInt);
+}, 220);
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('out');
+    buildSatCanvas();
+    buildMiniCanvas();
+    buildSparkline();
+    initPolygon();
+    initDrag();
+    startClock();
+  }, 1200);
+});
+
+/* ─────────────────────────────────────────────────────────
+   PROCEDURAL SATELLITE CANVAS
+   INTEGRAÇÃO FUTURA: substituir por tile real Mapbox Satellite / Google Maps
+   map = new mapboxgl.Map({ container:'mapCanvas', style:'mapbox://styles/mapbox/satellite-v9' })
+───────────────────────────────────────────────────────── */
+function buildSatCanvas() {
+  const c = document.getElementById('mapCanvas');
+  const w = c.parentElement.offsetWidth;
+  const h = c.parentElement.offsetHeight;
+  c.width  = w * window.devicePixelRatio;
+  c.height = h * window.devicePixelRatio;
+  c.style.width  = w + 'px';
+  c.style.height = h + 'px';
+  const ctx = c.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  drawSatelliteScene(ctx, w, h, 'sat');
+}
+
+function drawSatelliteScene(ctx, W, H, mode) {
+  ctx.clearRect(0, 0, W, H);
+
+  if (mode === 'str') {
+    // Street map style
+    ctx.fillStyle = '#0C1826';
+    ctx.fillRect(0, 0, W, H);
+    // Roads
+    ctx.strokeStyle = '#162236';
+    ctx.lineWidth = 28;
+    ctx.beginPath(); ctx.moveTo(0, H * .55); ctx.lineTo(W, H * .55); ctx.stroke();
+    ctx.lineWidth = 18;
+    ctx.beginPath(); ctx.moveTo(W * .38, 0); ctx.lineTo(W * .38, H); ctx.stroke();
+    ctx.lineWidth = 12;
+    ctx.beginPath(); ctx.moveTo(W * .68, 0); ctx.lineTo(W * .68, H); ctx.stroke();
+    ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(0, H * .28); ctx.lineTo(W, H * .28); ctx.stroke();
+    // Blocks
+    const blocks = [
+      [W*.04,H*.05,W*.22,H*.2],[W*.04,H*.32,W*.18,H*.2],
+      [W*.44,H*.05,W*.18,H*.2],[W*.44,H*.32,W*.16,H*.2],
+      [W*.72,H*.05,W*.18,H*.18],[W*.72,H*.32,W*.14,H*.16],
+      [W*.04,H*.62,W*.22,H*.25],[W*.44,H*.62,W*.18,H*.25],
+      [W*.72,H*.62,W*.18,H*.22],
+    ];
+    blocks.forEach(([x,y,bw,bh]) => {
+      ctx.fillStyle = '#0E1C2E';
+      ctx.fillRect(x, y, bw, bh);
+      ctx.strokeStyle = '#1A2F46';
+      ctx.lineWidth = .8;
+      ctx.strokeRect(x, y, bw, bh);
+    });
+    // Labels
+    ctx.fillStyle = 'rgba(232,240,255,.12)';
+    ctx.font = '500 10px DM Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('AV. FARIA LIMA', W * .5, H * .52);
+    ctx.fillText('R. LEOPOLDO COUTO', W * .38, H * .15);
+    return;
+  }
+
+  if (mode === 'hyb') {
+    // Hybrid: satellite + road overlay
+    drawSatelliteScene(ctx, W, H, 'sat');
+    ctx.strokeStyle = 'rgba(22,34,54,.9)';
+    ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(0, H*.55); ctx.lineTo(W, H*.55); ctx.stroke();
+    ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(W*.38, 0); ctx.lineTo(W*.38, H); ctx.stroke();
+    ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(W*.68, 0); ctx.lineTo(W*.68, H); ctx.stroke();
+    ctx.fillStyle = 'rgba(232,240,255,.18)';
+    ctx.font = '600 9px DM Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('AV. FARIA LIMA', W * .5, H * .5);
+    return;
+  }
+
+  // ── SATELLITE mode ──────────────────────────────────────
+  // Sky and background tones
+  ctx.fillStyle = '#04100A';
+  ctx.fillRect(0, 0, W, H);
+
+  // Organic terrain patches using bezier paths
+  const rng = mulberry32(42); // deterministic RNG for consistency
+
+  // Large green zones (parks / vegetation)
+  const veg = [
+    {x:W*.05,y:H*.05,r:W*.18,g:'#0D2010'},
+    {x:W*.72,y:H*.08,r:W*.15,g:'#0C1E0C'},
+    {x:W*.55,y:H*.62,r:W*.16,g:'#0B1D0B'},
+    {x:W*.18,y:H*.7,r:W*.14,g:'#0A1A09'},
+    {x:W*.85,y:H*.5,r:W*.1,g:'#0B1C0A'},
+  ];
+  veg.forEach(v => {
+    const grd = ctx.createRadialGradient(v.x, v.y, 0, v.x, v.y, v.r);
+    grd.addColorStop(0, v.g);
+    grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(v.x, v.y, v.r, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Detailed building footprints
+  const buildings = [
+    // [x%, y%, w%, h%, rotation]
+    [.32,.22,.14,.10, 0],
+    [.36,.24,.06,.06, 0], // target building (roof selection)
+    [.50,.18,.12,.08,  5],
+    [.18,.32,.10,.14, -3],
+    [.65,.28,.08,.12, 2],
+    [.72,.38,.14,.07, 0],
+    [.24,.55,.12,.10, 1],
+    [.55,.45,.10,.08,-2],
+    [.80,.20,.09,.13, 0],
+    [.42,.58,.16,.08, 3],
+    [.08,.40,.09,.18, 0],
+    [.68,.58,.12,.09,-1],
+    [.12,.62,.08,.12, 2],
+    [.84,.55,.10,.11, 0],
+  ];
+
+  buildings.forEach(([bx,by,bw,bh,rot],i) => {
+    const x = W*bx, y = H*by, w = W*bw, h = H*bh;
+    ctx.save();
+    ctx.translate(x+w/2, y+h/2);
+    ctx.rotate(rot*Math.PI/180);
+
+    // Building shadow
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.fillRect(-w/2+3, -h/2+3, w, h);
+
+    // Building base
+    const roofColor = i===1 ? '#1A3A28' : `hsl(${210+rng()*20}deg,${20+rng()*15}%,${10+rng()*8}%)`;
+    ctx.fillStyle = roofColor;
+    ctx.fillRect(-w/2, -h/2, w, h);
+
+    // Roof texture lines
+    ctx.strokeStyle = 'rgba(232,240,255,.05)';
+    ctx.lineWidth = .6;
+    for(let line=0; line<w; line+=8) {
+      ctx.beginPath();
+      ctx.moveTo(-w/2+line, -h/2);
+      ctx.lineTo(-w/2+line, h/2);
+      ctx.stroke();
+    }
+
+    // Building edge highlights
+    ctx.strokeStyle = 'rgba(232,240,255,.08)';
+    ctx.lineWidth = .8;
+    ctx.strokeRect(-w/2, -h/2, w, h);
+
+    // Rooftop features (random - AC units, etc.)
+    if (rng() > .5) {
+      ctx.fillStyle = 'rgba(232,240,255,.06)';
+      ctx.fillRect(-w/4, -h/4, w*.2, h*.2);
+    }
+
+    ctx.restore();
+  });
+
+  // Roads network
+  const roads = [
+    {x1:0,y1:H*.55,x2:W,y2:H*.55,w:24,color:'rgba(8,22,40,.95)'},
+    {x1:W*.38,y1:0,x2:W*.38,y2:H,w:18,color:'rgba(8,22,40,.95)'},
+    {x1:W*.68,y1:0,x2:W*.68,y2:H,w:13,color:'rgba(8,22,40,.9)'},
+    {x1:0,y1:H*.28,x2:W,y2:H*.28,w:11,color:'rgba(8,22,40,.85)'},
+    {x1:W*.18,y1:0,x2:W*.18,y2:H*.55,w:8,color:'rgba(8,22,40,.7)'},
+    {x1:W*.38,y1:H*.55,x2:W*.68,y2:H,w:8,color:'rgba(8,22,40,.7)'},
+    {x1:W*.68,y1:H*.55,x2:W,y2:H*.75,w:7,color:'rgba(8,22,40,.6)'},
+  ];
+  roads.forEach(r => {
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = r.w;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(r.x1,r.y1); ctx.lineTo(r.x2,r.y2); ctx.stroke();
+    // Center line
+    if (r.w > 14) {
+      ctx.strokeStyle = 'rgba(232,240,255,.04)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([12,8]);
+      ctx.beginPath(); ctx.moveTo(r.x1,r.y1); ctx.lineTo(r.x2,r.y2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // Water body (faint blue-grey area)
+  const waterGrd = ctx.createRadialGradient(W*.88, H*.8, 0, W*.88, H*.8, W*.14);
+  waterGrd.addColorStop(0, 'rgba(10,28,55,.9)');
+  waterGrd.addColorStop(1, 'transparent');
+  ctx.fillStyle = waterGrd;
+  ctx.beginPath(); ctx.arc(W*.88, H*.8, W*.14, 0, Math.PI*2); ctx.fill();
+
+  // Ground atmospheric glow
+  const atmGrd = ctx.createRadialGradient(W*.44, H*.35, 0, W*.44, H*.35, W*.32);
+  atmGrd.addColorStop(0, 'rgba(245,166,35,.04)');
+  atmGrd.addColorStop(1, 'transparent');
+  ctx.fillStyle = atmGrd;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Mulberry32 — simple deterministic PRNG
+function mulberry32(seed) {
+  let s = seed;
+  return () => {
+    s += 0x6D2B79F5;
+    let t = Math.imul(s ^ s>>>15, 1|s);
+    t ^= t + Math.imul(t ^ t>>>7, 61|t);
+    return ((t ^ t>>>14) >>> 0) / 0xFFFFFFFF;
+  };
+}
+
+/* ─────────────────────────────────────────────────────────
+   MINI MAP CANVAS
+───────────────────────────────────────────────────────── */
+function buildMiniCanvas() {
+  const mc = document.getElementById('miniCanvas');
+  mc.width  = 108 * window.devicePixelRatio;
+  mc.height = 70  * window.devicePixelRatio;
+  mc.style.width  = '108px'; mc.style.height = '70px';
+  const ctx = mc.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  ctx.fillStyle = '#040E0A'; ctx.fillRect(0,0,108,70);
+
+  // Mini city blocks
+  const blocks2 = [[8,6,18,12],[30,6,14,12],[48,6,16,10],[70,6,12,14],
+                   [8,24,14,14],[28,24,20,12],[52,24,12,14],[70,24,16,10],
+                   [8,44,18,14],[30,44,14,10],[48,44,16,14],[70,44,12,10]];
+  blocks2.forEach(([x,y,w,h]) => {
+    ctx.fillStyle = '#0D1E14';
+    ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle='rgba(232,240,255,.05)'; ctx.lineWidth=.5;
+    ctx.strokeRect(x,y,w,h);
+  });
+
+  // Roads
+  ctx.strokeStyle='rgba(4,14,10,.9)'; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(0,38); ctx.lineTo(108,38); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(66,0); ctx.lineTo(66,70); ctx.stroke();
+  ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(25,0); ctx.lineTo(25,70); ctx.stroke();
+}
+
+/* ─────────────────────────────────────────────────────────
+   SPARKLINE — monthly solar irradiance
+   INTEGRAÇÃO FUTURA: dados reais via NASA POWER API
+───────────────────────────────────────────────────────── */
+function buildSparkline() {
+  const c = document.getElementById('sparkline');
+  const vals = [105,100,92,80,68,60,65,75,88,96,102,108];
+  const max  = Math.max(...vals);
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  c.innerHTML = vals.map((v,i) => {
+    const h = (v/max*100).toFixed(0);
+    const isTop = i===11, isMid = i===5;
+    const bg = isTop ? 'background:linear-gradient(180deg,var(--amber-hi),var(--amber))'
+              : isMid ? 'background:rgba(0,229,160,.4)'
+              : 'background:linear-gradient(180deg,rgba(0,229,160,.7),rgba(0,229,160,.25))';
+    return `<div class="sk-bar" style="height:${h}%;${bg};animation-delay:${i*.04}s" title="${months[i]}: ${v} kWh/m²/mês"></div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   SELECTION POLYGON
+   INTEGRAÇÃO FUTURA: polígono substituído por Mapbox GL Draw:
+   new MapboxDraw({ modes: MapboxDraw.modes })
+   map.on('draw.create', e => processPolygon(e.features[0]))
+───────────────────────────────────────────────────────── */
+let svgEl, polyPts, SVG_NS = 'http://www.w3.org/2000/svg';
+
+function ptsToStr(pts) { return pts.map(p => p.join(',')).join(' '); }
+
+function initPolygon() {
+  const wrap = document.getElementById('mapWrap');
+  const W = wrap.offsetWidth, H = wrap.offsetHeight;
+
+  // Define polygon as % of container
+  const pctPts = [
+    [.33, .22], [.55, .20], [.62, .36],
+    [.58, .52], [.40, .54], [.30, .42],
+  ];
+  polyPts = pctPts.map(([px,py]) => [px*W, py*H]);
+
+  renderPolygon();
+
+  // Show area label
+  const lbl = document.getElementById('areaLabel');
+  const cx = polyPts.reduce((s,p) => s+p[0], 0) / polyPts.length;
+  const miny = Math.min(...polyPts.map(p => p[1]));
+  lbl.style.left  = cx + 'px';
+  lbl.style.top   = (miny - 36) + 'px';
+  lbl.style.display = 'flex';
+
+  // Measurement callout
+  const mc = document.getElementById('measCallout');
+  const maxx = Math.max(...polyPts.map(p => p[0]));
+  mc.style.left  = (maxx + 12) + 'px';
+  mc.style.top   = (polyPts[2][1] - 30) + 'px';
+  mc.style.display = 'block';
+}
+
+function renderPolygon() {
+  const pts = ptsToStr(polyPts);
+  ['panelFill','selGlow','selFill','selStroke','selDash'].forEach(id => {
+    document.getElementById(id).setAttribute('points', pts);
+  });
+  renderAnchors();
+}
+
+function renderAnchors() {
+  const g = document.getElementById('anchors');
+  g.innerHTML = '';
+  polyPts.forEach((p, i) => {
+    // Main anchor
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]);
+    c.setAttribute('r', '6');
+    c.setAttribute('fill', 'rgba(1,5,9,.92)');
+    c.setAttribute('stroke', 'var(--jade)'); c.setAttribute('stroke-width', '1.8');
+    c.setAttribute('rx', '3');
+    c.style.cursor = 'grab';
+    c.style.filter = 'drop-shadow(0 0 4px rgba(0,229,160,.5))';
+    c.dataset.idx = i;
+    g.appendChild(c);
+
+    // Midpoint handle
+    const next = polyPts[(i+1)%polyPts.length];
+    const mx = (p[0]+next[0])/2, my = (p[1]+next[1])/2;
+    const m = document.createElementNS(SVG_NS, 'circle');
+    m.setAttribute('cx', mx); m.setAttribute('cy', my);
+    m.setAttribute('r', '4');
+    m.setAttribute('fill', 'rgba(0,229,160,.12)');
+    m.setAttribute('stroke', 'rgba(0,229,160,.4)'); m.setAttribute('stroke-width', '1.2');
+    m.style.cursor = 'crosshair';
+    g.appendChild(m);
+  });
+
+  // Update area label position
+  updateLabelPos();
+}
+
+function updateLabelPos() {
+  const cx = polyPts.reduce((s,p) => s+p[0], 0)/polyPts.length;
+  const miny = Math.min(...polyPts.map(p=>p[1]));
+  const lbl = document.getElementById('areaLabel');
+  lbl.style.left = cx+'px'; lbl.style.top = (miny-36)+'px';
+
+  const maxx = Math.max(...polyPts.map(p=>p[0]));
+  const midy = (Math.min(...polyPts.map(p=>p[1]))+Math.max(...polyPts.map(p=>p[1])))/2;
+  const mc = document.getElementById('measCallout');
+  mc.style.left = (maxx+12)+'px'; mc.style.top = (midy-30)+'px';
+}
+
+/* ─────────────────────────────────────────────────────────
+   ANCHOR DRAG
+───────────────────────────────────────────────────────── */
+function initDrag() {
+  const svg = document.getElementById('mapSVG');
+  const wrap = document.getElementById('mapWrap');
+  let dragging = null, ox, oy;
+
+  svg.addEventListener('mousedown', e => {
+    const circle = e.target.closest('circle');
+    if (!circle || !circle.dataset.idx) return;
+    dragging = parseInt(circle.dataset.idx);
+    const r = wrap.getBoundingClientRect();
+    ox = e.clientX - r.left - polyPts[dragging][0];
+    oy = e.clientY - r.top  - polyPts[dragging][1];
+    e.preventDefault();
+    svg.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (dragging === null) return;
+    const r = wrap.getBoundingClientRect();
+    const nx = Math.max(0, Math.min(r.width,  e.clientX - r.left - ox));
+    const ny = Math.max(0, Math.min(r.height, e.clientY - r.top  - oy));
+    polyPts[dragging] = [nx, ny];
+    renderPolygon();
+    /* INTEGRAÇÃO FUTURA: map.unproject([nx,ny]) → atualizar GeoJSON do polígono */
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (dragging !== null) { dragging = null; svg.style.cursor = ''; }
+  });
+
+  // Polygon body drag
+  let bodyDragging = false, box, boy, origPts;
+  const polys = ['selFill','selStroke'];
+  polys.forEach(id => {
+    const el = document.getElementById(id);
+    el.style.pointerEvents = 'all';
+    el.style.cursor = 'move';
+    el.addEventListener('mousedown', e => {
+      bodyDragging = true;
+      const r = wrap.getBoundingClientRect();
+      box = e.clientX - r.left;
+      boy = e.clientY - r.top;
+      origPts = polyPts.map(p => [...p]);
+      e.stopPropagation();
+    });
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!bodyDragging) return;
+    const r = wrap.getBoundingClientRect();
+    const dx = (e.clientX-r.left) - box;
+    const dy = (e.clientY-r.top)  - boy;
+    polyPts = origPts.map(p => [
+      Math.max(0, Math.min(r.width,  p[0]+dx)),
+      Math.max(0, Math.min(r.height, p[1]+dy)),
+    ]);
+    renderPolygon();
+  });
+  window.addEventListener('mouseup', () => { bodyDragging = false; });
+}
+
+/* ─────────────────────────────────────────────────────────
+   VIEW MODE
+   INTEGRAÇÃO FUTURA: map.setStyle('mapbox://styles/mapbox/satellite-v9')
+───────────────────────────────────────────────────────── */
+let currentView = 'sat';
+function setView(btn, mode) {
+  document.querySelectorAll('.vs-opt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  currentView = mode;
+  const c = document.getElementById('mapCanvas');
+  const ctx = c.getContext('2d');
+  const W = c.offsetWidth, H = c.offsetHeight;
+  // Fade
+  c.style.opacity = '0.3';
+  setTimeout(() => {
+    drawSatelliteScene(ctx, W, H, mode);
+    c.style.transition = 'opacity .4s';
+    c.style.opacity = '1';
+  }, 200);
+}
+
+/* ─────────────────────────────────────────────────────────
+   LAYER TOGGLES
+   INTEGRAÇÃO FUTURA: addSource/addLayer Mapbox GL para tiles de análise
+───────────────────────────────────────────────────────── */
+function toggleLayer(name, on) {
+  const map = {
+    solar:    'solarHeat',
+    shadow:   'shadowHeat',
+    potential:'potentialOv',
+    orient:   null,
+  };
+  const item = document.querySelector(`[data-layer="${name}"]`);
+  if (item) item.classList.toggle('layer-on', on);
+
+  if (map[name]) {
+    const el = document.getElementById(map[name]);
+    el && el.classList.toggle('vis', on);
+  }
+  /* INTEGRAÇÃO FUTURA:
+     solar → NASA POWER raster tiles
+     shadow → DSM-based shadow analysis raster
+     potential → kWp/m² heatmap
+     orient → azimute overlay com gradiente direcional */
+}
+
+/* ─────────────────────────────────────────────────────────
+   TOOLS
+   INTEGRAÇÃO FUTURA: ativar modo no MapboxDraw: draw.changeMode('draw_polygon')
+───────────────────────────────────────────────────────── */
+let activeTool = 'move';
+function setTool(btn, tool) {
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  activeTool = tool;
+  const cursors = { move:'grab', draw:'crosshair', edit:'cell', measure:'crosshair' };
+  document.getElementById('mapWrap').style.cursor = cursors[tool] || 'default';
+}
+
+/* ─────────────────────────────────────────────────────────
+   SELECTION TYPE
+───────────────────────────────────────────────────────── */
+function setSelType(el, label) {
+  document.querySelectorAll('.sel-card').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('rType').textContent = label;
+}
+
+/* ─────────────────────────────────────────────────────────
+   ZOOM
+   INTEGRAÇÃO FUTURA: map.zoomIn() / map.zoomOut()
+───────────────────────────────────────────────────────── */
+let zoomLvl = 18;
+function zoom(d) {
+  zoomLvl = Math.max(10, Math.min(22, zoomLvl+d));
+  document.getElementById('coordZoom').textContent = zoomLvl;
+  flashCoords(`Zoom: ${zoomLvl}`);
+}
+function undoAct() { flashCoords('Desfazer ← Ctrl+Z'); }
+function redoAct() { flashCoords('Refazer → Ctrl+Y'); }
+function clearSel() {
+  flashCoords('Seleção removida');
+  /* INTEGRAÇÃO FUTURA: draw.deleteAll() */
+}
+
+/* ─────────────────────────────────────────────────────────
+   CURSOR TRACKER + TOOLTIP
+   INTEGRAÇÃO FUTURA: lngLat = map.unproject([x,y]) para coords reais
+───────────────────────────────────────────────────────── */
+const mapWrap = document.getElementById('mapWrap');
+const tip = document.getElementById('mapTip');
+mapWrap.addEventListener('mousemove', e => {
+  const r = mapWrap.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+
+  // Update tooltip
+  const tipMsgs = { move:'Clique e arraste para mover', draw:'Clique para adicionar ponto', edit:'Arraste um vértice', measure:'Clique para medir distância' };
+  tip.textContent = tipMsgs[activeTool] || '';
+  tip.style.display = activeTool === 'move' ? 'none' : 'block';
+  tip.style.left = (x + 16) + 'px';
+  tip.style.top  = (y - 32) + 'px';
+
+  // Simulate lat/lon
+  const lat = (-23.5687 - (y/r.height)*.0022).toFixed(5);
+  const lon = (-46.6924 + (x/r.width)*.0030).toFixed(5);
+  document.getElementById('coordLat').textContent = lat + '°';
+  document.getElementById('coordLon').textContent = lon + '°';
+});
+mapWrap.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+/* Click spark */
+mapWrap.addEventListener('click', e => {
+  if (activeTool !== 'draw') return;
+  const spark = document.createElement('div');
+  spark.className = 'click-spark';
+  spark.style.left = e.offsetX + 'px';
+  spark.style.top  = e.offsetY + 'px';
+  mapWrap.appendChild(spark);
+  spark.addEventListener('animationend', () => spark.remove());
+});
+
+/* ─────────────────────────────────────────────────────────
+   MEASURE TOGGLE
+───────────────────────────────────────────────────────── */
+function toggleMeasure() {
+  const ico = document.getElementById('icoMeasure');
+  ico.classList.toggle('active');
+}
+
+/* ─────────────────────────────────────────────────────────
+   FLASH MESSAGE (coord bar)
+───────────────────────────────────────────────────────── */
+function flashCoords(msg) {
+  const el = document.getElementById('coordArea');
+  const prev = el.textContent;
+  el.textContent = msg;
+  el.style.color = 'var(--jade-hi)';
+  el.style.transition = 'color .2s';
+  setTimeout(() => { el.textContent = prev; el.style.color = ''; }, 1800);
+}
+function flashMsg(m) { flashCoords(m); }
+
+/* ─────────────────────────────────────────────────────────
+   LOCATE / GPS
+   INTEGRAÇÃO FUTURA: Mapbox Geocoding API → flyTo + Marker
+───────────────────────────────────────────────────────── */
+function mockLocate() {
+  const addr = document.getElementById('fAddr').value;
+  flashCoords(`Localizando: ${addr}...`);
+  setTimeout(() => {
+    document.getElementById('fLat').value = '-23.56870';
+    document.getElementById('fLon').value = '-46.69240';
+    flashCoords('-23.56870° · -46.69240° — Itaim Bibi, SP');
+  }, 900);
+}
+function mockGPS() {
+  flashCoords('Obtendo localização GPS...');
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        document.getElementById('fLat').value = p.coords.latitude.toFixed(5);
+        document.getElementById('fLon').value = p.coords.longitude.toFixed(5);
+        flashCoords(`${p.coords.latitude.toFixed(4)}° · ${p.coords.longitude.toFixed(4)}°`);
+      },
+      () => flashCoords('Permissão de localização negada')
+    );
+  } else { flashCoords('Geolocalização não disponível'); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ONBOARDING
+───────────────────────────────────────────────────────── */
+function showOnboard() {
+  document.getElementById('obBg').style.display = 'block';
+  document.getElementById('obCard').style.display = 'block';
+}
+function closeOnboard() {
+  document.getElementById('obBg').style.display = 'none';
+  document.getElementById('obCard').style.display = 'none';
+}
+
+/* ─────────────────────────────────────────────────────────
+   SAVE / CONFIRM
+   INTEGRAÇÃO FUTURA: POST /api/areas { geojson, area_m2, project_id }
+───────────────────────────────────────────────────────── */
+function saveArea() {
+  flashCoords('✓ Área salva · SIM-2027-0482');
+  const btn = document.querySelector('.btn-ghost');
+  btn.textContent = '✓ Salvo';
+  btn.style.borderColor = 'var(--jade-bd)';
+  btn.style.color = 'var(--jade-hi)';
+  setTimeout(() => { btn.textContent = '💾 Salvar'; btn.style.borderColor=''; btn.style.color=''; }, 2200);
+}
+function confirmSel() {
+  const btn = document.querySelector('.btn-prime');
+  btn.textContent = '⏳ Confirmando...';
+  btn.style.opacity = '.7';
+  setTimeout(() => {
+    btn.style.opacity = '1';
+    btn.textContent = '✓ Seleção confirmada!';
+    btn.style.background = 'linear-gradient(135deg,var(--jade-hi),var(--jade))';
+    btn.style.color = 'var(--void)';
+    const sz = document.getElementById('selGlow');
+    sz.setAttribute('stroke', 'var(--jade-hi)');
+    setTimeout(() => {
+      btn.textContent = '✓ Confirmar seleção';
+      btn.style.background = '';
+      btn.style.color = '';
+      sz.setAttribute('stroke', 'rgba(0,229,160,.18)');
+    }, 3000);
+  }, 900);
+}
+
+/* ─────────────────────────────────────────────────────────
+   NAVIGATE TO SIMULATION
+   INTEGRAÇÃO FUTURA: passar polygon GeoJSON + area + type como query params
+───────────────────────────────────────────────────────── */
+function goSimulate() { window.location.href = 'simulacao.html'; }
+
+/* ─────────────────────────────────────────────────────────
+   LIVE CLOCK
+───────────────────────────────────────────────────────── */
+function startClock() {
+  const update = () => {
+    const n = new Date();
+    const hhmm = n.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    const el = document.getElementById('hspTime');
+    if (el) el.textContent = hhmm;
+  };
+  update();
+  setInterval(update, 30000);
+}
+
+/* ─────────────────────────────────────────────────────────
+   MOBILE PANELS
+───────────────────────────────────────────────────────── */
+function togglePanel(side) {
+  const p = document.getElementById(side === 'left' ? 'panelLeft' : 'panelRight');
+  p.classList.toggle('open');
+  const other = document.getElementById(side === 'left' ? 'panelRight' : 'panelLeft');
+  other.classList.remove('open');
+}
+
+/* ─────────────────────────────────────────────────────────
+   FULLSCREEN
+───────────────────────────────────────────────────────── */
+function toggleFS() {
+  const ico = document.getElementById('icoFullscreen');
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.().catch(()=>{});
+    ico.textContent = '⊡';
+  } else {
+    document.exitFullscreen?.();
+    ico.textContent = '⛶';
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   KEYBOARD SHORTCUTS
+───────────────────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  if (e.key === 'Escape')        closeOnboard();
+  if (e.key === '+'||e.key==='=') zoom(1);
+  if (e.key === '-')             zoom(-1);
+  if (e.key === 'm'||e.key==='M') setTool(document.querySelector('[onclick*="move"]'), 'move');
+  if (e.key === 'd'||e.key==='D') setTool(document.querySelector('[onclick*="draw"]'), 'draw');
+  if ((e.ctrlKey||e.metaKey)&&e.key==='z') { e.preventDefault(); undoAct(); }
+  if ((e.ctrlKey||e.metaKey)&&e.key==='s') { e.preventDefault(); saveArea(); }
+  if ((e.ctrlKey||e.metaKey)&&e.key==='Enter') confirmSel();
+});
+
+/* RESIZE */
+window.addEventListener('resize', () => {
+  buildSatCanvas();
+  buildMiniCanvas();
+  initPolygon();
+});
+
+/*
+ * ═══════════════════════════════════════════════════════════════════
+ * INTEGRAÇÕES FUTURAS — MAPEAMENTO GEOESPACIAL SOLARMAP AI
+ * ═══════════════════════════════════════════════════════════════════
+ *
+ * 1. MAPA SATELITAL REAL
+ *    Mapbox GL JS: mapboxgl.Map({ container, style:'satellite-v9', center:[lon,lat], zoom:18 })
+ *    Google Maps:  new google.maps.Map(el, { mapTypeId:'satellite', zoom:19 })
+ *    Google Earth: integração via Earth Engine Tilelayer
+ *
+ * 2. POLÍGONO GEOESPACIAL REAL
+ *    Mapbox Draw:  draw = new MapboxDraw(); map.addControl(draw)
+ *    Área real:    turf.area(polygon) → m² / Turf.js
+ *    Evento:       map.on('draw.create', e => sendToAPI(e.features[0]))
+ *
+ * 3. GOOGLE SOLAR API (análise automática de telhado)
+ *    Endpoint: GET /v1/buildingInsights:findClosest?location.latitude=X&location.longitude=Y&key=KEY
+ *    Retorna:  maxArrayPanelsCount, panelCapacityWatts, solarPanelConfigs, maxSunshineHoursPerYear
+ *    Preenche: placas, potência, eficiência, geração anual
+ *
+ * 4. NASA POWER API (irradiância real)
+ *    GET https://power.larc.nasa.gov/api/temporal/monthly/point
+ *    Params: parameters=ALLSKY_SFC_SW_DWN, lat, lon, start, end, format=JSON
+ *    Preenche: sparkline mensal, geração diária/mensal/anual
+ *
+ * 5. ANÁLISE DE SOMBRA (DSM)
+ *    Google Solar API → DSM raster layers
+ *    SunCalc.js: SunCalc.getPosition(date, lat, lon) → altitude, azimuth
+ *    Heatmap de sombra por hora/mês projetado sobre o polígono
+ *
+ * 6. ELEVAÇÃO E INCLINAÇÃO
+ *    Google Maps Elevation API para múltiplos pontos do polígono
+ *    Calcular slope entre pontos → ângulo de inclinação do telhado
+ *
+ * 7. MOTOR FINANCEIRO
+ *    POST /api/financial/estimate { area_m2, lat, lon, distribuidora, tipo }
+ *    Tarifa via ANEEL Open Data: https://dadosabertos.aneel.gov.br
+ *    Projeção de reajuste tarifário histórico (IPCA energético)
+ *
+ * 8. MULTI-PAÍS / INTERNACIONALIZAÇÃO
+ *    i18next para textos · Intl.NumberFormat para moeda · timezone via luxon
+ *    Seletor de país → muda: tarifa padrão, distribuidoras, regulamentação (net metering)
+ *    Exchange rate via https://api.exchangerate-api.com
+ *
+ * 9. SALVAR / COMPARTILHAR
+ *    POST /api/areas { geojson:polygon, area_m2, tipo, project_id }
+ *    Exportar: KML (Google Earth), GeoJSON, Shapefile, DXF (AutoCAD)
+ *    Link compartilhável: /mapa?session=hash&area=base64polygon
+ *
+ * 10. ANÁLISE DE MALHA DE MÓDULOS
+ *     Algoritmo bin-packing para layout ótimo de painéis no polígono
+ *     Considera: espaçamento mínimo 20cm, bordas de segurança 50cm,
+ *     inclinação/azimute de cada fileira, acessos para manutenção
+ *     Renderizado como pattern fill no SVG com geometria real
+ */
+</script>
+</body>
+</html>

@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarMap AI — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   SOLARMAP AI — DASHBOARD DESIGN SYSTEM
+   Fontes: Outfit (UI) · JetBrains Mono (dados/código)
+   Tema: Deep Navy · Solar Gold · Energy Green · Arctic White
+   ================================================================ */
+
+:root {
+  /* Core palette */
+  --bg-base:      #04090F;
+  --bg-surface:   #070E1A;
+  --bg-card:      #0A1525;
+  --bg-elevated:  #0D1C30;
+  --bg-hover:     #101F35;
+
+  /* Sidebar */
+  --sidebar-bg:   #060C18;
+  --sidebar-w:    240px;
+
+  /* Accents */
+  --gold:         #D4A843;
+  --gold-light:   #F0C96B;
+  --gold-dim:     rgba(212,168,67,0.15);
+  --gold-border:  rgba(212,168,67,0.22);
+
+  --green:        #1FD8A4;
+  --green-dim:    rgba(31,216,164,0.12);
+  --green-border: rgba(31,216,164,0.22);
+
+  --blue:         #4A9EFF;
+  --blue-dim:     rgba(74,158,255,0.12);
+
+  --coral:        #FF6B6B;
+  --coral-dim:    rgba(255,107,107,0.12);
+
+  /* Text */
+  --text-1:       #EEF4FF;
+  --text-2:       rgba(238,244,255,0.65);
+  --text-3:       rgba(238,244,255,0.38);
+  --text-4:       rgba(238,244,255,0.20);
+
+  /* Borders */
+  --border:       rgba(238,244,255,0.07);
+  --border-mid:   rgba(238,244,255,0.12);
+
+  /* Radius */
+  --r-sm:  8px;
+  --r:     12px;
+  --r-lg:  18px;
+  --r-xl:  24px;
+
+  /* Transitions */
+  --t: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-1);
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(238,244,255,0.12); border-radius: 99px; }
+
+/* ── Typography helpers ── */
+.mono { font-family: 'JetBrains Mono', monospace; }
+.grad-gold { background: linear-gradient(135deg, var(--gold-light), var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.grad-green { background: linear-gradient(135deg, #5CF4CC, var(--green)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* ── Noise texture ── */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.018; background-size: 200px;
+}
+
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 200;
+  transition: transform var(--t);
+}
+
+/* Logo */
+.sidebar-logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+}
+.logo-mark {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(212,168,67,0.4);
+}
+.logo-text { font-size: 0.95rem; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em; }
+.logo-text span { color: var(--gold); }
+
+/* Nav */
+.sidebar-nav {
+  flex: 1; overflow-y: auto; padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.nav-section-label {
+  font-size: 0.62rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-4); padding: 14px 8px 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--r-sm);
+  text-decoration: none; font-size: 0.845rem; font-weight: 400;
+  color: var(--text-2); transition: var(--t); position: relative;
+  cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: rgba(238,244,255,0.04); color: var(--text-1); }
+.nav-item.active {
+  background: var(--gold-dim); color: var(--gold-light); font-weight: 600;
+  border: 1px solid var(--gold-border);
+}
+.nav-item.active::before {
+  content:''; position:absolute; left:-12px; top:50%; transform:translateY(-50%);
+  width:3px; height:60%; background:var(--gold); border-radius:0 3px 3px 0;
+}
+.nav-icon { font-size: 1rem; flex-shrink: 0; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto; font-size: 0.65rem; font-weight: 700;
+  background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border);
+  border-radius: 99px; padding: 1px 7px;
+}
+
+/* User area */
+.sidebar-user {
+  border-top: 1px solid var(--border); padding: 14px 16px;
+}
+.user-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.avatar {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, #1FD8A4, #4A9EFF);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 0.82rem; font-weight: 600; color: var(--text-1); truncate: ellipsis; white-space: nowrap; overflow: hidden; }
+.user-plan { font-size: 0.7rem; color: var(--gold); }
+.btn-upgrade {
+  width: 100%; padding: 9px; border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: #060C18; font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 700;
+  border: none; cursor: pointer; transition: var(--t);
+  letter-spacing: 0.02em;
+}
+.btn-upgrade:hover { box-shadow: 0 4px 20px rgba(212,168,67,0.4); }
+
+/* ================================================================
+   MAIN LAYOUT
+   ================================================================ */
+.main-wrapper {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ================================================================
+   TOPBAR
+   ================================================================ */
+.topbar {
+  height: 62px;
+  background: rgba(6,12,24,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 24px;
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 100;
+}
+
+.topbar-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 8px 14px; flex: 1; max-width: 340px;
+  transition: var(--t);
+}
+.topbar-search:focus-within { border-color: var(--border-mid); }
+.topbar-search span { color: var(--text-3); font-size: 0.85rem; }
+.topbar-search input {
+  background: none; border: none; outline: none;
+  font-family: 'Outfit', sans-serif; font-size: 0.845rem; color: var(--text-1);
+  width: 100%;
+}
+.topbar-search input::placeholder { color: var(--text-3); }
+
+.topbar-spacer { flex: 1; }
+
+.topbar-select {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 7px 12px;
+  font-family: 'Outfit', sans-serif; font-size: 0.8rem; color: var(--text-2);
+  cursor: pointer; transition: var(--t);
+}
+.topbar-select:hover { border-color: var(--border-mid); color: var(--text-1); }
+
+.topbar-icon-btn {
+  width: 36px; height: 36px; border-radius: var(--r-sm);
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--t); position: relative; color: var(--text-2);
+  font-size: 1rem;
+}
+.topbar-icon-btn:hover { border-color: var(--border-mid); color: var(--text-1); }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--green); border: 1.5px solid var(--bg-surface);
+}
+
+.topbar-avatar {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  border: 1px solid rgba(31,216,164,0.3);
+}
+
+.btn-new-sim {
+  display: flex; align-items: center; gap: 7px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: #04090F; font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 700;
+  border: none; border-radius: var(--r-sm); padding: 8px 16px; cursor: pointer;
+  transition: var(--t); white-space: nowrap; flex-shrink: 0;
+}
+.btn-new-sim:hover { box-shadow: 0 4px 20px rgba(212,168,67,0.4); }
+
+/* ================================================================
+   CONTENT AREA
+   ================================================================ */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 28px 60px;
+}
+
+/* ================================================================
+   HERO BANNER
+   ================================================================ */
+.dash-hero {
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, #071628 0%, #0D2545 45%, #08192E 100%);
+  border: 1px solid var(--border);
+  padding: 36px 44px;
+  position: relative; overflow: hidden;
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 40px;
+}
+
+/* Decorative radial glows */
+.dash-hero::before {
+  content:''; position:absolute; width:500px; height:500px; border-radius:50%;
+  background: radial-gradient(circle, rgba(212,168,67,0.1) 0%, transparent 65%);
+  top:-200px; right:-100px; pointer-events:none;
+}
+.dash-hero::after {
+  content:''; position:absolute; width:300px; height:300px; border-radius:50%;
+  background: radial-gradient(circle, rgba(31,216,164,0.08) 0%, transparent 65%);
+  bottom:-100px; left:30%; pointer-events:none;
+}
+
+/* Grid lines in hero */
+.hero-grid-lines {
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(238,244,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(238,244,255,0.02) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+
+.hero-content { position:relative; z-index:1; }
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:0.7rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase;
+  color:var(--gold); background:var(--gold-dim); border:1px solid var(--gold-border);
+  border-radius:99px; padding:4px 12px; margin-bottom:16px;
+}
+.hero-eyebrow::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--gold); }
+
+.dash-hero h1 {
+  font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 800; letter-spacing: -0.025em;
+  line-height: 1.15; margin-bottom: 10px;
+}
+.dash-hero p { font-size: 0.875rem; color: var(--text-2); max-width: 440px; line-height: 1.7; margin-bottom: 22px; }
+
+.hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
+.btn-hero-primary {
+  display:inline-flex; align-items:center; gap:8px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: #04090F; font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:700;
+  border:none; border-radius:var(--r-sm); padding:10px 20px; cursor:pointer;
+  transition:var(--t); white-space:nowrap;
+}
+.btn-hero-primary:hover { box-shadow:0 6px 24px rgba(212,168,67,0.45); }
+.btn-hero-ghost {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(238,244,255,0.05); border:1px solid var(--border-mid);
+  color:var(--text-1); font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:500;
+  border-radius:var(--r-sm); padding:10px 20px; cursor:pointer; transition:var(--t);
+}
+.btn-hero-ghost:hover { background:rgba(238,244,255,0.08); }
+
+/* Hero visual orb */
+.hero-visual { position:relative; z-index:1; flex-shrink:0; }
+.solar-orb {
+  width:160px; height:160px; border-radius:50%; position:relative;
+  background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 40%, #8a5a1a);
+  box-shadow: 0 0 60px rgba(212,168,67,0.4), 0 0 120px rgba(212,168,67,0.15);
+  animation: orbPulse 4s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%,100% { box-shadow: 0 0 60px rgba(212,168,67,0.4), 0 0 120px rgba(212,168,67,0.15); }
+  50% { box-shadow: 0 0 80px rgba(212,168,67,0.55), 0 0 160px rgba(212,168,67,0.2); }
+}
+/* Orbit ring */
+.orb-ring {
+  position:absolute; inset:-24px; border-radius:50%;
+  border:1px solid rgba(212,168,67,0.2);
+  animation: orbRotate 12s linear infinite;
+}
+.orb-ring::after {
+  content:''; position:absolute; width:10px; height:10px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 10px var(--green);
+  top:-5px; left:50%; transform:translateX(-50%);
+}
+@keyframes orbRotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.orb-ring-2 {
+  position:absolute; inset:-44px; border-radius:50%;
+  border:1px solid rgba(31,216,164,0.1);
+  animation: orbRotate 20s linear infinite reverse;
+}
+.orb-ring-2::after {
+  content:''; position:absolute; width:6px; height:6px; border-radius:50%;
+  background:var(--blue); box-shadow:0 0 8px var(--blue);
+  top:-3px; right:20%; transform:translateX(50%);
+}
+
+/* ================================================================
+   KPI CARDS
+   ================================================================ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 20px 18px;
+  transition: var(--t); position: relative; overflow: hidden;
+}
+.kpi-card:hover { border-color: var(--border-mid); transform: translateY(-1px); }
+.kpi-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  opacity:0; transition:var(--t);
+}
+.kpi-card:hover::before { opacity:1; }
+.kpi-card.gold::before { background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+.kpi-card.green::before { background: linear-gradient(90deg, var(--green), #5CF4CC); }
+.kpi-card.blue::before { background: linear-gradient(90deg, var(--blue), #82BFFF); }
+
+.kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.kpi-icon {
+  width:38px; height:38px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; font-size:1.05rem;
+  flex-shrink:0;
+}
+.kpi-icon.gold { background:var(--gold-dim); }
+.kpi-icon.green { background:var(--green-dim); }
+.kpi-icon.blue { background:var(--blue-dim); }
+.kpi-icon.coral { background:var(--coral-dim); }
+
+.kpi-trend {
+  font-size:0.7rem; font-weight:600; display:flex; align-items:center; gap:3px;
+  padding:2px 7px; border-radius:99px;
+}
+.kpi-trend.up { color:var(--green); background:var(--green-dim); }
+.kpi-trend.down { color:var(--coral); background:var(--coral-dim); }
+
+.kpi-val { font-size:1.6rem; font-weight:800; line-height:1; margin-bottom:4px; letter-spacing:-0.02em; }
+.kpi-label { font-size:0.75rem; color:var(--text-3); font-weight:400; }
+
+/* Mini sparkline */
+.sparkline { display:flex; align-items:flex-end; gap:2px; height:24px; margin-top:10px; }
+.spark-bar {
+  flex:1; border-radius:2px 2px 0 0; opacity:0.5;
+  background:var(--gold); min-height:3px;
+}
+.spark-bar.green { background:var(--green); }
+.spark-bar.blue { background:var(--blue); }
+.spark-bar.active { opacity:1; }
+
+/* ================================================================
+   MAIN GRID
+   ================================================================ */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+/* ── Card base ── */
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden; transition: var(--t);
+}
+.card:hover { border-color: var(--border-mid); }
+.card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px 0;
+}
+.card-title { font-size: 0.88rem; font-weight: 700; color: var(--text-1); }
+.card-sub { font-size: 0.72rem; color: var(--text-3); margin-top:2px; }
+.card-body { padding: 16px 22px 20px; }
+.card-action {
+  font-size: 0.72rem; font-weight: 600; color: var(--gold);
+  background: var(--gold-dim); border: 1px solid var(--gold-border);
+  border-radius: 99px; padding: 4px 12px; cursor: pointer;
+  transition: var(--t); white-space:nowrap;
+}
+.card-action:hover { background: rgba(212,168,67,0.22); }
+
+/* ── Block A: Map ── */
+.block-map { grid-column: 1; grid-row: 1 / 3; }
+.map-container {
+  position: relative; height: 360px;
+  background: linear-gradient(145deg, #060F1E, #0A1A30);
+  overflow: hidden;
+}
+/* Satellite grid */
+.map-sat-grid {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(31,216,164,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31,216,164,0.04) 1px, transparent 1px);
+  background-size:30px 30px;
+}
+/* Simulated terrain patches */
+.terrain { position:absolute; border-radius:4px; }
+.t1 { width:140px;height:90px; top:25%;left:22%; background:rgba(14,40,20,0.7); border:1px solid rgba(31,216,164,0.08); }
+.t2 { width:90px;height:60px; top:55%;left:18%; background:rgba(14,40,20,0.5); border:1px solid rgba(31,216,164,0.06); }
+.t3 { width:180px;height:40px; top:70%;left:40%; background:rgba(14,40,20,0.4); }
+.t4 { width:60px;height:80px; top:15%;left:62%; background:rgba(14,40,20,0.6); border:1px solid rgba(31,216,164,0.06); }
+
+/* Highlighted roof area */
+.roof-highlight {
+  position:absolute; top:24%; left:25%; width:110px; height:72px;
+  border-radius:6px; border:2px solid var(--gold); background:rgba(212,168,67,0.12);
+  animation:roofBlink 2.5s ease-in-out infinite;
+}
+@keyframes roofBlink {
+  0%,100%{border-color:var(--gold);box-shadow:0 0 14px rgba(212,168,67,0.3)}
+  50%{border-color:var(--gold-light);box-shadow:0 0 28px rgba(212,168,67,0.5)}
+}
+/* Panel cells on roof */
+.roof-panels {
+  position:absolute; inset:6px;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:2px;
+}
+.rp { border-radius:2px; background:rgba(31,216,164,0.3); border:1px solid rgba(31,216,164,0.5); }
+
+/* Location pin */
+.map-pin {
+  position:absolute; top:18%; left:27%;
+  display:flex; flex-direction:column; align-items:center; z-index:10;
+  animation: pinAnim 2s ease-in-out infinite;
+}
+@keyframes pinAnim { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.pin-head {
+  width:24px; height:24px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+  background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow:0 0 16px rgba(212,168,67,0.6); display:flex; align-items:center; justify-content:center;
+}
+.pin-head::after { content:'☀'; transform:rotate(45deg); font-size:0.6rem; }
+.pin-tail { width:2px; height:16px; background:rgba(212,168,67,0.5); border-radius:1px; }
+
+/* Pulse rings */
+.pin-pulse {
+  position:absolute; top:8px; left:0;
+  width:24px; height:24px; border-radius:50%; border:1.5px solid rgba(212,168,67,0.4);
+  animation:pulsering 2s ease-out infinite;
+}
+@keyframes pulsering { 0%{transform:scale(1);opacity:0.8} 100%{transform:scale(3);opacity:0} }
+
+/* Solar potential badge */
+.solar-badge {
+  position:absolute; top:14px; right:14px;
+  background:rgba(6,12,24,0.85); backdrop-filter:blur(8px);
+  border:1px solid var(--gold-border); border-radius:var(--r-sm);
+  padding:10px 14px; text-align:right;
+}
+.solar-badge-val { font-family:'JetBrains Mono',monospace; font-size:1.1rem; font-weight:500; color:var(--gold-light); }
+.solar-badge-label { font-size:0.65rem; color:var(--text-3); margin-top:2px; }
+
+/* Coords display */
+.map-coords {
+  position:absolute; bottom:14px; left:14px;
+  font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:rgba(31,216,164,0.6);
+  background:rgba(6,12,24,0.7); padding:5px 10px; border-radius:6px;
+  border:1px solid var(--border);
+}
+/* Live dot */
+.map-live {
+  position:absolute; bottom:14px; right:14px;
+  display:flex; align-items:center; gap:6px;
+  font-size:0.65rem; color:var(--text-3);
+  background:rgba(6,12,24,0.7); padding:5px 10px; border-radius:6px;
+  border:1px solid var(--border);
+}
+.live-dot { width:6px;height:6px;border-radius:50%;background:var(--green);animation:livePulse 1.5s infinite; }
+@keyframes livePulse { 0%,100%{opacity:1;box-shadow:0 0 4px var(--green)} 50%{opacity:0.4;box-shadow:none} }
+
+/* Radial overlay on map */
+.map-vignette {
+  position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 80% 80% at 32% 32%, rgba(212,168,67,0.06) 0%, transparent 70%);
+}
+
+.map-open-btn {
+  display:flex; align-items:center; gap:7px; margin-top:14px;
+  background:var(--green-dim); border:1px solid var(--green-border);
+  color:var(--green); font-family:'Outfit',sans-serif; font-size:0.78rem; font-weight:600;
+  border-radius:var(--r-sm); padding:8px 16px; cursor:pointer; transition:var(--t);
+}
+.map-open-btn:hover { background:rgba(31,216,164,0.2); }
+/* INTEGRAÇÃO FUTURA: botão conectará ao componente de mapa real (Google Maps / Mapbox) */
+
+/* ── Block B: Placas ── */
+.block-plates {}
+.plates-main {
+  text-align:center; margin:14px 0 18px;
+}
+.plates-big { font-size:3rem; font-weight:800; line-height:1; }
+.plates-label { font-size:0.75rem; color:var(--text-3); margin-top:4px; }
+
+.plates-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.pstat {
+  background:var(--bg-elevated); border:1px solid var(--border);
+  border-radius:var(--r-sm); padding:12px; text-align:center;
+}
+.pstat-val { font-family:'JetBrains Mono',monospace; font-size:1rem; font-weight:500; color:var(--text-1); margin-bottom:2px; }
+.pstat-label { font-size:0.65rem; color:var(--text-3); }
+
+/* Efficiency bar */
+.eff-label { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-3); margin-bottom:6px; }
+.eff-bar { height:6px; background:rgba(238,244,255,0.07); border-radius:99px; overflow:hidden; margin-bottom:14px; }
+.eff-fill { height:100%; border-radius:99px; background:linear-gradient(90deg, var(--green), var(--gold)); animation:fillEff 1.2s ease-out; }
+@keyframes fillEff { from{width:0} }
+
+/* Panel grid visual */
+.panel-grid-visual {
+  display:grid; grid-template-columns:repeat(8,1fr); gap:3px;
+}
+.pgv-cell {
+  aspect-ratio:1.4/1; border-radius:2px;
+  background:linear-gradient(145deg, #0D2A45, #0A1E35);
+  border:1px solid rgba(31,216,164,0.15);
+  transition:var(--t);
+}
+.pgv-cell:hover { border-color:rgba(31,216,164,0.4); }
+.pgv-cell.active { background:linear-gradient(145deg, #0D3A2A, #0A2A1E); border-color:rgba(31,216,164,0.35); }
+
+/* ── Block C: Production chart ── */
+.block-production { grid-column:2; grid-row:1; }
+.chart-tabs {
+  display:flex; gap:4px; padding:14px 22px 0;
+}
+.chart-tab {
+  font-size:0.72rem; font-weight:500; padding:4px 12px; border-radius:99px;
+  cursor:pointer; transition:var(--t); color:var(--text-3); border:none; background:none;
+  font-family:'Outfit',sans-serif;
+}
+.chart-tab.active { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+
+/* Bar chart */
+.bar-chart {
+  display:flex; align-items:flex-end; gap:5px; height:120px; padding:14px 22px 0;
+}
+.bc-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bc-bar {
+  width:100%; border-radius:4px 4px 0 0;
+  background:linear-gradient(180deg, rgba(31,216,164,0.7), rgba(31,216,164,0.3));
+  transition:var(--t); cursor:pointer; position:relative;
+  min-height:4px;
+}
+.bc-bar:hover { background:linear-gradient(180deg, var(--green), rgba(31,216,164,0.5)); }
+.bc-bar.highlight { background:linear-gradient(180deg, var(--gold-light), var(--gold)); }
+.bc-bar.highlight:hover { background:linear-gradient(180deg, var(--gold-light), var(--gold)); filter:brightness(1.1); }
+
+.bc-label { font-size:0.58rem; color:var(--text-4); font-family:'JetBrains Mono',monospace; }
+
+.chart-footer {
+  display:flex; justify-content:space-between; padding:12px 22px 18px; gap:10px;
+  border-top:1px solid var(--border); margin-top:12px;
+}
+.cf-stat { text-align:center; }
+.cf-val { font-family:'JetBrains Mono',monospace; font-size:0.95rem; font-weight:500; color:var(--text-1); }
+.cf-label { font-size:0.62rem; color:var(--text-3); margin-top:2px; }
+
+/* ── Block D: Financial ── */
+.block-financial { grid-column:1; grid-row:3; }
+.financial-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+.fin-hero {
+  grid-column:1 / 3;
+  display:flex; justify-content:space-between; align-items:center;
+  background:linear-gradient(135deg, rgba(31,216,164,0.08), rgba(212,168,67,0.06));
+  border:1px solid var(--border); border-radius:var(--r);
+  padding:16px 20px;
+}
+.fin-hero-left {}
+.fin-hero-label { font-size:0.7rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+.fin-hero-val { font-size:2rem; font-weight:800; line-height:1; }
+.fin-hero-sub { font-size:0.72rem; color:var(--text-3); margin-top:4px; }
+
+/* ROI bars */
+.roi-bars { display:flex; flex-direction:column; gap:6px; min-width:160px; }
+.roi-row { display:flex; align-items:center; gap:10px; }
+.roi-year { font-size:0.65rem; color:var(--text-3); width:32px; flex-shrink:0; font-family:'JetBrains Mono',monospace; }
+.roi-track { flex:1; height:6px; background:rgba(238,244,255,0.06); border-radius:99px; overflow:hidden; }
+.roi-fill { height:100%; border-radius:99px; background:linear-gradient(90deg, var(--green), var(--gold)); }
+.roi-val { font-size:0.65rem; font-weight:600; color:var(--green); width:44px; text-align:right; font-family:'JetBrains Mono',monospace; }
+
+.fin-stat {
+  background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--r);
+  padding:14px 16px;
+}
+.fin-stat-label { font-size:0.68rem; color:var(--text-3); margin-bottom:6px; }
+.fin-stat-val { font-size:1.2rem; font-weight:700; }
+.fin-stat-note { font-size:0.65rem; color:var(--text-3); margin-top:4px; }
+
+/* ── Block E: Solar Position ── */
+.block-solar-pos { grid-column:2; grid-row:2; }
+.solar-arc-wrap {
+  position:relative; height:130px; margin:10px 20px 0;
+}
+/* SVG arc */
+.solar-arc-wrap svg { width:100%; height:130px; }
+.sun-dot { animation:sunMove 6s ease-in-out infinite; }
+@keyframes sunMove {
+  0%   { transform:translate(0px, 0px); }
+  50%  { transform:translate(2px, -3px); }
+  100% { transform:translate(0px, 0px); }
+}
+
+.sun-stats {
+  display:flex; justify-content:space-between; padding:0 22px 18px;
+  margin-top:10px;
+}
+.sun-stat { text-align:center; }
+.ss-val { font-family:'JetBrains Mono',monospace; font-size:0.9rem; font-weight:500; }
+.ss-label { font-size:0.62rem; color:var(--text-3); margin-top:2px; }
+
+/* ── Block F: Financing ── */
+.block-financing { grid-column:2; grid-row:3; }
+.fin-options { display:flex; flex-direction:column; gap:10px; padding:0 22px 20px; }
+.fin-option {
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--bg-elevated); border:1px solid var(--border);
+  border-radius:var(--r-sm); padding:12px 16px; transition:var(--t);
+}
+.fin-option:hover { border-color:var(--border-mid); }
+.fo-left {}
+.fo-bank { font-size:0.8rem; font-weight:600; color:var(--text-1); margin-bottom:3px; }
+.fo-detail { font-size:0.68rem; color:var(--text-3); }
+.fo-right { text-align:right; }
+.fo-rate { font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--green); font-weight:500; }
+.fo-parcel { font-size:0.65rem; color:var(--text-3); margin-top:2px; }
+.fo-badge {
+  font-size:0.6rem; font-weight:700; padding:2px 8px; border-radius:99px;
+  background:var(--green-dim); color:var(--green); border:1px solid var(--green-border);
+  margin-top:4px; display:inline-block;
+}
+/* INTEGRAÇÃO FUTURA: cards de financiamento conectarão a APIs de bancos parceiros */
+
+/* ================================================================
+   PROJECTS TABLE
+   ================================================================ */
+.projects-section { margin-bottom: 24px; }
+.section-header-row {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:14px;
+}
+.section-title { font-size:0.95rem; font-weight:700; }
+.section-action {
+  font-size:0.75rem; color:var(--gold); cursor:pointer;
+  display:flex; align-items:center; gap:4px;
+}
+.section-action:hover { text-decoration:underline; }
+
+.projects-table-wrap {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden;
+}
+.pt-header {
+  display:grid; grid-template-columns:2fr 1fr 1.2fr 1.1fr 1.1fr 1fr 0.8fr;
+  padding:12px 22px; border-bottom:1px solid var(--border);
+  font-size:0.68rem; font-weight:600; color:var(--text-3);
+  letter-spacing:0.08em; text-transform:uppercase;
+}
+.pt-row {
+  display:grid; grid-template-columns:2fr 1fr 1.2fr 1.1fr 1.1fr 1fr 0.8fr;
+  padding:14px 22px; border-bottom:1px solid var(--border);
+  font-size:0.82rem; align-items:center; transition:var(--t); cursor:pointer;
+}
+.pt-row:last-child { border-bottom:none; }
+.pt-row:hover { background:rgba(238,244,255,0.025); }
+
+.pt-name { font-weight:600; color:var(--text-1); }
+.pt-country { color:var(--text-2); }
+.type-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:0.68rem; font-weight:600; padding:3px 10px; border-radius:99px;
+}
+.type-badge.casa { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(74,158,255,0.2); }
+.type-badge.empresa { background:var(--gold-dim); color:var(--gold-light); border:1px solid var(--gold-border); }
+.type-badge.fazenda { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+.type-badge.terreno { background:var(--coral-dim); color:var(--coral); border:1px solid rgba(255,107,107,0.2); }
+
+.status-dot {
+  display:inline-flex; align-items:center; gap:6px; font-size:0.72rem;
+}
+.sdot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.sdot.active { background:var(--green); box-shadow:0 0 6px var(--green); }
+.sdot.pending { background:var(--gold); }
+.sdot.draft { background:var(--text-4); }
+
+.pt-gen { font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:var(--green); }
+.pt-roi { font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:var(--gold-light); }
+.pt-action-btn {
+  font-size:0.68rem; font-weight:600; padding:4px 12px; border-radius:99px;
+  background:rgba(238,244,255,0.05); border:1px solid var(--border);
+  color:var(--text-2); cursor:pointer; transition:var(--t);
+}
+.pt-action-btn:hover { border-color:var(--border-mid); color:var(--text-1); }
+
+/* ================================================================
+   INSIGHTS
+   ================================================================ */
+.insights-grid {
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;
+  margin-bottom:24px;
+}
+.insight-card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:18px 18px;
+  transition:var(--t); position:relative; overflow:hidden;
+}
+.insight-card:hover { border-color:var(--border-mid); transform:translateY(-1px); }
+.insight-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--green), transparent);
+  opacity:0; transition:var(--t);
+}
+.insight-card:hover::after { opacity:1; }
+.insight-icon { font-size:1.4rem; margin-bottom:12px; display:block; }
+.insight-title { font-size:0.82rem; font-weight:700; color:var(--text-1); margin-bottom:8px; line-height:1.35; }
+.insight-desc { font-size:0.72rem; color:var(--text-3); line-height:1.6; }
+.insight-cta {
+  display:inline-block; margin-top:12px; font-size:0.68rem; font-weight:600;
+  color:var(--green); cursor:pointer;
+}
+.insight-cta:hover { text-decoration:underline; }
+
+/* ================================================================
+   FUTURE MODULES
+   ================================================================ */
+.modules-section { margin-bottom:24px; }
+.modules-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+.module-card {
+  background:var(--bg-elevated); border:1px dashed rgba(238,244,255,0.08);
+  border-radius:var(--r); padding:16px 14px; text-align:center;
+  transition:var(--t); position:relative; overflow:hidden;
+}
+.module-card:hover { border-color:rgba(238,244,255,0.15); background:var(--bg-hover); }
+.module-card::before {
+  content:'Em breve'; position:absolute; top:8px; right:8px;
+  font-size:0.52rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--text-4); background:rgba(238,244,255,0.04); border-radius:99px;
+  padding:2px 6px;
+}
+.module-icon { font-size:1.4rem; margin-bottom:10px; opacity:0.6; display:block; }
+.module-name { font-size:0.72rem; font-weight:600; color:var(--text-3); line-height:1.35; }
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 1280px) {
+  .kpi-grid { grid-template-columns: repeat(3,1fr); }
+  .insights-grid { grid-template-columns: repeat(2,1fr); }
+  .modules-grid { grid-template-columns: repeat(3,1fr); }
+}
+
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+  .main-grid { grid-template-columns: 1fr 1fr; }
+  .block-map { grid-column:1 / 3; grid-row:1; }
+  .block-plates { grid-column:1; grid-row:2; }
+  .block-production { grid-column:2; grid-row:2; }
+  .block-solar-pos { grid-column:1; grid-row:3; }
+  .block-financing { grid-column:2; grid-row:3; }
+  .block-financial { grid-column:1 / 3; grid-row:4; }
+  .financial-grid { grid-template-columns:1fr 1fr 1fr 1fr; }
+  .fin-hero { grid-column:1 / 3; }
+  .pt-header,.pt-row { grid-template-columns:2fr 1.2fr 1.1fr 1fr 0.8fr; }
+  .pt-header > *:nth-child(4),
+  .pt-row > *:nth-child(4) { display:none; }
+  .hero-visual { display:none; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:translateX(0); }
+  .main-wrapper { margin-left:0; }
+  .content { padding:16px 16px 60px; }
+  .kpi-grid { grid-template-columns:1fr 1fr; }
+  .main-grid { grid-template-columns:1fr; }
+  .block-map,.block-financial,.block-plates,.block-production,
+  .block-solar-pos,.block-financing { grid-column:1; grid-row:auto; }
+  .financial-grid { grid-template-columns:1fr 1fr; }
+  .fin-hero { grid-column:1 / 3; }
+  .insights-grid { grid-template-columns:1fr; }
+  .modules-grid { grid-template-columns:repeat(2,1fr); }
+  .dash-hero { padding:24px 20px; flex-direction:column; }
+  .pt-header,.pt-row { grid-template-columns:2fr 1.2fr 1fr 0.8fr; }
+  .pt-header > *:nth-child(2),
+  .pt-row > *:nth-child(2),
+  .pt-header > *:nth-child(5),
+  .pt-row > *:nth-child(5) { display:none; }
+  .topbar-select, .topbar-search { display:none; }
+  .mobile-menu-btn { display:flex; }
+  .sidebar-toggle { display:flex; }
+}
+
+/* Mobile toggle button */
+.mobile-menu-btn,.sidebar-toggle {
+  display:none; width:36px; height:36px; border-radius:var(--r-sm);
+  background:var(--bg-elevated); border:1px solid var(--border);
+  align-items:center; justify-content:center; cursor:pointer;
+  color:var(--text-2); font-size:1rem;
+}
+@media (max-width:768px) {
+  .mobile-menu-btn { display:flex; }
+}
+
+/* Sidebar overlay */
+.sidebar-overlay {
+  display:none; position:fixed; inset:0; background:rgba(4,9,15,0.8);
+  backdrop-filter:blur(4px); z-index:199;
+}
+.sidebar-overlay.visible { display:block; }
+
+/* Loader */
+#dash-loader {
+  position:fixed; inset:0; z-index:9998; background:var(--bg-base);
+  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px;
+  transition:opacity 0.5s, visibility 0.5s;
+}
+#dash-loader.gone { opacity:0; visibility:hidden; pointer-events:none; }
+.dl-logo { font-family:'Outfit',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-0.02em; }
+.dl-logo span { color:var(--gold); }
+.dl-progress { width:180px; height:2px; background:rgba(238,244,255,0.06); border-radius:99px; overflow:hidden; }
+.dl-bar { height:100%; background:linear-gradient(90deg,var(--gold),var(--green)); border-radius:99px; animation:dlFill 1.1s ease-out forwards; }
+@keyframes dlFill { from{width:0} to{width:100%} }
+.dl-text { font-size:0.72rem; color:var(--text-3); letter-spacing:0.05em; }
+</style>
+</head>
+<body>
+
+<!-- ── LOADER ── -->
+<div id="dash-loader">
+  <div class="dl-logo">Solar<span>Map</span> AI</div>
+  <div class="dl-progress"><div class="dl-bar"></div></div>
+  <div class="dl-text">Carregando centro de inteligência solar...</div>
+</div>
+
+<!-- ── SIDEBAR OVERLAY (mobile) ── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ================================================================
+     SIDEBAR
+     ================================================================ -->
+<aside class="sidebar" id="sidebar">
+  <a href="#" class="sidebar-logo">
+    <div class="logo-mark">☀</div>
+    <span class="logo-text">Solar<span>Map</span> AI</span>
+  </a>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+
+    <button class="nav-item active" onclick="setActive(this)">
+      <span class="nav-icon">⬡</span> Visão Geral
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">⚡</span> Simulações
+      <span class="nav-badge">3</span>
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">🗺</span> Mapa Solar
+    </button>
+
+    <div class="nav-section-label">Análise</div>
+    <!-- INTEGRAÇÃO FUTURA: cada item conectará a uma sub-rota da plataforma -->
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">🏠</span> Telhados
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">🌾</span> Terrenos
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">☀</span> Produção Energética
+    </button>
+
+    <div class="nav-section-label">Financeiro</div>
+    <!-- INTEGRAÇÃO FUTURA: módulos de orçamento e financiamento -->
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">📋</span> Orçamentos
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">🏦</span> Financiamento
+    </button>
+
+    <div class="nav-section-label">Negócios</div>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">🤝</span> Parceiros
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">🛒</span> Marketplace
+    </button>
+
+    <div class="nav-section-label">Sistema</div>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">📊</span> Relatórios
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">⚙</span> Configurações
+    </button>
+  </nav>
+
+  <!-- User area -->
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="avatar">RM</div>
+      <div class="user-info">
+        <div class="user-name">Rafael Mendes</div>
+        <!-- INTEGRAÇÃO FUTURA: plano atual via API de assinaturas -->
+        <div class="user-plan">✦ Pro Global</div>
+      </div>
+    </div>
+    <button class="btn-upgrade">↑ Fazer Upgrade</button>
+  </div>
+</aside>
+
+<!-- ================================================================
+     MAIN
+     ================================================================ -->
+<div class="main-wrapper">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+
+    <div class="topbar-search">
+      <span>🔍</span>
+      <!-- INTEGRAÇÃO FUTURA: busca conectará à pesquisa de endereços via geocoding API -->
+      <input type="text" placeholder="Buscar imóvel, projeto ou endereço...">
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <!-- INTEGRAÇÃO FUTURA: seletores conectarão ao módulo de internacionalização (i18n) -->
+    <div class="topbar-select">🌍 Brasil</div>
+    <div class="topbar-select">R$ BRL</div>
+
+    <div class="topbar-icon-btn">
+      🔔
+      <div class="notif-dot"></div>
+    </div>
+
+    <div class="topbar-avatar">RM</div>
+
+    <button class="btn-new-sim" onclick="alert('Módulo de simulação em breve!')">
+      ＋ Nova Simulação
+    </button>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- HERO BANNER -->
+    <div class="dash-hero">
+      <div class="hero-grid-lines"></div>
+      <div class="hero-content">
+        <div class="hero-eyebrow">Centro de Inteligência Solar</div>
+        <h1>Analise. Calcule.<br><span class="grad-gold">Lucre com o Sol.</span></h1>
+        <p>
+          Localize qualquer imóvel no mapa, estime a capacidade solar do telhado ou terreno,
+          calcule geração de energia, economia e retorno sobre investimento — com inteligência geoespacial avançada.
+        </p>
+        <div class="hero-actions">
+          <!-- INTEGRAÇÃO FUTURA: botão abrirá o módulo de mapa interativo para nova simulação -->
+          <button class="btn-hero-primary">☀ Analisar novo imóvel</button>
+          <button class="btn-hero-ghost">▶ Ver demonstração</button>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="solar-orb">
+          <div class="orb-ring"></div>
+          <div class="orb-ring-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <!-- EDITAR: trocar os valores fictícios pelos dados reais da plataforma -->
+    <div class="kpi-grid">
+      <div class="kpi-card gold">
+        <div class="kpi-top">
+          <div class="kpi-icon gold">🏠</div>
+          <div class="kpi-trend up">↑ 12%</div>
+        </div>
+        <div class="kpi-val grad-gold">1.284</div>
+        <div class="kpi-label">Imóveis analisados</div>
+        <div class="sparkline">
+          <div class="spark-bar" style="height:30%"></div>
+          <div class="spark-bar" style="height:50%"></div>
+          <div class="spark-bar" style="height:40%"></div>
+          <div class="spark-bar" style="height:70%"></div>
+          <div class="spark-bar" style="height:55%"></div>
+          <div class="spark-bar" style="height:80%"></div>
+          <div class="spark-bar active" style="height:100%"></div>
+        </div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-top">
+          <div class="kpi-icon green">⚡</div>
+          <div class="kpi-trend up">↑ 8%</div>
+        </div>
+        <div class="kpi-val grad-green">4,7 GW</div>
+        <div class="kpi-label">Potencial solar total</div>
+        <div class="sparkline">
+          <div class="spark-bar green" style="height:20%"></div>
+          <div class="spark-bar green" style="height:45%"></div>
+          <div class="spark-bar green" style="height:35%"></div>
+          <div class="spark-bar green" style="height:65%"></div>
+          <div class="spark-bar green" style="height:80%"></div>
+          <div class="spark-bar green" style="height:70%"></div>
+          <div class="spark-bar green active" style="height:95%"></div>
+        </div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-top">
+          <div class="kpi-icon gold">💰</div>
+          <div class="kpi-trend up">↑ 23%</div>
+        </div>
+        <div class="kpi-val grad-gold">R$42M</div>
+        <div class="kpi-label">Economia estimada</div>
+        <div class="sparkline">
+          <div class="spark-bar" style="height:15%"></div>
+          <div class="spark-bar" style="height:30%"></div>
+          <div class="spark-bar" style="height:50%"></div>
+          <div class="spark-bar" style="height:45%"></div>
+          <div class="spark-bar" style="height:75%"></div>
+          <div class="spark-bar" style="height:60%"></div>
+          <div class="spark-bar active" style="height:90%"></div>
+        </div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-top">
+          <div class="kpi-icon green">🔆</div>
+          <div class="kpi-trend up">↑ 5%</div>
+        </div>
+        <div class="kpi-val grad-green">892 GWh</div>
+        <div class="kpi-label">Geração anual prevista</div>
+        <div class="sparkline">
+          <div class="spark-bar green" style="height:40%"></div>
+          <div class="spark-bar green" style="height:55%"></div>
+          <div class="spark-bar green" style="height:45%"></div>
+          <div class="spark-bar green" style="height:75%"></div>
+          <div class="spark-bar green" style="height:65%"></div>
+          <div class="spark-bar green" style="height:85%"></div>
+          <div class="spark-bar green active" style="height:100%"></div>
+        </div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-top">
+          <div class="kpi-icon blue">📅</div>
+          <div class="kpi-trend down">↓ 2%</div>
+        </div>
+        <div class="kpi-val" style="color:var(--blue)">5,2 anos</div>
+        <div class="kpi-label">Payback médio</div>
+        <div class="sparkline">
+          <div class="spark-bar blue" style="height:90%"></div>
+          <div class="spark-bar blue" style="height:80%"></div>
+          <div class="spark-bar blue" style="height:85%"></div>
+          <div class="spark-bar blue" style="height:70%"></div>
+          <div class="spark-bar blue" style="height:65%"></div>
+          <div class="spark-bar blue" style="height:55%"></div>
+          <div class="spark-bar blue active" style="height:45%"></div>
+        </div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-top">
+          <div class="kpi-icon gold">📂</div>
+          <div class="kpi-trend up">↑ 31%</div>
+        </div>
+        <div class="kpi-val grad-gold">347</div>
+        <div class="kpi-label">Projetos ativos</div>
+        <div class="sparkline">
+          <div class="spark-bar" style="height:25%"></div>
+          <div class="spark-bar" style="height:40%"></div>
+          <div class="spark-bar" style="height:55%"></div>
+          <div class="spark-bar" style="height:50%"></div>
+          <div class="spark-bar" style="height:75%"></div>
+          <div class="spark-bar" style="height:85%"></div>
+          <div class="spark-bar active" style="height:100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- BLOCO A: MAPA -->
+      <div class="card block-map">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Mapa Solar · Visão Aérea</div>
+            <div class="card-sub">Residência · Rua das Palmeiras, 482 — São Paulo, SP</div>
+          </div>
+          <span class="card-action">Ver mapa completo →</span>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: substituir por Google Maps / Mapbox com satélite -->
+        <!-- <div id="map" style="width:100%;height:360px;"></div> -->
+        <div class="map-container">
+          <div class="map-sat-grid"></div>
+          <div class="map-vignette"></div>
+          <!-- Simulated terrain -->
+          <div class="terrain t1"></div>
+          <div class="terrain t2"></div>
+          <div class="terrain t3"></div>
+          <div class="terrain t4"></div>
+          <!-- Highlighted roof -->
+          <div class="roof-highlight">
+            <div class="roof-panels">
+              <div class="rp"></div><div class="rp"></div><div class="rp"></div><div class="rp"></div><div class="rp"></div>
+              <div class="rp"></div><div class="rp"></div><div class="rp"></div><div class="rp"></div><div class="rp"></div>
+            </div>
+          </div>
+          <!-- Pin -->
+          <div class="map-pin">
+            <div class="pin-pulse"></div>
+            <div class="pin-head"></div>
+            <div class="pin-tail"></div>
+          </div>
+          <!-- Solar badge -->
+          <div class="solar-badge">
+            <div class="solar-badge-val">5,4 kWp</div>
+            <div class="solar-badge-label">Potencial solar identificado</div>
+          </div>
+          <!-- Coords -->
+          <div class="map-coords">-23.5505° S, -46.6333° W</div>
+          <!-- Live -->
+          <div class="map-live">
+            <div class="live-dot"></div>
+            Análise ativa
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:14px">
+          <!-- INTEGRAÇÃO FUTURA: botão abrirá análise detalhada de telhado com cálculo de área -->
+          <button class="map-open-btn">🔍 Abrir análise detalhada do imóvel</button>
+        </div>
+      </div>
+
+      <!-- BLOCO C: PRODUÇÃO -->
+      <div class="card block-production">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Produção de Energia</div>
+            <div class="card-sub">Estimativa baseada em irradiância local</div>
+          </div>
+        </div>
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="setChartTab(this,'daily')">Diária</button>
+          <button class="chart-tab" onclick="setChartTab(this,'monthly')">Mensal</button>
+          <button class="chart-tab" onclick="setChartTab(this,'annual')">Anual</button>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: dados reais via NASA POWER API ou PVGIS por lat/lon -->
+        <div class="bar-chart" id="prodChart">
+          <!-- Gerado via JS -->
+        </div>
+        <div class="chart-footer">
+          <div class="cf-stat">
+            <div class="cf-val mono">18,4 kWh</div>
+            <div class="cf-label">Média diária</div>
+          </div>
+          <div class="cf-stat">
+            <div class="cf-val mono">552 kWh</div>
+            <div class="cf-label">Estimativa mensal</div>
+          </div>
+          <div class="cf-stat">
+            <div class="cf-val mono grad-green">6.624 kWh</div>
+            <div class="cf-label">Estimativa anual</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO B: PLACAS -->
+      <div class="card block-plates">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Estimativa de Painéis</div>
+            <div class="card-sub">Área útil do telhado analisada</div>
+          </div>
+          <span class="card-action">Editar →</span>
+        </div>
+        <div class="card-body">
+          <div class="plates-main">
+            <!-- INTEGRAÇÃO FUTURA: cálculo real via área detectada por satélite + algoritmo de pack -->
+            <div class="plates-big grad-gold">32</div>
+            <div class="plates-label">painéis solares estimados</div>
+          </div>
+          <div class="plates-stats">
+            <div class="pstat">
+              <div class="pstat-val">64 m²</div>
+              <div class="pstat-label">Área disponível</div>
+            </div>
+            <div class="pstat">
+              <div class="pstat-val">11,2 kWp</div>
+              <div class="pstat-label">Potência total</div>
+            </div>
+          </div>
+          <div class="eff-label">
+            <span>Eficiência prevista</span>
+            <span style="color:var(--green)">91,4%</span>
+          </div>
+          <div class="eff-bar">
+            <div class="eff-fill" style="width:91.4%"></div>
+          </div>
+          <!-- Visual dos painéis -->
+          <div class="panel-grid-visual" id="panelGrid">
+            <!-- Gerado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO E: POSIÇÃO SOLAR -->
+      <div class="card block-solar-pos">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Incidência Solar</div>
+            <div class="card-sub">Trajetória do sol · Hoje, São Paulo</div>
+          </div>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: dados de posição solar em tempo real (SunCalc API) -->
+        <div class="solar-arc-wrap">
+          <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:rgba(212,168,67,0.1)"/>
+                <stop offset="50%" style="stop-color:rgba(212,168,67,0.5)"/>
+                <stop offset="100%" style="stop-color:rgba(212,168,67,0.1)"/>
+              </linearGradient>
+              <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:#F0C96B"/>
+                <stop offset="100%" style="stop-color:#D4A843"/>
+              </radialGradient>
+              <filter id="sunGlow">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <!-- Ground line -->
+            <line x1="20" y1="115" x2="280" y2="115" stroke="rgba(238,244,255,0.08)" stroke-width="1"/>
+            <!-- Horizon labels -->
+            <text x="22" y="125" fill="rgba(238,244,255,0.25)" font-size="7" font-family="JetBrains Mono">Nascente</text>
+            <text x="240" y="125" fill="rgba(238,244,255,0.25)" font-size="7" font-family="JetBrains Mono">Poente</text>
+            <!-- Arc path -->
+            <path d="M 30 115 Q 150 -10 270 115" stroke="url(#arcGrad)" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+            <!-- Sun position (current time ~13h) -->
+            <g class="sun-dot" filter="url(#sunGlow)">
+              <circle cx="165" cy="38" r="10" fill="url(#sunGrad)" opacity="0.95"/>
+              <circle cx="165" cy="38" r="16" fill="rgba(212,168,67,0.15)"/>
+            </g>
+            <!-- Vertical projection line -->
+            <line x1="165" y1="54" x2="165" y2="115" stroke="rgba(212,168,67,0.2)" stroke-width="1" stroke-dasharray="3 3"/>
+            <!-- Zenith line -->
+            <line x1="150" y1="5" x2="150" y2="115" stroke="rgba(238,244,255,0.05)" stroke-width="1" stroke-dasharray="2 4"/>
+            <!-- Building silhouette -->
+            <rect x="120" y="95" width="60" height="20" fill="var(--bg-base)" stroke="rgba(238,244,255,0.08)" stroke-width="1"/>
+            <polygon points="120,95 150,75 180,95" fill="var(--bg-surface)" stroke="rgba(238,244,255,0.08)" stroke-width="1"/>
+            <!-- Roof panels -->
+            <rect x="127" y="84" width="8" height="6" fill="rgba(31,216,164,0.4)" rx="1"/>
+            <rect x="137" y="81" width="8" height="6" fill="rgba(31,216,164,0.4)" rx="1"/>
+            <rect x="147" y="79" width="8" height="6" fill="rgba(31,216,164,0.4)" rx="1"/>
+            <rect x="157" y="81" width="8" height="6" fill="rgba(31,216,164,0.4)" rx="1"/>
+            <rect x="167" y="84" width="8" height="6" fill="rgba(31,216,164,0.4)" rx="1"/>
+          </svg>
+        </div>
+        <div class="sun-stats">
+          <div class="sun-stat">
+            <div class="ss-val" style="color:var(--gold-light)">5h48</div>
+            <div class="ss-label">Nascer do sol</div>
+          </div>
+          <div class="sun-stat">
+            <div class="ss-val" style="color:var(--gold)">12h41</div>
+            <div class="ss-label">Zênite solar</div>
+          </div>
+          <div class="sun-stat">
+            <div class="ss-val" style="color:var(--gold-light)">18h02</div>
+            <div class="ss-label">Pôr do sol</div>
+          </div>
+          <div class="sun-stat">
+            <div class="ss-val" style="color:var(--green)">12,3h</div>
+            <div class="ss-label">Horas de sol</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO D: FINANCEIRO -->
+      <div class="card block-financial">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Retorno Financeiro</div>
+            <div class="card-sub">Projeção baseada no perfil atual do imóvel</div>
+          </div>
+          <span class="card-action">Relatório completo →</span>
+        </div>
+        <div class="card-body">
+          <!-- INTEGRAÇÃO FUTURA: dados reais via motor financeiro + tarifas regionais da ANEEL -->
+          <div class="financial-grid">
+            <div class="fin-hero">
+              <div class="fin-hero-left">
+                <div class="fin-hero-label">Economia anual estimada</div>
+                <div class="fin-hero-val grad-green">R$ 8.640</div>
+                <div class="fin-hero-sub">Baseado na tarifa atual: R$ 0,85/kWh · CPFL SP</div>
+              </div>
+              <div class="roi-bars">
+                <div class="roi-row">
+                  <div class="roi-year">5a</div>
+                  <div class="roi-track"><div class="roi-fill" style="width:28%"></div></div>
+                  <div class="roi-val">R$43k</div>
+                </div>
+                <div class="roi-row">
+                  <div class="roi-year">10a</div>
+                  <div class="roi-track"><div class="roi-fill" style="width:55%"></div></div>
+                  <div class="roi-val">R$86k</div>
+                </div>
+                <div class="roi-row">
+                  <div class="roi-year">25a</div>
+                  <div class="roi-track"><div class="roi-fill" style="width:100%"></div></div>
+                  <div class="roi-val">R$216k</div>
+                </div>
+              </div>
+            </div>
+            <div class="fin-stat">
+              <div class="fin-stat-label">Investimento estimado</div>
+              <div class="fin-stat-val" style="color:var(--text-1)">R$ 42.000</div>
+              <div class="fin-stat-note">Equipamentos + instalação</div>
+            </div>
+            <div class="fin-stat">
+              <div class="fin-stat-label">Payback simples</div>
+              <div class="fin-stat-val" style="color:var(--gold-light)">4,8 anos</div>
+              <div class="fin-stat-note">Abaixo da média do setor</div>
+            </div>
+            <div class="fin-stat">
+              <div class="fin-stat-label">ROI em 25 anos</div>
+              <div class="fin-stat-val grad-green">+514%</div>
+              <div class="fin-stat-note">Com correção monetária</div>
+            </div>
+            <div class="fin-stat">
+              <div class="fin-stat-label">VPL do projeto</div>
+              <div class="fin-stat-val" style="color:var(--green)">R$ 128k</div>
+              <div class="fin-stat-note">TMA: 8% a.a.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO F: FINANCIAMENTO -->
+      <div class="card block-financing">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Opções de Financiamento</div>
+            <div class="card-sub">Comparativo de crédito solar disponível</div>
+          </div>
+          <span class="card-action">Ver todos →</span>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: dados reais via APIs de bancos parceiros (BNDES, Santander Solar, etc.) -->
+        <div class="fin-options">
+          <div class="fin-option">
+            <div class="fo-left">
+              <div class="fo-bank">🏦 BV Financeira</div>
+              <div class="fo-detail">Entrada: R$ 8.400 · 36x</div>
+            </div>
+            <div class="fo-right">
+              <div class="fo-rate">0,79% a.m.</div>
+              <div class="fo-parcel">R$ 1.180/mês</div>
+              <div class="fo-badge">Recomendado</div>
+            </div>
+          </div>
+          <div class="fin-option">
+            <div class="fo-left">
+              <div class="fo-bank">🏦 Santander Solar</div>
+              <div class="fo-detail">Entrada: R$ 0 · 60x</div>
+            </div>
+            <div class="fo-right">
+              <div class="fo-rate">0,99% a.m.</div>
+              <div class="fo-parcel">R$ 780/mês</div>
+            </div>
+          </div>
+          <div class="fin-option">
+            <div class="fo-left">
+              <div class="fo-bank">🏦 BNDES ProGiro</div>
+              <div class="fo-detail">Entrada: R$ 12.000 · 24x</div>
+            </div>
+            <div class="fo-right">
+              <div class="fo-rate">0,65% a.m.</div>
+              <div class="fo-parcel">R$ 1.540/mês</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-grid -->
+
+    <!-- PROJETOS RECENTES -->
+    <div class="projects-section">
+      <div class="section-header-row">
+        <div class="section-title">Projetos Recentes</div>
+        <div class="section-action">Ver todos os projetos →</div>
+      </div>
+      <div class="projects-table-wrap">
+        <div class="pt-header">
+          <span>Projeto / Imóvel</span>
+          <span>País</span>
+          <span>Tipo</span>
+          <span>Status</span>
+          <span>Geração Est.</span>
+          <span>ROI 10a</span>
+          <span>Ação</span>
+        </div>
+        <!-- EDITAR: substituir por dados reais via API de projetos do usuário -->
+        <div class="pt-row">
+          <div class="pt-name">Residência Jardim Europa</div>
+          <div class="pt-country">🇧🇷 Brasil</div>
+          <div><span class="type-badge casa">🏠 Casa</span></div>
+          <div><span class="status-dot"><span class="sdot active"></span>Ativo</span></div>
+          <div class="pt-gen">6.624 kWh/a</div>
+          <div class="pt-roi">+312%</div>
+          <button class="pt-action-btn">Abrir</button>
+        </div>
+        <div class="pt-row">
+          <div class="pt-name">Galpão Industrial Sumaré</div>
+          <div class="pt-country">🇧🇷 Brasil</div>
+          <div><span class="type-badge empresa">🏢 Empresa</span></div>
+          <div><span class="status-dot"><span class="sdot active"></span>Ativo</span></div>
+          <div class="pt-gen">84.200 kWh/a</div>
+          <div class="pt-roi">+480%</div>
+          <button class="pt-action-btn">Abrir</button>
+        </div>
+        <div class="pt-row">
+          <div class="pt-name">Fazenda Solar Cerrado</div>
+          <div class="pt-country">🇧🇷 Brasil</div>
+          <div><span class="type-badge fazenda">🌾 Fazenda</span></div>
+          <div><span class="status-dot"><span class="sdot pending"></span>Em análise</span></div>
+          <div class="pt-gen">1,2 GWh/a</div>
+          <div class="pt-roi">+640%</div>
+          <button class="pt-action-btn">Abrir</button>
+        </div>
+        <div class="pt-row">
+          <div class="pt-name">Terreno Campinas Norte</div>
+          <div class="pt-country">🇧🇷 Brasil</div>
+          <div><span class="type-badge terreno">⬜ Terreno</span></div>
+          <div><span class="status-dot"><span class="sdot draft"></span>Rascunho</span></div>
+          <div class="pt-gen">—</div>
+          <div class="pt-roi">—</div>
+          <button class="pt-action-btn">Continuar</button>
+        </div>
+        <div class="pt-row">
+          <div class="pt-name">Casa de Praia · Florianópolis</div>
+          <div class="pt-country">🇧🇷 Brasil</div>
+          <div><span class="type-badge casa">🏠 Casa</span></div>
+          <div><span class="status-dot"><span class="sdot active"></span>Ativo</span></div>
+          <div class="pt-gen">8.100 kWh/a</div>
+          <div class="pt-roi">+295%</div>
+          <button class="pt-action-btn">Abrir</button>
+        </div>
+        <div class="pt-row">
+          <div class="pt-name">Shopping Paulista Solar</div>
+          <div class="pt-country">🇧🇷 Brasil</div>
+          <div><span class="type-badge empresa">🏢 Empresa</span></div>
+          <div><span class="status-dot"><span class="sdot pending"></span>Em análise</span></div>
+          <div class="pt-gen">420 MWh/a</div>
+          <div class="pt-roi">+710%</div>
+          <button class="pt-action-btn">Abrir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="section-header-row">
+      <div class="section-title">Insights de Inteligência Solar</div>
+      <div class="section-action">Ver todos →</div>
+    </div>
+    <div class="insights-grid" style="margin-bottom:24px">
+      <div class="insight-card">
+        <span class="insight-icon">🛰️</span>
+        <div class="insight-title">Telhado pode suportar até 38 módulos</div>
+        <div class="insight-desc">Nossa análise por satélite identificou 72 m² de área útil livre de obstáculos no telhado sul do imóvel.</div>
+        <span class="insight-cta">Ver análise →</span>
+      </div>
+      <div class="insight-card">
+        <span class="insight-icon">🧭</span>
+        <div class="insight-title">Orientação solar ideal detectada</div>
+        <div class="insight-desc">A face norte do telhado apresenta inclinação de 22° e orientação sul-sudoeste, configuração optimal para SP.</div>
+        <span class="insight-cta">Ver detalhes →</span>
+      </div>
+      <div class="insight-card">
+        <span class="insight-icon">💡</span>
+        <div class="insight-title">Potencial de monetização de excedente</div>
+        <div class="insight-desc">Com 32 painéis, você gerará ~1.800 kWh/mês acima do consumo. Injeção na rede pode gerar créditos de até R$ 1.530/mês.</div>
+        <span class="insight-cta">Simular ganhos →</span>
+      </div>
+      <div class="insight-card">
+        <span class="insight-icon">🏦</span>
+        <div class="insight-title">Financiamento elimina barreira de entrada</div>
+        <div class="insight-desc">Com a opção BV Solar, as parcelas mensais (R$ 1.180) são menores que a economia gerada (R$ 720/mês) já no 1° ano.</div>
+        <span class="insight-cta">Simular financiamento →</span>
+      </div>
+    </div>
+
+    <!-- MÓDULOS FUTUROS -->
+    <div class="modules-section">
+      <div class="section-header-row" style="margin-bottom:14px">
+        <div class="section-title">Módulos em Desenvolvimento</div>
+        <div class="section-action">Ver roadmap →</div>
+      </div>
+      <div class="modules-grid">
+        <!-- INTEGRAÇÃO FUTURA: cada card representa um módulo a ser desenvolvido na plataforma -->
+        <div class="module-card">
+          <span class="module-icon">🛰️</span>
+          <div class="module-name">Análise Automática de Telhado por IA</div>
+        </div>
+        <div class="module-card">
+          <span class="module-icon">⚙️</span>
+          <div class="module-name">Comparador de Equipamentos</div>
+        </div>
+        <div class="module-card">
+          <span class="module-icon">💲</span>
+          <div class="module-name">Orçamento por Região em Tempo Real</div>
+        </div>
+        <div class="module-card">
+          <span class="module-icon">🔧</span>
+          <div class="module-name">Rede de Instaladores Certificados</div>
+        </div>
+        <div class="module-card">
+          <span class="module-icon">🌍</span>
+          <div class="module-name">Financiamento Solar Global</div>
+        </div>
+        <div class="module-card">
+          <span class="module-icon">🤖</span>
+          <div class="module-name">IA para Recomendação Energética</div>
+        </div>
+      </div>
+    </div>
+
+  </main><!-- /content -->
+</div><!-- /main-wrapper -->
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+<script>
+/* ── Loader ── */
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('dash-loader').classList.add('gone'), 1200);
+});
+
+/* ── Sidebar toggle (mobile) ── */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('visible');
+}
+
+/* ── Active nav ── */
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ── Chart tab ── */
+function setChartTab(el, type) {
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderChart(type);
+}
+
+/* ── Production chart ── */
+/* INTEGRAÇÃO FUTURA: dados virão de NASA POWER API ou PVGIS baseados em lat/lon do imóvel */
+const chartData = {
+  daily: {
+    labels: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
+    values: [65, 82, 58, 90, 75, 95, 88],
+    highlight: 5
+  },
+  monthly: {
+    labels: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+    values: [92, 88, 78, 65, 55, 48, 52, 62, 72, 85, 90, 95],
+    highlight: 11
+  },
+  annual: {
+    labels: ['2022','2023','2024','2025','2026','2027'],
+    values: [60, 68, 75, 82, 90, 100],
+    highlight: 5
+  }
+};
+
+function renderChart(type = 'daily') {
+  const data = chartData[type];
+  const chart = document.getElementById('prodChart');
+  const maxVal = Math.max(...data.values);
+  chart.innerHTML = data.labels.map((label, i) => {
+    const height = (data.values[i] / maxVal * 100).toFixed(0);
+    const isHL = i === data.highlight;
+    return `
+      <div class="bc-col">
+        <div class="bc-bar ${isHL ? 'highlight' : ''}" style="height:${height}%" title="${data.values[i]} kWh"></div>
+        <div class="bc-label">${label}</div>
+      </div>`;
+  }).join('');
+}
+renderChart('daily');
+
+/* ── Panel grid visual ── */
+/* INTEGRAÇÃO FUTURA: quantidade de painéis ativos baseada no cálculo real de área detectada */
+function renderPanelGrid() {
+  const grid = document.getElementById('panelGrid');
+  const total = 40; // grid 8x5
+  const active = 32; // painéis estimados
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    html += `<div class="pgv-cell ${i < active ? 'active' : ''}"></div>`;
+  }
+  grid.innerHTML = html;
+}
+renderPanelGrid();
+
+/* ── Topbar search focus ── */
+document.querySelectorAll('.topbar-search input').forEach(input => {
+  input.addEventListener('focus', () => {
+    input.closest('.topbar-search').style.borderColor = 'rgba(212,168,67,0.3)';
+  });
+  input.addEventListener('blur', () => {
+    input.closest('.topbar-search').style.borderColor = '';
+  });
+});
+
+/* ── KPI card hover glow ── */
+document.querySelectorAll('.kpi-card').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    card.style.boxShadow = card.classList.contains('gold')
+      ? '0 8px 30px rgba(212,168,67,0.1)'
+      : card.classList.contains('green')
+      ? '0 8px 30px rgba(31,216,164,0.1)'
+      : '0 8px 30px rgba(74,158,255,0.1)';
+  });
+  card.addEventListener('mouseleave', () => { card.style.boxShadow = ''; });
+});
+
+/* ── Row hover ── */
+document.querySelectorAll('.pt-row').forEach(row => {
+  row.addEventListener('click', () => {
+    // INTEGRAÇÃO FUTURA: navegar para o projeto clicado via router (React Router / SPA)
+    console.log('Open project:', row.querySelector('.pt-name').textContent);
+  });
+});
+
+/*
+ * ══════════════════════════════════════════════════════════════════
+ * PONTOS DE INTEGRAÇÃO FUTURA — DASHBOARD SOLARMAP AI
+ * ══════════════════════════════════════════════════════════════════
+ *
+ * 1. AUTENTICAÇÃO E DADOS DO USUÁRIO
+ *    - Supabase Auth / Firebase Auth / Auth0
+ *    - GET /api/user/profile → nome, plano, país padrão
+ *
+ * 2. MAPA INTERATIVO (Bloco A)
+ *    - Mapbox GL JS ou Google Maps JS API com Satellite View
+ *    - geocoder para busca de endereço
+ *    - polygon drawing para delimitar área do telhado/terreno
+ *    - API: mapboxgl.accessToken = 'TOKEN';
+ *
+ * 3. ANÁLISE DE TELHADO POR IA
+ *    - Google Solar API: https://developers.google.com/maps/documentation/solar
+ *    - Parâmetros: lat, lon → retorna área, painéis, geração anual
+ *    - Alternativa: análise via satélite própria + TensorFlow.js
+ *
+ * 4. DADOS DE PRODUÇÃO SOLAR (Bloco C)
+ *    - NASA POWER API: https://power.larc.nasa.gov/api/
+ *    - PVGIS API (global): https://re.jrc.ec.europa.eu/pvg_tools/
+ *    - Parâmetros: lat, lon, tilt, azimuth, peakpower
+ *
+ * 5. POSIÇÃO SOLAR (Bloco E)
+ *    - SunCalc library (npm: suncalc) para posição em tempo real
+ *    - Parâmetros: lat, lon, timestamp → altitude, azimuth, sunrise, sunset
+ *
+ * 6. RETORNO FINANCEIRO (Bloco D)
+ *    - Motor de cálculo próprio: tarifa regional (ANEEL API), inflação, desconto
+ *    - GET /api/financial/simulate → payback, ROI, VPL, TIR
+ *
+ * 7. FINANCIAMENTO (Bloco F)
+ *    - APIs de bancos parceiros (BV, Santander Solar, BNDES)
+ *    - POST /api/financing/options → parcelas, taxas, condições
+ *
+ * 8. KPIs DO DASHBOARD
+ *    - GET /api/dashboard/stats → imóveis, potencial, economia, ROI médio
+ *
+ * 9. TABELA DE PROJETOS
+ *    - GET /api/projects?user_id=X&status=all&page=1
+ *    - Paginação, filtros e sorting server-side
+ *
+ * 10. INTERNACIONALIZAÇÃO (i18n)
+ *     - i18next / react-intl para multi-idioma
+ *     - Seletor de país → muda moeda, tarifas e idioma
+ *     - Fuso horário automático via Intl.DateTimeFormat
+ *
+ * 11. ANALYTICS
+ *     - Google Analytics 4 / Mixpanel
+ *     - Eventos: new_simulation, project_opened, financing_viewed
+ */
+</script>
+
+</body>
+</html>

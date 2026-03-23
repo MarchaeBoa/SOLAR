@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarMap AI — Inteligência Geoespacial Solar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SOLARMAP AI — DESIGN SYSTEM
+   Paleta: Midnight Navy · Solar Gold · Energy Green · Ice White
+   Tipografia: Syne (display) + DM Sans (corpo)
+   ============================================================ */
+
+:root {
+  --midnight:    #060C14;
+  --deep-navy:   #0A1628;
+  --navy:        #0D1F3C;
+  --navy-mid:    #112240;
+  --gold:        #D4A843;
+  --gold-light:  #F0C96B;
+  --gold-glow:   rgba(212,168,67,0.18);
+  --green:       #1FD8A4;
+  --green-dim:   #12A07A;
+  --green-glow:  rgba(31,216,164,0.15);
+  --ice:         #EEF4FF;
+  --white:       #FFFFFF;
+  --muted:       rgba(238,244,255,0.55);
+  --border:      rgba(238,244,255,0.08);
+  --border-gold: rgba(212,168,67,0.25);
+  --glass:       rgba(13,31,60,0.55);
+  --glass-light: rgba(238,244,255,0.04);
+  --shadow-gold: 0 0 60px rgba(212,168,67,0.12);
+  --shadow-green:0 0 60px rgba(31,216,164,0.10);
+  --radius:      14px;
+  --radius-lg:   22px;
+  --transition:  0.35s cubic-bezier(0.22,1,0.36,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--midnight);
+  color: var(--ice);
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--midnight); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 99px; }
+
+/* ── Typography ── */
+h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; font-weight: 700; line-height: 1.18; }
+h1 { font-size: clamp(2.6rem, 5.5vw, 5rem); letter-spacing: -0.025em; }
+h2 { font-size: clamp(1.9rem, 3.5vw, 3rem); letter-spacing: -0.02em; }
+h3 { font-size: clamp(1.25rem, 2vw, 1.65rem); }
+p  { font-size: clamp(0.96rem, 1.1vw, 1.08rem); }
+
+/* ── Utilities ── */
+.container { width: 90%; max-width: 1200px; margin: 0 auto; }
+.container-wide { width: 92%; max-width: 1440px; margin: 0 auto; }
+
+.tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--gold); background: var(--gold-glow);
+  border: 1px solid var(--border-gold); border-radius: 99px;
+  padding: 6px 16px;
+}
+.tag::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: 'Syne', sans-serif; font-size: 0.92rem; font-weight: 600;
+  color: var(--midnight); background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  border: none; border-radius: 99px; padding: 15px 32px; cursor: pointer;
+  transition: var(--transition); text-decoration: none; white-space: nowrap;
+  box-shadow: 0 4px 30px rgba(212,168,67,0.35);
+  position: relative; overflow: hidden;
+}
+.btn-primary::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent);
+  opacity:0; transition: var(--transition);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(212,168,67,0.5); }
+.btn-primary:hover::after { opacity:1; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: 'Syne', sans-serif; font-size: 0.92rem; font-weight: 600;
+  color: var(--ice); background: transparent;
+  border: 1px solid var(--border); border-radius: 99px; padding: 14px 30px; cursor: pointer;
+  transition: var(--transition); text-decoration: none; white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover { border-color: rgba(238,244,255,0.3); background: rgba(238,244,255,0.06); transform: translateY(-1px); }
+
+/* ── Gradient headings ── */
+.grad-gold  { background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #B8882E 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.grad-green { background: linear-gradient(135deg, #5AFAC8 0%, var(--green) 60%, var(--green-dim) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* ── Noise overlay ── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.022; background-size: 180px;
+}
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+#header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+  transition: var(--transition);
+  padding: 22px 0;
+}
+#header.scrolled {
+  background: rgba(6,12,20,0.85);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.4);
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+.logo {
+  font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800;
+  text-decoration: none; display: flex; align-items: center; gap: 10px;
+  letter-spacing: -0.02em; color: var(--white);
+}
+.logo-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; box-shadow: 0 4px 16px rgba(212,168,67,0.45);
+}
+.logo span { color: var(--gold); }
+
+nav { display: flex; align-items: center; gap: 6px; }
+nav a {
+  font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 400;
+  color: var(--muted); text-decoration: none; padding: 8px 14px; border-radius: 8px;
+  transition: var(--transition);
+}
+nav a:hover { color: var(--ice); background: var(--glass-light); }
+
+.header-cta { display: flex; align-items: center; gap: 12px; }
+
+.hamburger {
+  display: none; flex-direction: column; gap: 5px; cursor: pointer;
+  background: none; border: none; padding: 6px;
+}
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--ice); border-radius: 2px; transition: var(--transition); }
+
+/* Mobile nav */
+.mobile-nav {
+  display: none; position: fixed; inset: 0; z-index: 800;
+  background: rgba(6,12,20,0.97); backdrop-filter: blur(20px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+}
+.mobile-nav.open { display: flex; }
+.mobile-nav a { font-family: 'Syne',sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--ice); text-decoration: none; }
+.mobile-nav a:hover { color: var(--gold); }
+
+/* ══════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════ */
+#hero {
+  min-height: 100vh; display: flex; align-items: center;
+  position: relative; overflow: hidden;
+  padding: 140px 0 80px;
+}
+
+/* Radial glow blobs */
+.hero-glow-1 {
+  position:absolute; width:700px; height:700px; border-radius:50%;
+  background: radial-gradient(circle, rgba(212,168,67,0.12) 0%, transparent 70%);
+  top: -200px; right: -200px; pointer-events:none;
+  animation: floatBlob 8s ease-in-out infinite;
+}
+.hero-glow-2 {
+  position:absolute; width:500px; height:500px; border-radius:50%;
+  background: radial-gradient(circle, rgba(31,216,164,0.10) 0%, transparent 70%);
+  bottom: -100px; left: -100px; pointer-events:none;
+  animation: floatBlob 10s ease-in-out infinite reverse;
+}
+.hero-glow-3 {
+  position:absolute; width:300px; height:300px; border-radius:50%;
+  background: radial-gradient(circle, rgba(212,168,67,0.08) 0%, transparent 70%);
+  top: 40%; left: 40%; pointer-events:none;
+  animation: floatBlob 12s ease-in-out infinite;
+}
+@keyframes floatBlob {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(30px,-20px) scale(1.05); }
+  66% { transform: translate(-20px,30px) scale(0.95); }
+}
+
+/* Grid lines */
+.hero-grid {
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(238,244,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(238,244,255,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+
+.hero-inner {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  position: relative; z-index: 2;
+}
+
+.hero-content { max-width: 600px; }
+.hero-content .tag { margin-bottom: 28px; }
+
+.hero-headline {
+  font-size: clamp(2.8rem, 5.5vw, 5.2rem);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.08; margin-bottom: 28px;
+}
+
+.hero-sub {
+  font-size: clamp(1rem, 1.3vw, 1.18rem); color: var(--muted);
+  font-weight: 300; max-width: 480px; margin-bottom: 44px; line-height: 1.75;
+}
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 56px; }
+
+.hero-stats {
+  display: flex; gap: 36px; flex-wrap: wrap;
+  border-top: 1px solid var(--border); padding-top: 32px;
+}
+.hero-stat {}
+.hero-stat-num {
+  font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+  color: var(--gold-light); line-height: 1;
+  margin-bottom: 4px;
+}
+.hero-stat-label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.05em; }
+
+/* Hero visual */
+.hero-visual {
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+
+/* Satellite / map image placeholder */
+.hero-img-wrap {
+  width: 100%; aspect-ratio: 4/3; border-radius: var(--radius-lg);
+  overflow: hidden; position: relative;
+  border: 1px solid var(--border);
+  box-shadow: 0 40px 120px rgba(0,0,0,0.6), var(--shadow-gold);
+}
+.hero-img-bg {
+  /* SUBSTITUIR por imagem real: foto aérea de fazenda solar ou casa com painéis */
+  width:100%; height:100%;
+  background: linear-gradient(145deg, #0A1628 0%, #0D2545 40%, #061018 100%);
+  display: flex; align-items: center; justify-content: center; position: relative; overflow:hidden;
+}
+/* Simulated aerial map grid */
+.map-grid {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(31,216,164,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31,216,164,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.map-overlay {
+  position:absolute; inset:0;
+  background: radial-gradient(ellipse 60% 60% at 55% 45%, rgba(212,168,67,0.15) 0%, transparent 70%);
+}
+/* Simulated solar panels area */
+.panel-cluster {
+  position:absolute; inset: 15% 20%;
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px;
+  opacity: 0.85;
+}
+.panel-cell {
+  aspect-ratio: 1.4/1; border-radius: 3px;
+  background: linear-gradient(145deg, #1a3a5c, #0e2540);
+  border: 1px solid rgba(31,216,164,0.25);
+  animation: panelPulse 3s ease-in-out infinite;
+}
+.panel-cell:nth-child(odd) { animation-delay: 0.3s; }
+.panel-cell:nth-child(3n) { animation-delay: 0.7s; }
+@keyframes panelPulse {
+  0%,100% { opacity: 0.8; }
+  50% { opacity: 1; border-color: rgba(31,216,164,0.5); }
+}
+/* GPS pin */
+.map-pin {
+  position:absolute; top:28%; left:50%; transform:translate(-50%,-50%);
+  display:flex; flex-direction:column; align-items:center; z-index:10;
+  animation: pinBounce 2s ease-in-out infinite;
+}
+@keyframes pinBounce { 0%,100%{transform:translate(-50%,-50%)} 50%{transform:translate(-50%,-62%)} }
+.map-pin-icon {
+  width:38px; height:38px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 24px rgba(212,168,67,0.6);
+  display:flex; align-items:center; justify-content:center;
+}
+.map-pin-icon::after {
+  content:'☀'; transform:rotate(45deg); color:var(--midnight); font-size:1rem;
+}
+.map-pin-ripple {
+  width:60px; height:16px; border-radius:50%; margin-top:-4px;
+  background: rgba(212,168,67,0.25);
+  animation: ripplePulse 2s ease-in-out infinite;
+}
+@keyframes ripplePulse { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(1.3);opacity:0.2} }
+
+/* Floating mini card on hero image */
+.hero-float-card {
+  position:absolute; bottom:-24px; left:-24px; z-index:10;
+  background: var(--glass); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border: 1px solid var(--border-gold); border-radius: var(--radius);
+  padding: 18px 22px; min-width: 200px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--shadow-gold);
+  animation: cardFloat 6s ease-in-out infinite;
+}
+@keyframes cardFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.hero-float-label { font-size: 0.7rem; color: var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom: 4px; }
+.hero-float-val { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:var(--green); }
+.hero-float-sub { font-size: 0.75rem; color:var(--muted); margin-top:2px; }
+
+.hero-float-card2 {
+  position:absolute; top:-20px; right:-20px; z-index:10;
+  background: var(--glass); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border: 1px solid rgba(31,216,164,0.2); border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--shadow-green);
+  animation: cardFloat 7s ease-in-out infinite reverse;
+}
+.hero-float2-row { display:flex; align-items:center; gap:8px; }
+.hero-float2-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); }
+.hero-float2-txt { font-size:0.8rem; font-weight:500; color:var(--ice); }
+
+/* ══════════════════════════════════════════════
+   SECTION BASE
+══════════════════════════════════════════════ */
+section { padding: 110px 0; position: relative; }
+.section-header { text-align:center; margin-bottom: 70px; }
+.section-header .tag { margin-bottom: 20px; }
+.section-header h2 { margin-bottom: 18px; }
+.section-header p { color: var(--muted); max-width: 560px; margin: 0 auto; font-size: 1.05rem; }
+
+/* Divider */
+.divider {
+  height: 1px; background: linear-gradient(90deg, transparent, var(--border-gold), var(--border), transparent);
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════════ */
+#how {
+  background: linear-gradient(180deg, var(--midnight) 0%, var(--deep-navy) 50%, var(--midnight) 100%);
+}
+
+.steps-timeline {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  position: relative;
+}
+.steps-timeline::before {
+  content:''; position:absolute; top: 52px; left: 12.5%; right: 12.5%; height: 1px;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--green) 100%);
+  z-index: 0;
+}
+
+.step {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 0 20px; position: relative; z-index: 1;
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.step.visible { opacity:1; transform:translateY(0); }
+.step:nth-child(2) { transition-delay: 0.1s; }
+.step:nth-child(3) { transition-delay: 0.2s; }
+.step:nth-child(4) { transition-delay: 0.3s; }
+
+.step-num {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--midnight); border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne',sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--gold);
+  margin-bottom: 28px; position: relative; z-index: 2;
+  box-shadow: 0 0 24px rgba(212,168,67,0.3);
+}
+.step-icon { font-size: 1.5rem; margin-bottom: 16px; }
+.step h3 { font-size: 1.05rem; color: var(--ice); margin-bottom: 10px; }
+.step p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+
+/* ══════════════════════════════════════════════
+   BENEFITS
+══════════════════════════════════════════════ */
+#benefits { background: var(--midnight); }
+
+.benefits-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+
+.benefit-card {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 36px 32px;
+  transition: var(--transition); position: relative; overflow: hidden;
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.35s ease, background 0.35s ease;
+}
+.benefit-card.visible { opacity:1; transform:translateY(0); }
+.benefit-card:nth-child(2){transition-delay:0.05s}
+.benefit-card:nth-child(3){transition-delay:0.1s}
+.benefit-card:nth-child(4){transition-delay:0.15s}
+.benefit-card:nth-child(5){transition-delay:0.2s}
+.benefit-card:nth-child(6){transition-delay:0.25s}
+
+.benefit-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, var(--gold), var(--green));
+  opacity: 0; transition: var(--transition);
+}
+.benefit-card:hover { border-color: var(--border-gold); background: rgba(212,168,67,0.04); }
+.benefit-card:hover::before { opacity: 1; }
+
+.benefit-icon {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: var(--gold-glow); border: 1px solid var(--border-gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; margin-bottom: 22px;
+}
+.benefit-card h3 { font-size: 1.05rem; color: var(--ice); margin-bottom: 10px; }
+.benefit-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
+
+/* ══════════════════════════════════════════════
+   FOR WHO
+══════════════════════════════════════════════ */
+#forwho {
+  background: linear-gradient(180deg, var(--midnight) 0%, #08111E 100%);
+}
+
+.forwho-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+}
+
+.forwho-card {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 32px 22px; text-align: center;
+  transition: var(--transition); cursor: default;
+  opacity: 0; transform: scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.35s ease;
+}
+.forwho-card.visible { opacity:1; transform:scale(1); }
+.forwho-card:nth-child(2){transition-delay:0.07s}
+.forwho-card:nth-child(3){transition-delay:0.14s}
+.forwho-card:nth-child(4){transition-delay:0.21s}
+.forwho-card:nth-child(5){transition-delay:0.28s}
+.forwho-card:hover { border-color: rgba(31,216,164,0.3); background: rgba(31,216,164,0.04); }
+
+.forwho-emoji { font-size: 2.2rem; display: block; margin-bottom: 16px; }
+.forwho-card h3 { font-size: 0.95rem; color: var(--ice); margin-bottom: 8px; }
+.forwho-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+
+/* ══════════════════════════════════════════════
+   ROADMAP
+══════════════════════════════════════════════ */
+#roadmap { background: var(--midnight); }
+
+.roadmap-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+}
+
+.roadmap-item {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px 20px;
+  transition: var(--transition);
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.roadmap-item.visible { opacity:1; transform:translateY(0); }
+.roadmap-item:nth-child(even){transition-delay:0.08s}
+.roadmap-item:nth-child(3n){transition-delay:0.16s}
+
+.roadmap-item:hover { border-color: rgba(31,216,164,0.2); }
+.roadmap-badge {
+  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform:uppercase;
+  color: var(--green); background: var(--green-glow); border: 1px solid rgba(31,216,164,0.2);
+  border-radius:99px; padding: 3px 10px; display:inline-block; margin-bottom: 14px;
+}
+.roadmap-item h4 { font-family:'Syne',sans-serif; font-size:0.95rem; color:var(--ice); margin-bottom:6px; }
+.roadmap-item p { font-size:0.8rem; color:var(--muted); line-height:1.5; }
+
+/* ══════════════════════════════════════════════
+   NUMBERS / CREDIBILITY
+══════════════════════════════════════════════ */
+#numbers {
+  background: linear-gradient(135deg, #08111E 0%, #0A1628 50%, #061018 100%);
+  position:relative; overflow:hidden;
+}
+#numbers::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,168,67,0.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.numbers-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; text-align: center;
+  position:relative; z-index:1;
+}
+.number-item {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.number-item.visible { opacity:1; transform:translateY(0); }
+.number-item:nth-child(2){transition-delay:0.1s}
+.number-item:nth-child(3){transition-delay:0.2s}
+.number-item:nth-child(4){transition-delay:0.3s}
+
+.number-val {
+  font-family:'Syne',sans-serif; font-size: clamp(2.2rem, 3.5vw, 3.5rem); font-weight:800;
+  line-height:1; margin-bottom: 10px;
+}
+.number-label { font-size: 0.85rem; color:var(--muted); letter-spacing:0.04em; }
+
+/* ══════════════════════════════════════════════
+   MOCKUP / DASHBOARD
+══════════════════════════════════════════════ */
+#mockup {
+  background: var(--midnight);
+  padding: 110px 0;
+}
+
+.mockup-inner {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: 24px; overflow: hidden;
+  box-shadow: 0 60px 160px rgba(0,0,0,0.5), var(--shadow-gold);
+}
+
+.mockup-topbar {
+  background: rgba(10,22,40,0.8); padding: 14px 24px;
+  display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border);
+}
+.dot { width:12px; height:12px; border-radius:50%; }
+.dot-r { background: #FF5F57; }
+.dot-y { background: #FFBD2E; }
+.dot-g { background: #28C840; }
+.mockup-url {
+  flex:1; background: rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:8px; padding:6px 14px; font-size:0.78rem; color:var(--muted);
+  text-align:center; max-width:360px; margin:0 auto;
+}
+
+.mockup-body {
+  display: grid; grid-template-columns: 1fr 320px; min-height: 480px;
+}
+
+/* Map panel */
+.mockup-map {
+  background: linear-gradient(145deg, #07111e, #0A1E35);
+  position:relative; overflow:hidden; min-height:480px;
+}
+.mockup-map-grid {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(31,216,164,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31,216,164,0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.mockup-map-overlay {
+  position:absolute; inset:0;
+  background: radial-gradient(ellipse 70% 70% at 48% 52%, rgba(212,168,67,0.12) 0%, transparent 65%);
+}
+/* Simulated building footprints */
+.building { position:absolute; border-radius:4px; }
+.b1 { width:80px;height:60px; top:30%;left:38%; background:rgba(31,216,164,0.2); border:1px solid rgba(31,216,164,0.4); }
+.b2 { width:50px;height:40px; top:32%;left:42%; background:rgba(212,168,67,0.15); border:1px solid rgba(212,168,67,0.35); animation:blink 2.5s infinite; }
+.b3 { width:120px;height:30px; top:55%;left:25%; background:rgba(31,216,164,0.1); border:1px solid rgba(31,216,164,0.2); }
+.b4 { width:40px;height:55px; top:22%;left:60%; background:rgba(31,216,164,0.12); border:1px solid rgba(31,216,164,0.25); }
+@keyframes blink { 0%,100%{opacity:1;box-shadow:0 0 16px rgba(212,168,67,0.4)} 50%{opacity:0.6;box-shadow:0 0 8px rgba(212,168,67,0.2)} }
+
+.mockup-pin {
+  position:absolute; top:28%; left:42%;
+  width:20px; height:20px; border-radius:50%;
+  background: var(--gold); box-shadow:0 0 20px rgba(212,168,67,0.7);
+  animation:pinPulse 2s ease-in-out infinite;
+}
+.mockup-pin::after {
+  content:''; position:absolute; inset:-8px; border-radius:50%;
+  border:2px solid rgba(212,168,67,0.4); animation:ripple 2s ease-out infinite;
+}
+@keyframes pinPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+@keyframes ripple { 0%{transform:scale(1);opacity:1} 100%{transform:scale(2.5);opacity:0} }
+
+.mockup-tag-map {
+  position:absolute; top:16px; left:16px;
+  background:rgba(6,12,20,0.8); backdrop-filter:blur(8px);
+  border:1px solid var(--border); border-radius:8px;
+  padding:8px 14px; font-size:0.75rem; color:var(--muted);
+  display:flex; align-items:center; gap:8px;
+}
+.live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:livePulse 1.5s infinite; }
+@keyframes livePulse { 0%,100%{opacity:1;box-shadow:0 0 6px var(--green)} 50%{opacity:0.4;box-shadow:none} }
+
+/* Sidebar */
+.mockup-sidebar {
+  background: rgba(8,17,30,0.95); border-left:1px solid var(--border);
+  padding:24px 20px; display:flex; flex-direction:column; gap:20px;
+}
+.sidebar-widget {
+  background:var(--glass-light); border:1px solid var(--border);
+  border-radius:12px; padding:16px; overflow:hidden;
+}
+.sw-label { font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+.sw-val { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; color:var(--gold-light); line-height:1; }
+.sw-sub { font-size:0.75rem; color:var(--muted); margin-top:4px; }
+
+/* Mini bar chart */
+.mini-chart { display:flex; align-items:flex-end; gap:4px; height:48px; margin-top:12px; }
+.bar {
+  flex:1; background:linear-gradient(180deg, var(--gold), var(--gold-dim,#8a6820));
+  border-radius:3px 3px 0 0; opacity:0.75;
+  animation:barGrow 0.6s ease-out forwards;
+  transform-origin:bottom;
+}
+.bar:nth-child(1){height:35%;animation-delay:0.1s}
+.bar:nth-child(2){height:55%;animation-delay:0.15s}
+.bar:nth-child(3){height:45%;animation-delay:0.2s}
+.bar:nth-child(4){height:70%;animation-delay:0.25s}
+.bar:nth-child(5){height:60%;animation-delay:0.3s}
+.bar:nth-child(6){height:80%;animation-delay:0.35s}
+.bar:nth-child(7){height:90%;animation-delay:0.4s; opacity:1; background:linear-gradient(180deg,var(--green),var(--green-dim))}
+@keyframes barGrow { from{transform:scaleY(0)} to{transform:scaleY(1)} }
+
+.roi-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); }
+.roi-row:last-child { border:none; }
+.roi-row span:first-child { font-size:0.78rem; color:var(--muted); }
+.roi-row span:last-child { font-size:0.85rem; font-weight:600; color:var(--ice); }
+
+.mockup-cta {
+  width:100%; background:linear-gradient(135deg,var(--gold-light),var(--gold));
+  color:var(--midnight); font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:700;
+  border:none; border-radius:10px; padding:14px; cursor:pointer;
+  transition:var(--transition); letter-spacing:0.02em;
+  box-shadow:0 4px 20px rgba(212,168,67,0.35);
+}
+.mockup-cta:hover { box-shadow:0 8px 30px rgba(212,168,67,0.55); }
+
+/* ══════════════════════════════════════════════
+   FAQ
+══════════════════════════════════════════════ */
+#faq {
+  background: linear-gradient(180deg, var(--midnight) 0%, var(--deep-navy) 100%);
+}
+
+.faq-list { max-width: 780px; margin: 0 auto; display:flex; flex-direction:column; gap:14px; }
+
+.faq-item {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow:hidden; transition:var(--transition);
+}
+.faq-item.open { border-color: var(--border-gold); }
+
+.faq-q {
+  display: flex; justify-content:space-between; align-items:center;
+  padding: 22px 28px; cursor:pointer; gap:20px;
+  font-family:'Syne',sans-serif; font-size:1rem; font-weight:600; color:var(--ice);
+  transition:var(--transition); user-select:none;
+}
+.faq-q:hover { color:var(--gold-light); }
+.faq-arrow {
+  flex-shrink:0; width:28px; height:28px; border-radius:50%;
+  background:var(--gold-glow); border:1px solid var(--border-gold);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--gold); font-size:0.8rem; transition:var(--transition);
+}
+.faq-item.open .faq-arrow { transform:rotate(45deg); }
+
+.faq-a {
+  max-height:0; overflow:hidden; transition: max-height 0.4s ease, padding 0.4s ease;
+  font-size:0.9rem; color:var(--muted); padding: 0 28px; line-height:1.7;
+}
+.faq-item.open .faq-a { max-height:200px; padding:0 28px 22px; }
+
+/* ══════════════════════════════════════════════
+   CTA FINAL
+══════════════════════════════════════════════ */
+#cta-final {
+  background: linear-gradient(135deg, #071626 0%, #0D2040 50%, #07192e 100%);
+  text-align:center; padding: 120px 0; position:relative; overflow:hidden;
+}
+#cta-final::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(212,168,67,0.08) 0%, transparent 70%);
+  pointer-events:none;
+}
+.cta-final-inner { position:relative; z-index:1; max-width:680px; margin:0 auto; }
+.cta-final-inner .tag { margin-bottom:24px; }
+.cta-final-inner h2 { font-size:clamp(2rem,3.5vw,3.2rem); margin-bottom:20px; }
+.cta-final-inner p { color:var(--muted); margin-bottom:40px; font-size:1.05rem; }
+.cta-final-btns { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
+
+/* ══════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════ */
+footer {
+  background: var(--midnight); border-top: 1px solid var(--border);
+  padding: 70px 0 36px;
+}
+
+.footer-grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 60px;
+  margin-bottom: 60px;
+}
+.footer-brand .logo { margin-bottom: 16px; display:flex; }
+.footer-brand p { font-size:0.875rem; color:var(--muted); line-height:1.7; max-width:280px; margin-bottom:24px; }
+.footer-socials { display:flex; gap:12px; }
+.social-btn {
+  width:38px; height:38px; border-radius:10px;
+  background:var(--glass-light); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); font-size:0.9rem; text-decoration:none;
+  transition:var(--transition);
+}
+.social-btn:hover { border-color:var(--border-gold); color:var(--gold); background:var(--gold-glow); }
+
+.footer-col h5 { font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:700; color:var(--ice); margin-bottom:18px; }
+.footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.footer-col ul li a { font-size:0.85rem; color:var(--muted); text-decoration:none; transition:var(--transition); }
+.footer-col ul li a:hover { color:var(--gold-light); }
+
+.footer-contact { display:flex; flex-direction:column; gap:10px; }
+.contact-item { display:flex; align-items:center; gap:10px; font-size:0.85rem; color:var(--muted); }
+.contact-icon { color:var(--gold); }
+
+.footer-bottom {
+  border-top:1px solid var(--border); padding-top:28px;
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
+}
+.footer-bottom p { font-size:0.8rem; color:rgba(238,244,255,0.35); }
+.footer-bottom-links { display:flex; gap:20px; }
+.footer-bottom-links a { font-size:0.8rem; color:rgba(238,244,255,0.35); text-decoration:none; transition:var(--transition); }
+.footer-bottom-links a:hover { color:var(--muted); }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .hero-inner { grid-template-columns:1fr; gap:60px; }
+  .hero-visual { max-width:560px; margin:0 auto; width:100%; }
+  .hero-content { max-width:100%; }
+  .forwho-grid { grid-template-columns:repeat(3,1fr); }
+  .roadmap-grid { grid-template-columns:repeat(2,1fr); }
+  .mockup-body { grid-template-columns:1fr; }
+  .mockup-sidebar { border-left:none; border-top:1px solid var(--border); }
+  .footer-grid { grid-template-columns:1fr 1fr; gap:40px; }
+}
+
+@media (max-width: 768px) {
+  nav, .header-cta .btn-ghost { display:none; }
+  .hamburger { display:flex; }
+  h1 { font-size:2.4rem; }
+  .steps-timeline { grid-template-columns:1fr 1fr; gap:40px; }
+  .steps-timeline::before { display:none; }
+  .benefits-grid { grid-template-columns:1fr; }
+  .forwho-grid { grid-template-columns:1fr 1fr; }
+  .numbers-grid { grid-template-columns:1fr 1fr; gap:36px; }
+  .footer-grid { grid-template-columns:1fr; gap:36px; }
+  .footer-brand { order:-1; }
+  .mockup-map { min-height:280px; }
+}
+
+@media (max-width: 480px) {
+  .steps-timeline { grid-template-columns:1fr; }
+  .forwho-grid { grid-template-columns:1fr; }
+  .hero-float-card, .hero-float-card2 { display:none; }
+  .numbers-grid { grid-template-columns:1fr; text-align:left; }
+  .footer-bottom { flex-direction:column; text-align:center; }
+}
+
+/* ── Scroll reveal base ── */
+.reveal { opacity:0; transform:translateY(30px); transition:opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ── Loading screen ── */
+#loader {
+  position:fixed; inset:0; z-index:9999;
+  background:var(--midnight); display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:16px; transition:opacity 0.6s ease, visibility 0.6s ease;
+}
+#loader.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+.loader-logo { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; color:var(--ice); letter-spacing:-0.02em; }
+.loader-logo span { color:var(--gold); }
+.loader-bar {
+  width:200px; height:2px; background:rgba(238,244,255,0.08); border-radius:99px; overflow:hidden;
+}
+.loader-fill {
+  height:100%; width:0%; border-radius:99px;
+  background:linear-gradient(90deg, var(--gold), var(--green));
+  animation: fillBar 1.2s ease-out forwards;
+}
+@keyframes fillBar { to { width:100%; } }
+</style>
+</head>
+<body>
+
+<!-- ══ LOADER ══ -->
+<div id="loader">
+  <div class="loader-logo">Solar<span>Map</span> AI</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- ══ MOBILE NAV ══ -->
+<div class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="closeMobile()">Início</a>
+  <a href="#benefits" onclick="closeMobile()">Soluções</a>
+  <a href="#how" onclick="closeMobile()">Como funciona</a>
+  <a href="#mockup" onclick="closeMobile()">Simulação</a>
+  <a href="#forwho" onclick="closeMobile()">Para empresas</a>
+  <a href="#faq" onclick="closeMobile()">Contato</a>
+  <a href="#cta-final" class="btn-primary" style="margin-top:16px" onclick="closeMobile()">Iniciar simulação</a>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════ -->
+<header id="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="#hero" class="logo">
+        <div class="logo-icon">☀</div>
+        Solar<span>Map</span> AI
+      </a>
+      <nav>
+        <a href="#hero">Início</a>
+        <a href="#benefits">Soluções</a>
+        <a href="#how">Como funciona</a>
+        <a href="#mockup">Simulação</a>
+        <a href="#forwho">Para empresas</a>
+        <a href="#faq">Contato</a>
+      </nav>
+      <div class="header-cta">
+        <a href="#cta-final" class="btn-ghost">Solicitar demo</a>
+        <a href="#mockup" class="btn-primary">Iniciar simulação ↗</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-glow-1"></div>
+  <div class="hero-glow-2"></div>
+  <div class="hero-glow-3"></div>
+  <div class="hero-grid"></div>
+
+  <div class="container">
+    <div class="hero-inner">
+
+      <!-- Content -->
+      <div class="hero-content">
+        <div class="tag">Inteligência Geoespacial Solar · 2027</div>
+        <h1 class="hero-headline">
+          Seu telhado.<br>
+          <span class="grad-gold">Seu potencial.</span><br>
+          <span class="grad-green">Seu futuro.</span>
+        </h1>
+        <p class="hero-sub">
+          Descubra em minutos quanto energia solar seu imóvel pode gerar.
+          Análise geoespacial por satélite, cálculo financeiro em tempo real
+          e um roteiro completo para sua independência energética.
+        </p>
+        <div class="hero-actions">
+          <!-- INTEGRAÇÃO FUTURA: botão conectará ao módulo de mapa interativo -->
+          <a href="#mockup" class="btn-primary">Iniciar simulação gratuita ↗</a>
+          <a href="#how" class="btn-ghost">Como funciona</a>
+        </div>
+        <div class="hero-stats">
+          <!-- EDITAR: trocar por dados reais quando disponíveis -->
+          <div class="hero-stat">
+            <div class="hero-stat-num">+47</div>
+            <div class="hero-stat-label">Países atendidos</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">2.8M</div>
+            <div class="hero-stat-label">Telhados analisados</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">12 GW</div>
+            <div class="hero-stat-label">Capacidade simulada</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual -->
+      <div class="hero-visual">
+        <div class="hero-img-wrap">
+          <div class="hero-img-bg">
+            <!-- SUBSTITUIR: inserir foto aérea real de fazenda solar ou telhado residencial aqui -->
+            <!-- Exemplo: <img src="assets/hero-aerial-solar.jpg" alt="Vista aérea de propriedade com painéis solares" style="width:100%;height:100%;object-fit:cover;"> -->
+            <div class="map-grid"></div>
+            <div class="map-overlay"></div>
+            <div class="panel-cluster">
+              <!-- Simulação visual de painéis solares no mapa -->
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+              <div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div><div class="panel-cell"></div>
+            </div>
+            <div class="map-pin">
+              <div class="map-pin-icon"></div>
+              <div class="map-pin-ripple"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Float card 1 -->
+        <div class="hero-float-card">
+          <div class="hero-float-label">Economia estimada</div>
+          <div class="hero-float-val">R$ 4.820/ano</div>
+          <div class="hero-float-sub">Baseado no perfil do seu imóvel</div>
+        </div>
+
+        <!-- Float card 2 -->
+        <div class="hero-float-card2">
+          <div class="hero-float2-row">
+            <div class="hero-float2-dot"></div>
+            <div class="hero-float2-txt">Análise em tempo real</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     HOW IT WORKS
+══════════════════════════════════════════════ -->
+<section id="how">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Processo simplificado</div>
+      <h2>Da localização ao<br><span class="grad-gold">lucro em 4 passos</span></h2>
+      <p>Nossa plataforma transforma dados geoespaciais complexos em decisões financeiras simples e precisas.</p>
+    </div>
+
+    <div class="steps-timeline">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-icon">📍</div>
+        <h3>Localize seu imóvel</h3>
+        <!-- INTEGRAÇÃO FUTURA: conectar ao Google Maps API / Mapbox GL para busca de endereço -->
+        <p>Digite o endereço ou clique no mapa interativo. Nossa IA identifica automaticamente as coordenadas e imagens de satélite do local.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-icon">🛰️</div>
+        <h3>Analise o telhado ou terreno</h3>
+        <!-- INTEGRAÇÃO FUTURA: integrar com API de imagem de satélite para análise de área disponível -->
+        <p>Algoritmos de visão computacional medem a área utilizável, detectam obstáculos e calculam a orientação ideal para captação solar.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-icon">⚡</div>
+        <h3>Calcule a geração solar</h3>
+        <!-- INTEGRAÇÃO FUTURA: motor de cálculo solar com NASA POWER API e dados climáticos regionais -->
+        <p>Simulamos a geração diária, mensal e anual com base em irradiância solar, temperatura e sazonalidade da região.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-icon">💰</div>
+        <h3>Veja seu retorno financeiro</h3>
+        <!-- INTEGRAÇÃO FUTURA: conectar preços de equipamentos, tarifas regionais e simuladores de financiamento -->
+        <p>Receba um relatório completo com economia na conta de luz, payback do investimento, ROI e potencial de geração de renda.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     BENEFITS
+══════════════════════════════════════════════ -->
+<section id="benefits">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Por que a SolarMap AI</div>
+      <h2>Tecnologia que<br><span class="grad-green">transforma decisões</span></h2>
+      <p>Da análise inicial ao acompanhamento do retorno, nossa plataforma cobre todo o ciclo da energia solar.</p>
+    </div>
+
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">🗺️</div>
+        <h3>Análise Visual por Satélite</h3>
+        <p>Imagens de alta resolução e inteligência geoespacial para mapeamento preciso de cada centímetro do seu espaço disponível.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">☀️</div>
+        <h3>Simulação Solar Avançada</h3>
+        <p>Modelos climáticos locais, posição solar em tempo real e histórico de irradiância para estimativas de geração altamente precisas.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">📊</div>
+        <h3>Cálculo Financeiro Completo</h3>
+        <p>Payback, VPL, TIR e cenários de retorno detalhados. Visão clara de quando e quanto você vai economizar ou lucrar.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🏭</div>
+        <h3>Escala: Casa, Empresa ou Fazenda</h3>
+        <p>De residências urbanas a megafazendas solares rurais. A mesma plataforma inteligente adaptada a qualquer escala de projeto.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🌍</div>
+        <h3>Cobertura Global</h3>
+        <p>Dados solares e tarifas de energia em mais de 47 países. Análise precisa independente de onde seu projeto estiver localizado.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">💡</div>
+        <h3>Potencial de Monetização</h3>
+        <p>Descubra como gerar renda injetando excedente na rede, participando de mercados de crédito de carbono e biogás.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     FOR WHO
+══════════════════════════════════════════════ -->
+<section id="forwho">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Soluções por perfil</div>
+      <h2>Para quem é a<br><span class="grad-gold">SolarMap AI</span></h2>
+      <p>Uma plataforma construída para atender diferentes perfis com as mesmas precisão e elegância.</p>
+    </div>
+
+    <div class="forwho-grid">
+      <div class="forwho-card">
+        <span class="forwho-emoji">🏠</span>
+        <h3>Residências</h3>
+        <p>Proprietários que querem reduzir a conta de luz e valorizar o imóvel com energia solar.</p>
+      </div>
+      <div class="forwho-card">
+        <span class="forwho-emoji">🏢</span>
+        <h3>Empresas</h3>
+        <p>Negócios que buscam redução de custos operacionais e metas ESG com energia limpa.</p>
+      </div>
+      <div class="forwho-card">
+        <span class="forwho-emoji">🌾</span>
+        <h3>Fazendas e Rurais</h3>
+        <p>Produtores rurais com grandes áreas disponíveis para projetos de alta capacidade.</p>
+      </div>
+      <div class="forwho-card">
+        <span class="forwho-emoji">🔧</span>
+        <h3>Integradores</h3>
+        <p>Empresas de instalação que precisam de análise rápida e proposta técnica automatizada.</p>
+      </div>
+      <div class="forwho-card">
+        <span class="forwho-emoji">📈</span>
+        <h3>Investidores</h3>
+        <p>Fundos e pessoas físicas buscando rentabilidade sustentável em ativos de energia limpa.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     ROADMAP
+══════════════════════════════════════════════ -->
+<section id="roadmap">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Visão de futuro</div>
+      <h2>O que vem pela<br><span class="grad-green">frente</span></h2>
+      <p>A SolarMap AI está em constante evolução. Confira os módulos que entram em breve na plataforma.</p>
+    </div>
+
+    <div class="roadmap-grid">
+      <!-- MÓDULOS FUTUROS: cada item representa um módulo a ser desenvolvido -->
+      <div class="roadmap-item">
+        <div class="roadmap-badge">Em breve</div>
+        <h4>Cálculo de Área Preciso</h4>
+        <p>Medição automatizada via satélite com detecção de obstáculos como chaminés, caixas d'água e antenas.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">Em breve</div>
+        <h4>Simulação de Posição Solar</h4>
+        <p>Rastreamento da trajetória solar hora a hora ao longo do ano para otimização do ângulo dos painéis.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">Em breve</div>
+        <h4>Orçamento por Região</h4>
+        <!-- INTEGRAÇÃO FUTURA: marketplace de fornecedores e distribuidores regionais de painéis e inversores -->
+        <p>Preços de equipamentos e instalação atualizados por cidade, com comparativo de fornecedores locais.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">Q3 2025</div>
+        <h4>Simulador de Financiamento</h4>
+        <!-- INTEGRAÇÃO FUTURA: APIs de bancos parceiros para simulação de crédito solar -->
+        <p>Compare linhas de crédito de bancos parceiros e descubra o melhor plano para seu projeto solar.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">Q4 2025</div>
+        <h4>Comparação de Equipamentos</h4>
+        <p>Painéis, inversores e baterias ranqueados por eficiência, garantia e custo-benefício para seu projeto.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">Q4 2025</div>
+        <h4>Marketplace Solar</h4>
+        <!-- INTEGRAÇÃO FUTURA: plataforma de conexão entre instaladores, compradores e fornecedores -->
+        <p>Conecte-se diretamente com instaladores certificados e fornecedores validados na sua região.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">2026</div>
+        <h4>Gestão Multi-Projeto</h4>
+        <p>Painel centralizado para gestão de múltiplas propriedades, unidades e projetos em diferentes países.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-badge">2026</div>
+        <h4>Crédito de Carbono</h4>
+        <p>Monetize sua geração limpa com emissão e comercialização automatizada de créditos de carbono.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     NUMBERS
+══════════════════════════════════════════════ -->
+<section id="numbers">
+  <div class="container">
+    <!-- EDITAR: trocar pelos números reais da plataforma conforme crescimento -->
+    <div class="numbers-grid">
+      <div class="number-item">
+        <div class="number-val grad-gold" data-target="47">47</div>
+        <div class="number-label">Países com análise ativa</div>
+      </div>
+      <div class="number-item">
+        <div class="number-val grad-green" data-target="2800000">2.8M+</div>
+        <div class="number-label">Telhados analisados</div>
+      </div>
+      <div class="number-item">
+        <div class="number-val grad-gold" data-target="12">12 GW</div>
+        <div class="number-label">Capacidade solar simulada</div>
+      </div>
+      <div class="number-item">
+        <div class="number-val grad-green" data-target="4">R$4,2Bi</div>
+        <div class="number-label">Economia projetada aos clientes</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     MOCKUP / DASHBOARD
+══════════════════════════════════════════════ -->
+<section id="mockup">
+  <div class="container-wide">
+    <div class="section-header reveal" style="margin-bottom:50px">
+      <div class="tag">Plataforma em ação</div>
+      <h2>O dashboard que vai<br><span class="grad-gold">mudar seu projeto solar</span></h2>
+      <p>Visualize, simule e decida — tudo em uma interface elegante e intuitiva.</p>
+    </div>
+
+    <!-- INTEGRAÇÃO FUTURA: substituir por iframe ou componente React do dashboard real -->
+    <div class="mockup-inner reveal">
+      <div class="mockup-topbar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <div class="mockup-url">app.solarmap.ai/simulation/dashboard</div>
+      </div>
+      <div class="mockup-body">
+        <!-- Map panel -->
+        <div class="mockup-map">
+          <div class="mockup-map-grid"></div>
+          <div class="mockup-map-overlay"></div>
+          <!-- Simulated building footprints -->
+          <div class="building b1"></div>
+          <div class="building b2"></div>
+          <div class="building b3"></div>
+          <div class="building b4"></div>
+          <div class="mockup-pin"></div>
+          <div class="mockup-tag-map">
+            <div class="live-dot"></div>
+            Análise em tempo real · Zona Sul, São Paulo
+          </div>
+          <!-- SUBSTITUIR: aqui entrará o mapa real com Google Maps API ou Mapbox -->
+          <!-- <div id="map" style="width:100%;height:100%;"></div> -->
+        </div>
+
+        <!-- Sidebar -->
+        <div class="mockup-sidebar">
+          <!-- Placas -->
+          <div class="sidebar-widget">
+            <div class="sw-label">Placas estimadas</div>
+            <div class="sw-val">32 painéis</div>
+            <div class="sw-sub">Área disponível: 64 m²</div>
+          </div>
+
+          <!-- Geração -->
+          <div class="sidebar-widget">
+            <div class="sw-label">Geração mensal estimada</div>
+            <div class="sw-val">480 kWh</div>
+            <div class="sw-sub">Média diária: 16 kWh/dia</div>
+            <!-- Mini bar chart -->
+            <div class="mini-chart">
+              <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+              <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+              <div class="bar"></div>
+            </div>
+          </div>
+
+          <!-- ROI -->
+          <div class="sidebar-widget">
+            <div class="sw-label">Análise financeira</div>
+            <div class="roi-row"><span>Custo estimado</span><span>R$ 42.000</span></div>
+            <div class="roi-row"><span>Economia/ano</span><span style="color:var(--green)">R$ 8.640</span></div>
+            <div class="roi-row"><span>Payback</span><span style="color:var(--gold-light)">4,8 anos</span></div>
+            <div class="roi-row"><span>ROI 25 anos</span><span style="color:var(--green)">+460%</span></div>
+          </div>
+
+          <!-- INTEGRAÇÃO FUTURA: botão de simulação completa e contato com integradores -->
+          <button class="mockup-cta" onclick="document.getElementById('cta-final').scrollIntoView({behavior:'smooth'})">
+            Simular meu imóvel →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     FAQ
+══════════════════════════════════════════════ -->
+<section id="faq">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Perguntas frequentes</div>
+      <h2>Tire suas<br><span class="grad-gold">dúvidas</span></h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Como a plataforma calcula o potencial solar do meu imóvel?
+          <div class="faq-arrow">+</div>
+        </div>
+        <div class="faq-a">
+          Combinamos imagens de satélite de alta resolução com dados de irradiância solar da NASA e do INPE, além de modelos climáticos regionais. Nossos algoritmos de IA analisam a área disponível, a orientação do telhado, o ângulo de inclinação e os obstáculos presentes para calcular com precisão a geração estimada de energia.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          A SolarMap AI funciona em qualquer país?
+          <div class="faq-arrow">+</div>
+        </div>
+        <div class="faq-a">
+          Sim. A plataforma está disponível em mais de 47 países, com dados solares localizados, tarifas de energia regionais e suporte a diferentes moedas. Continuamos expandindo nossa cobertura para novos mercados globais.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Posso usar para casa, empresa e fazenda ao mesmo tempo?
+          <div class="faq-arrow">+</div>
+        </div>
+        <div class="faq-a">
+          Absolutamente. A plataforma foi desenhada para atender residências, pequenas e médias empresas, grandes indústrias e fazendas com projetos de larga escala. Cada perfil possui parâmetros e relatórios otimizados para sua necessidade específica.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          O sistema mostra retorno financeiro detalhado?
+          <div class="faq-arrow">+</div>
+        </div>
+        <div class="faq-a">
+          Sim. O relatório financeiro inclui custo estimado de instalação, economia mensal e anual na conta de luz, payback simples e descontado, VPL e TIR do projeto ao longo de 25 anos, além de projeções de valorização do imóvel e potencial de monetização de excedente de energia.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          A plataforma vai integrar orçamento real e financiamento?
+          <div class="faq-arrow">+</div>
+        </div>
+        <div class="faq-a">
+          Sim, esses são módulos planejados para os próximos trimestres. Em breve a SolarMap AI integrará cotações reais de equipamentos por região, comparativo de instaladores certificados e simuladores de financiamento com bancos parceiros — tudo dentro da mesma plataforma.
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Meus dados e a localização do meu imóvel são seguros?
+          <div class="faq-arrow">+</div>
+        </div>
+        <div class="faq-a">
+          A segurança dos seus dados é prioridade absoluta. Utilizamos criptografia de ponta a ponta, servidores em nuvem com certificação ISO 27001 e estamos em plena conformidade com a LGPD no Brasil e o GDPR na Europa. Nenhum dado pessoal é compartilhado sem consentimento explícito.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     CTA FINAL
+══════════════════════════════════════════════ -->
+<section id="cta-final">
+  <div class="container">
+    <div class="cta-final-inner reveal">
+      <div class="tag">Comece agora · É gratuito</div>
+      <h2>Descubra o poder<br><span class="grad-gold">solar do seu espaço</span></h2>
+      <p>Leva menos de 3 minutos. Sem cartão de crédito. Sem compromisso.<br>Só inteligência solar ao seu alcance.</p>
+      <div class="cta-final-btns">
+        <!-- INTEGRAÇÃO FUTURA: conectar ao módulo de simulação e cadastro de usuários -->
+        <a href="#mockup" class="btn-primary">Iniciar simulação gratuita ↗</a>
+        <a href="mailto:contato@solarmap.ai" class="btn-ghost">Falar com especialista</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#hero" class="logo" style="text-decoration:none;margin-bottom:16px">
+          <div class="logo-icon">☀</div>
+          Solar<span>Map</span> AI
+        </a>
+        <p>Transformamos inteligência geoespacial em energia limpa e retorno financeiro real para residências, empresas e fazendas em todo o mundo.</p>
+        <div class="footer-socials">
+          <!-- INTEGRAÇÃO FUTURA: links reais das redes sociais -->
+          <a href="#" class="social-btn" aria-label="LinkedIn">in</a>
+          <a href="#" class="social-btn" aria-label="Instagram">ig</a>
+          <a href="#" class="social-btn" aria-label="Twitter/X">𝕏</a>
+          <a href="#" class="social-btn" aria-label="YouTube">▶</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h5>Plataforma</h5>
+        <ul>
+          <li><a href="#how">Como funciona</a></li>
+          <li><a href="#benefits">Soluções</a></li>
+          <li><a href="#mockup">Dashboard</a></li>
+          <li><a href="#roadmap">Roteiro</a></li>
+          <li><a href="#forwho">Para empresas</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Empresa</h5>
+        <ul>
+          <li><a href="#">Sobre nós</a></li>
+          <li><a href="#">Imprensa</a></li>
+          <li><a href="#">Carreiras</a></li>
+          <li><a href="#">Parceiros</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Contato</h5>
+        <div class="footer-contact">
+          <!-- EDITAR: trocar pelo e-mail e telefone reais -->
+          <div class="contact-item"><span class="contact-icon">✉</span> contato@solarmap.ai</div>
+          <div class="contact-item"><span class="contact-icon">📍</span> São Paulo, Brasil · Amsterdam, NL</div>
+          <div class="contact-item"><span class="contact-icon">🌐</span> Disponível globalmente</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <!-- EDITAR: ano e dados legais reais -->
+      <p>© 2027 SolarMap AI Technologies. Todos os direitos reservados.</p>
+      <div class="footer-bottom-links">
+        <a href="#">Privacidade</a>
+        <a href="#">Termos de uso</a>
+        <a href="#">Cookies</a>
+        <a href="#">LGPD</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+/* ── Loader ── */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 1400);
+});
+
+/* ── Header scroll effect ── */
+const header = document.getElementById('header');
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+/* ── Hamburger menu ── */
+const hamburger = document.getElementById('hamburger');
+const mobileNav = document.getElementById('mobileNav');
+
+hamburger.addEventListener('click', () => {
+  mobileNav.classList.toggle('open');
+  document.body.style.overflow = mobileNav.classList.contains('open') ? 'hidden' : '';
+});
+
+function closeMobile() {
+  mobileNav.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ── Scroll reveal (IntersectionObserver) ── */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // For .reveal class elements
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+// Observe all animated elements
+document.querySelectorAll(
+  '.reveal, .step, .benefit-card, .forwho-card, .roadmap-item, .number-item'
+).forEach(el => revealObserver.observe(el));
+
+/* ── FAQ accordion ── */
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const isOpen = item.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  // Open clicked if was closed
+  if (!isOpen) item.classList.add('open');
+}
+
+/* ── Smooth scroll for anchor links ── */
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      const offset = 80;
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  });
+});
+
+/* ── Active nav link ── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+const updateActiveNav = () => {
+  const scrollY = window.scrollY;
+  sections.forEach(section => {
+    const top = section.offsetTop - 120;
+    const bottom = top + section.offsetHeight;
+    if (scrollY >= top && scrollY < bottom) {
+      navLinks.forEach(a => a.style.color = '');
+      const active = document.querySelector(`nav a[href="#${section.id}"]`);
+      if (active) active.style.color = 'var(--gold-light)';
+    }
+  });
+};
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+/*
+ * ══════════════════════════════════════════════
+ * INTEGRAÇÕES FUTURAS — PONTOS DE EXTENSÃO
+ * ══════════════════════════════════════════════
+ *
+ * 1. MAPA INTERATIVO (Google Maps / Mapbox GL)
+ *    - Inicializar no elemento #map dentro do .mockup-map
+ *    - Adicionar geocoding para busca por endereço
+ *    - Exemplo: mapboxgl.accessToken = 'YOUR_TOKEN';
+ *
+ * 2. ANÁLISE DE IMAGEM DE SATÉLITE
+ *    - Integrar com Google Maps Static API ou Mapbox Satellite
+ *    - Processar área de telhado via ML no backend (ex.: TensorFlow.js ou API própria)
+ *
+ * 3. CÁLCULO SOLAR
+ *    - Usar NASA POWER API: https://power.larc.nasa.gov/api/
+ *    - Parâmetros: ALLSKY_SFC_SW_DWN (irradiância), lat, lon, start, end
+ *    - Alternativa: PVGIS API (Europa/Global): https://re.jrc.ec.europa.eu/pvg_tools/
+ *
+ * 4. MÓDULO FINANCEIRO
+ *    - Receber preços de equipamentos via API de marketplace próprio
+ *    - Integrar simuladores de financiamento de bancos parceiros
+ *    - Exibir resultados no painel lateral do dashboard
+ *
+ * 5. AUTENTICAÇÃO / USUÁRIOS
+ *    - Integrar com Supabase Auth, Firebase Auth ou Auth0
+ *    - Redirecionar botões "Iniciar simulação" para /login ou /register
+ *
+ * 6. ANALYTICS
+ *    - Google Analytics 4: gtag('config', 'G-XXXXXXXXXX')
+ *    - Mixpanel / Amplitude para eventos de funil de conversão
+ *    - Hotjar para heatmaps e gravações de sessão
+ *
+ * 7. CRM / LEADS
+ *    - Conectar formulário de demo ao HubSpot, Salesforce ou RD Station
+ *    - webhook: POST /api/leads com nome, email, tipo de imóvel, região
+ */
+</script>
+
+</body>
+</html>

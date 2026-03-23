@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarMap AI — Nova Simulação Solar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   SOLARMAP AI · TELA DE SIMULAÇÃO
+   Fontes: Cabinet Grotesk (UI) · Clash Display (headings) · JetBrains Mono (dados)
+   Tema: Midnight Abyss · Solar Amber · Neon Mint · Ice Chrome
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Backgrounds */
+  --bg-0:      #030810;
+  --bg-1:      #060E1C;
+  --bg-2:      #091526;
+  --bg-3:      #0C1C32;
+  --bg-4:      #102240;
+  --bg-glass:  rgba(9,21,38,0.7);
+  --bg-input:  rgba(6,14,28,0.8);
+
+  /* Brand */
+  --gold:      #D4A843;
+  --gold-hi:   #F2C860;
+  --gold-lo:   rgba(212,168,67,0.12);
+  --gold-bd:   rgba(212,168,67,0.2);
+
+  --mint:      #18E8A8;
+  --mint-hi:   #5CF5C8;
+  --mint-lo:   rgba(24,232,168,0.10);
+  --mint-bd:   rgba(24,232,168,0.2);
+
+  --sky:       #3B9EFF;
+  --sky-lo:    rgba(59,158,255,0.10);
+
+  --rose:      #FF5D6E;
+  --rose-lo:   rgba(255,93,110,0.10);
+
+  /* Text */
+  --t1: #EDF2FF;
+  --t2: rgba(237,242,255,0.62);
+  --t3: rgba(237,242,255,0.36);
+  --t4: rgba(237,242,255,0.18);
+  --t5: rgba(237,242,255,0.08);
+
+  /* Borders */
+  --bd:     rgba(237,242,255,0.07);
+  --bd-mid: rgba(237,242,255,0.13);
+  --bd-hi:  rgba(237,242,255,0.22);
+
+  /* Radius */
+  --r1: 8px;
+  --r2: 13px;
+  --r3: 20px;
+  --r4: 28px;
+
+  /* Transition */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 0.2s var(--ease);
+  --t-med:  0.35s var(--ease);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  background: var(--bg-0);
+  color: var(--t1);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(237,242,255,0.1); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(237,242,255,0.2); }
+
+/* ── Font helpers ── */
+.clash    { font-family: 'Clash Display', sans-serif; }
+.mono     { font-family: 'JetBrains Mono', monospace; }
+.grad-gold  { background: linear-gradient(135deg, var(--gold-hi), var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.grad-mint  { background: linear-gradient(135deg, var(--mint-hi), var(--mint)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* ── Noise overlay ── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9000;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.02; background-size:160px;
+}
+
+/* ════════════════════════════════════════════
+   LOADER
+════════════════════════════════════════════ */
+#loader {
+  position:fixed; inset:0; z-index:8000; background:var(--bg-0);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  transition: opacity 0.55s var(--ease), visibility 0.55s;
+}
+#loader.out { opacity:0; visibility:hidden; pointer-events:none; }
+.ld-logo { font-family:'Clash Display',sans-serif; font-size:1.7rem; font-weight:600; letter-spacing:-0.02em; color:var(--t1); }
+.ld-logo em { font-style:normal; color:var(--gold); }
+.ld-track { width:200px; height:2px; background:var(--t5); border-radius:99px; overflow:hidden; }
+.ld-fill  { height:100%; background:linear-gradient(90deg, var(--gold), var(--mint)); border-radius:99px; animation:ldFill 1s var(--ease) forwards; }
+@keyframes ldFill { from{width:0} to{width:100%} }
+.ld-msg { font-size:0.72rem; color:var(--t3); letter-spacing:0.06em; }
+
+/* ════════════════════════════════════════════
+   TOPBAR
+════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 400;
+  background: rgba(3,8,16,0.88);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--bd);
+  height: 60px;
+  display: flex; align-items: center;
+  padding: 0 28px; gap: 20px;
+}
+
+.topbar-back {
+  display:flex; align-items:center; gap:8px;
+  font-size:0.8rem; color:var(--t3); cursor:pointer;
+  padding:6px 12px; border-radius:var(--r1); border:1px solid var(--bd);
+  background: var(--t5); transition:var(--t-fast);
+  text-decoration:none;
+}
+.topbar-back:hover { color:var(--t1); border-color:var(--bd-mid); background:rgba(237,242,255,0.06); }
+
+.topbar-breadcrumb {
+  display:flex; align-items:center; gap:8px;
+  font-size:0.78rem; color:var(--t3);
+}
+.topbar-breadcrumb .sep { color:var(--t4); }
+.topbar-breadcrumb .cur { color:var(--t1); font-weight:600; }
+
+.topbar-title {
+  font-family:'Clash Display',sans-serif; font-size:1rem; font-weight:600;
+  color:var(--t1); letter-spacing:-0.01em;
+}
+
+.topbar-spacer { flex:1; }
+
+.topbar-step-indicator {
+  display:flex; align-items:center; gap:6px;
+}
+.step-dot {
+  width:24px; height:5px; border-radius:99px;
+  background:var(--t5); transition:var(--t-med);
+}
+.step-dot.done { background:var(--mint); }
+.step-dot.active { background:var(--gold); width:32px; }
+
+.topbar-sim-id {
+  font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--t4);
+  background:var(--t5); padding:4px 10px; border-radius:6px; border:1px solid var(--bd);
+}
+
+.btn-run {
+  display:flex; align-items:center; gap:8px;
+  background:linear-gradient(135deg, var(--gold-hi), var(--gold));
+  color:var(--bg-0); font-family:'Cabinet Grotesk',sans-serif;
+  font-size:0.82rem; font-weight:800;
+  border:none; border-radius:var(--r1); padding:9px 20px;
+  cursor:pointer; transition:var(--t-med); white-space:nowrap;
+  letter-spacing:0.01em;
+}
+.btn-run:hover { box-shadow:0 0 30px rgba(212,168,67,0.45); transform:translateY(-1px); }
+.btn-run:active { transform:translateY(0); }
+.btn-run .run-icon { font-size:1rem; }
+
+/* ════════════════════════════════════════════
+   MAIN LAYOUT
+════════════════════════════════════════════ */
+.sim-layout {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  min-height: calc(100vh - 60px);
+  gap: 0;
+}
+
+/* ════════════════════════════════════════════
+   LEFT PANEL — FORM
+════════════════════════════════════════════ */
+.sim-form-panel {
+  background: var(--bg-1);
+  border-right: 1px solid var(--bd);
+  overflow-y: auto;
+  padding: 28px 28px 80px;
+  max-height: calc(100vh - 60px);
+  position: sticky; top: 60px;
+}
+
+/* Section headers */
+.form-section {
+  margin-bottom: 28px;
+}
+.form-section-header {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:16px; padding-bottom:10px;
+  border-bottom:1px solid var(--bd);
+}
+.form-section-num {
+  width:24px; height:24px; border-radius:6px; flex-shrink:0;
+  background:var(--gold-lo); border:1px solid var(--gold-bd);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:0.68rem; font-weight:600; color:var(--gold);
+}
+.form-section-title {
+  font-family:'Clash Display',sans-serif; font-size:0.82rem; font-weight:600;
+  color:var(--t1); letter-spacing:0.02em; text-transform:uppercase;
+}
+.form-section-sub { font-size:0.72rem; color:var(--t3); margin-left:auto; }
+
+/* Field groups */
+.field-group { margin-bottom:14px; }
+.field-row   { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+
+/* Labels */
+.field-label {
+  display:flex; align-items:center; gap:6px;
+  font-size:0.72rem; font-weight:600; color:var(--t3);
+  text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;
+}
+.field-label .tip {
+  width:14px; height:14px; border-radius:50%; background:var(--t5); border:1px solid var(--bd);
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.55rem; color:var(--t4); cursor:help;
+}
+
+/* Base input */
+.field-input, .field-select, .field-textarea {
+  width:100%; background:var(--bg-input); border:1px solid var(--bd);
+  border-radius:var(--r1); padding:10px 14px;
+  font-family:'Cabinet Grotesk',sans-serif; font-size:0.875rem; color:var(--t1);
+  transition:var(--t-fast); outline:none; appearance:none;
+}
+.field-input:focus, .field-select:focus, .field-textarea:focus {
+  border-color: var(--gold-bd); background:rgba(9,21,38,0.95);
+  box-shadow:0 0 0 3px rgba(212,168,67,0.08);
+}
+.field-input::placeholder, .field-textarea::placeholder { color:var(--t4); }
+.field-select { cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(237,242,255,0.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+.field-select option { background:var(--bg-2); color:var(--t1); }
+
+/* Input with suffix */
+.input-suffix-wrap { position:relative; }
+.input-suffix-wrap .field-input { padding-right:48px; }
+.input-suffix {
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  font-size:0.72rem; font-weight:600; color:var(--t3); pointer-events:none;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* Segment control (radio buttons styled) */
+.segment-control {
+  display:flex; gap:4px; background:var(--bg-input); border:1px solid var(--bd);
+  border-radius:var(--r1); padding:3px;
+}
+.seg-btn {
+  flex:1; padding:7px 4px; border-radius:6px; text-align:center;
+  font-size:0.75rem; font-weight:600; color:var(--t3); cursor:pointer;
+  transition:var(--t-fast); border:1px solid transparent;
+  background:none; font-family:'Cabinet Grotesk',sans-serif;
+}
+.seg-btn.active { background:var(--gold-lo); color:var(--gold-hi); border-color:var(--gold-bd); }
+.seg-btn:hover:not(.active) { color:var(--t1); background:rgba(237,242,255,0.04); }
+
+/* Range slider */
+.range-wrap { position:relative; padding-bottom:6px; }
+.field-range {
+  width:100%; appearance:none; height:4px;
+  background:linear-gradient(to right, var(--gold) 0%, var(--gold) var(--pct, 50%), var(--t5) var(--pct, 50%));
+  border-radius:99px; outline:none; cursor:pointer; margin:8px 0 4px;
+}
+.field-range::-webkit-slider-thumb {
+  appearance:none; width:16px; height:16px; border-radius:50%;
+  background:linear-gradient(135deg, var(--gold-hi), var(--gold));
+  box-shadow:0 0 12px rgba(212,168,67,0.5); cursor:pointer;
+  border:2px solid var(--bg-0);
+}
+.range-labels { display:flex; justify-content:space-between; font-size:0.62rem; color:var(--t4); font-family:'JetBrains Mono',monospace; }
+.range-val {
+  position:absolute; top:-24px; right:0;
+  font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:600; color:var(--gold);
+  background:var(--gold-lo); border:1px solid var(--gold-bd); border-radius:6px; padding:2px 8px;
+}
+
+/* Toggle switch */
+.toggle-row {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg-input); border:1px solid var(--bd); border-radius:var(--r1);
+  padding:10px 14px; margin-bottom:8px; transition:var(--t-fast);
+}
+.toggle-row:hover { border-color:var(--bd-mid); }
+.toggle-info {}
+.toggle-label { font-size:0.82rem; font-weight:600; color:var(--t1); }
+.toggle-sub { font-size:0.68rem; color:var(--t3); margin-top:2px; }
+.toggle-switch {
+  position:relative; width:36px; height:20px; flex-shrink:0;
+}
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-track {
+  position:absolute; inset:0; border-radius:99px;
+  background:var(--t5); border:1px solid var(--bd); cursor:pointer; transition:var(--t-fast);
+}
+.toggle-track::after {
+  content:''; position:absolute; left:2px; top:2px;
+  width:14px; height:14px; border-radius:50%;
+  background:var(--t3); transition:var(--t-fast);
+}
+.toggle-switch input:checked + .toggle-track { background:var(--mint-lo); border-color:var(--mint-bd); }
+.toggle-switch input:checked + .toggle-track::after { background:var(--mint); transform:translateX(16px); }
+
+/* Location input special */
+.location-input-wrap {
+  position:relative;
+}
+.location-input-wrap .field-input { padding-left:40px; padding-right:110px; }
+.loc-icon {
+  position:absolute; left:13px; top:50%; transform:translateY(-50%);
+  font-size:1rem; pointer-events:none; color:var(--t3);
+}
+.loc-search-btn {
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  background:var(--gold-lo); border:1px solid var(--gold-bd); border-radius:6px;
+  color:var(--gold); font-size:0.68rem; font-weight:700; padding:5px 12px; cursor:pointer;
+  font-family:'Cabinet Grotesk',sans-serif; transition:var(--t-fast); white-space:nowrap;
+  /* INTEGRAÇÃO FUTURA: botão acionará geocoding API (Google Maps / Mapbox Geocoder) */
+}
+.loc-search-btn:hover { background:rgba(212,168,67,0.2); }
+
+/* Color pill selectors */
+.pill-selector { display:flex; flex-wrap:wrap; gap:6px; }
+.pill {
+  padding:5px 12px; border-radius:99px; font-size:0.73rem; font-weight:600;
+  border:1px solid var(--bd); background:var(--bg-input); color:var(--t3);
+  cursor:pointer; transition:var(--t-fast); font-family:'Cabinet Grotesk',sans-serif;
+}
+.pill:hover { border-color:var(--bd-mid); color:var(--t1); }
+.pill.active.gold { background:var(--gold-lo); border-color:var(--gold-bd); color:var(--gold-hi); }
+.pill.active.mint { background:var(--mint-lo); border-color:var(--mint-bd); color:var(--mint-hi); }
+
+/* Star shading selector */
+.shade-selector { display:flex; gap:6px; }
+.shade-opt {
+  flex:1; border:1px solid var(--bd); border-radius:var(--r1); padding:8px 6px; text-align:center;
+  cursor:pointer; transition:var(--t-fast); background:var(--bg-input);
+}
+.shade-opt .shade-icon { font-size:1.1rem; display:block; margin-bottom:4px; }
+.shade-opt .shade-label { font-size:0.65rem; color:var(--t3); }
+.shade-opt.active { border-color:var(--mint-bd); background:var(--mint-lo); }
+.shade-opt.active .shade-label { color:var(--mint); }
+
+/* Form CTA */
+.form-cta-bar {
+  position:sticky; bottom:0;
+  background:linear-gradient(0deg, var(--bg-1) 70%, transparent);
+  padding-top:24px; margin-top:8px;
+}
+.btn-simulate {
+  width:100%; padding:14px; border-radius:var(--r2);
+  background:linear-gradient(135deg, var(--gold-hi), var(--gold));
+  color:var(--bg-0); font-family:'Clash Display',sans-serif;
+  font-size:0.95rem; font-weight:700; border:none; cursor:pointer;
+  transition:var(--t-med); letter-spacing:0.02em;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.btn-simulate:hover { box-shadow:0 8px 40px rgba(212,168,67,0.5); transform:translateY(-1px); }
+.btn-simulate.loading { pointer-events:none; }
+
+/* ════════════════════════════════════════════
+   RIGHT PANEL — RESULTS
+════════════════════════════════════════════ */
+.sim-results-panel {
+  background: var(--bg-0);
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+  padding: 28px 28px 80px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+
+/* Empty state */
+.results-empty {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:20px; text-align:center; opacity:1; transition:var(--t-med);
+}
+.results-empty.hidden { display:none; }
+.empty-orb {
+  width:120px; height:120px; border-radius:50%; position:relative; margin:0 auto;
+  background:radial-gradient(circle at 38% 38%, var(--gold-hi), var(--gold) 45%, #7a5010);
+  box-shadow:0 0 50px rgba(212,168,67,0.25), 0 0 100px rgba(212,168,67,0.1);
+  animation:emptyPulse 3s ease-in-out infinite;
+}
+@keyframes emptyPulse { 0%,100%{box-shadow:0 0 50px rgba(212,168,67,0.25),0 0 100px rgba(212,168,67,0.1)} 50%{box-shadow:0 0 70px rgba(212,168,67,0.38),0 0 140px rgba(212,168,67,0.15)} }
+.empty-ring {
+  position:absolute; inset:-18px; border-radius:50%;
+  border:1px solid rgba(212,168,67,0.15);
+  animation:emptyRotate 14s linear infinite;
+}
+.empty-ring::after { content:''; position:absolute; width:7px; height:7px; border-radius:50%; background:var(--mint); top:-3px; left:50%; transform:translateX(-50%); box-shadow:0 0 8px var(--mint); }
+@keyframes emptyRotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.empty-title { font-family:'Clash Display',sans-serif; font-size:1.3rem; font-weight:600; color:var(--t1); }
+.empty-sub { font-size:0.85rem; color:var(--t3); max-width:300px; line-height:1.6; }
+.empty-hint { display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--t4); padding:10px 18px; background:var(--t5); border-radius:99px; border:1px solid var(--bd); }
+
+/* Results wrapper — hidden until calculated */
+.results-content { display:none; flex-direction:column; gap:20px; }
+.results-content.visible { display:flex; }
+
+/* ── Result summary banner ── */
+.result-banner {
+  border-radius:var(--r3); padding:28px 28px;
+  background:linear-gradient(135deg, rgba(9,21,38,0.9) 0%, rgba(12,28,50,0.95) 100%);
+  border:1px solid var(--bd);
+  position:relative; overflow:hidden;
+}
+.result-banner::before {
+  content:''; position:absolute; width:400px; height:400px; border-radius:50%;
+  background:radial-gradient(circle, rgba(212,168,67,0.1) 0%, transparent 70%);
+  top:-150px; right:-100px; pointer-events:none;
+}
+.result-banner::after {
+  content:''; position:absolute; width:250px; height:250px; border-radius:50%;
+  background:radial-gradient(circle, rgba(24,232,168,0.08) 0%, transparent 70%);
+  bottom:-80px; left:-60px; pointer-events:none;
+}
+.rb-top {
+  display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; position:relative; z-index:1;
+}
+.rb-tag {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:0.65rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;
+  color:var(--mint); background:var(--mint-lo); border:1px solid var(--mint-bd);
+  border-radius:99px; padding:4px 12px;
+}
+.rb-tag::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--mint); animation:livePulse 1.5s infinite; }
+@keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.rb-badge {
+  font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:var(--t4);
+  background:var(--t5); padding:4px 10px; border-radius:6px; border:1px solid var(--bd);
+}
+.rb-title { font-family:'Clash Display',sans-serif; font-size:1.5rem; font-weight:700; margin-bottom:6px; position:relative; z-index:1; }
+.rb-sub { font-size:0.82rem; color:var(--t2); line-height:1.6; position:relative; z-index:1; }
+
+.rb-kpis {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+  margin-top:20px; position:relative; z-index:1;
+}
+.rb-kpi {
+  background:rgba(3,8,16,0.6); border:1px solid var(--bd); border-radius:var(--r2); padding:14px;
+  text-align:center;
+}
+.rb-kpi-val { font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:600; line-height:1; margin-bottom:4px; }
+.rb-kpi-label { font-size:0.65rem; color:var(--t3); text-transform:uppercase; letter-spacing:0.08em; }
+
+/* ── MAP MOCKUP ── */
+.map-card {
+  border-radius:var(--r3); overflow:hidden;
+  background:var(--bg-2); border:1px solid var(--bd);
+}
+.map-topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid var(--bd);
+}
+.map-title { font-size:0.82rem; font-weight:700; color:var(--t1); display:flex; align-items:center; gap:8px; }
+.live-badge { display:flex; align-items:center; gap:5px; font-size:0.65rem; color:var(--mint); background:var(--mint-lo); border:1px solid var(--mint-bd); border-radius:99px; padding:3px 10px; }
+.live-dot { width:5px; height:5px; border-radius:50%; background:var(--mint); animation:livePulse 1.5s infinite; }
+.map-controls { display:flex; gap:6px; }
+.map-ctrl-btn {
+  width:28px; height:28px; border-radius:6px; border:1px solid var(--bd); background:var(--bg-input);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.75rem; color:var(--t3);
+  transition:var(--t-fast);
+  /* INTEGRAÇÃO FUTURA: zoom in/out do mapa Mapbox / Google Maps */
+}
+.map-ctrl-btn:hover { border-color:var(--bd-mid); color:var(--t1); }
+
+.map-viewport {
+  height:240px; position:relative; overflow:hidden;
+  /* INTEGRAÇÃO FUTURA: substituir por <div id="map"> para Google Maps JS API / Mapbox GL */
+  background:linear-gradient(145deg, #040C18, #081525);
+}
+.map-grid-lines {
+  position:absolute; inset:0;
+  background-image:linear-gradient(rgba(24,232,168,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(24,232,168,0.035) 1px, transparent 1px);
+  background-size:28px 28px;
+}
+.map-radial { position:absolute; inset:0; background:radial-gradient(ellipse 70% 70% at 45% 45%, rgba(212,168,67,0.1) 0%, transparent 65%); }
+/* Simulated building footprints */
+.bld { position:absolute; border-radius:3px; }
+.bld-1 { width:100px; height:68px; top:28%; left:33%; background:rgba(12,28,48,0.9); border:1px solid rgba(237,242,255,0.08); }
+.bld-2 { width:55px; height:40px; top:58%; left:22%; background:rgba(12,28,48,0.7); border:1px solid rgba(237,242,255,0.05); }
+.bld-3 { width:70px; height:30px; top:20%; left:62%; background:rgba(12,28,48,0.8); border:1px solid rgba(237,242,255,0.06); }
+.bld-4 { width:40px; height:52px; top:55%; left:65%; background:rgba(12,28,48,0.6); border:1px solid rgba(237,242,255,0.05); }
+/* Active roof */
+.roof-zone {
+  position:absolute; top:27%; left:34%; width:98px; height:66px;
+  border-radius:4px; border:2px solid var(--gold);
+  background:rgba(212,168,67,0.1);
+  animation:roofBlink 2.2s ease-in-out infinite;
+}
+@keyframes roofBlink { 0%,100%{border-color:var(--gold);box-shadow:0 0 12px rgba(212,168,67,0.3)} 50%{border-color:var(--gold-hi);box-shadow:0 0 24px rgba(212,168,67,0.5)} }
+.roof-panels-grid {
+  position:absolute; inset:5px;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:2px;
+}
+.rp { border-radius:2px; background:rgba(24,232,168,0.35); border:1px solid rgba(24,232,168,0.5); transition:var(--t-fast); }
+.rp:hover { background:rgba(24,232,168,0.55); }
+/* Map pin */
+.mpin { position:absolute; top:18%; left:36%; display:flex; flex-direction:column; align-items:center; animation:pinBounce 2.5s ease-in-out infinite; z-index:10; }
+@keyframes pinBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.mpin-head { width:20px; height:20px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); background:linear-gradient(135deg,var(--gold-hi),var(--gold)); box-shadow:0 0 14px rgba(212,168,67,0.6); }
+.mpin-head::after { content:'☀'; transform:rotate(45deg); display:block; font-size:0.55rem; text-align:center; line-height:20px; }
+.mpin-tail { width:2px; height:10px; background:rgba(212,168,67,0.4); }
+.mpin-pulse { position:absolute; top:6px; width:20px; height:20px; border-radius:50%; border:1.5px solid rgba(212,168,67,0.35); animation:mPulse 2s ease-out infinite; }
+@keyframes mPulse { 0%{transform:scale(1);opacity:1} 100%{transform:scale(3);opacity:0} }
+/* Map overlays */
+.map-solar-badge {
+  position:absolute; top:12px; right:12px;
+  background:rgba(3,8,16,0.85); backdrop-filter:blur(8px);
+  border:1px solid var(--gold-bd); border-radius:var(--r1); padding:8px 12px;
+}
+.msb-val { font-family:'JetBrains Mono',monospace; font-size:1rem; font-weight:500; color:var(--gold-hi); }
+.msb-label { font-size:0.6rem; color:var(--t3); margin-top:2px; }
+.map-coords { position:absolute; bottom:10px; left:10px; font-family:'JetBrains Mono',monospace; font-size:0.6rem; color:rgba(24,232,168,0.5); background:rgba(3,8,16,0.7); padding:4px 8px; border-radius:5px; border:1px solid var(--bd); }
+
+/* Area measurement overlay */
+.map-measure {
+  position:absolute; bottom:10px; right:10px;
+  background:rgba(3,8,16,0.85); backdrop-filter:blur(6px);
+  border:1px solid var(--mint-bd); border-radius:var(--r1); padding:7px 12px;
+  display:flex; align-items:center; gap:6px;
+}
+.mm-val { font-family:'JetBrains Mono',monospace; font-size:0.8rem; font-weight:600; color:var(--mint-hi); }
+.mm-label { font-size:0.6rem; color:var(--t3); }
+
+/* ── RESULTS GRID ── */
+.results-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.results-grid.full-width { grid-template-columns:1fr; }
+
+.res-card {
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2); overflow:hidden;
+  transition:var(--t-fast); position:relative;
+}
+.res-card:hover { border-color:var(--bd-mid); }
+.res-card-inner { padding:18px 18px; }
+.res-card-label { font-size:0.65rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--t3); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.res-card-icon { font-size:0.9rem; }
+.res-card-val { font-family:'JetBrains Mono',monospace; font-size:1.6rem; font-weight:600; line-height:1; margin-bottom:4px; }
+.res-card-unit { font-size:0.75rem; color:var(--t3); margin-bottom:10px; }
+.res-card-bar { height:4px; background:var(--t5); border-radius:99px; overflow:hidden; }
+.res-card-fill { height:100%; border-radius:99px; animation:barFill 1s var(--ease) forwards; }
+@keyframes barFill { from{width:0} }
+.res-card-accent {
+  position:absolute; top:0; left:0; right:0; height:2px;
+}
+.res-card-accent.gold { background:linear-gradient(90deg, var(--gold), var(--gold-hi)); }
+.res-card-accent.mint { background:linear-gradient(90deg, var(--mint), var(--mint-hi)); }
+.res-card-accent.sky  { background:linear-gradient(90deg, var(--sky), #82BFFF); }
+
+/* ── GENERATION CHART ── */
+.gen-chart-card {
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2); overflow:hidden;
+}
+.gc-header { padding:16px 18px 0; display:flex; justify-content:space-between; align-items:center; }
+.gc-title { font-size:0.82rem; font-weight:700; color:var(--t1); }
+.gc-tabs { display:flex; gap:4px; }
+.gc-tab { font-size:0.68rem; font-weight:600; padding:4px 10px; border-radius:99px; cursor:pointer; border:none; background:none; color:var(--t3); font-family:'Cabinet Grotesk',sans-serif; transition:var(--t-fast); }
+.gc-tab.active { background:var(--mint-lo); color:var(--mint-hi); border:1px solid var(--mint-bd); }
+.gc-body { padding:14px 18px; }
+/* Bar chart */
+.bar-chart-wrap { display:flex; align-items:flex-end; gap:5px; height:100px; }
+.bc-col2 { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bc-bar2 {
+  width:100%; border-radius:3px 3px 0 0; min-height:4px;
+  background:linear-gradient(180deg, var(--mint-hi), rgba(24,232,168,0.35));
+  transition:var(--t-med); cursor:pointer; position:relative;
+}
+.bc-bar2:hover { filter:brightness(1.2); }
+.bc-bar2.hl { background:linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+.bc-lbl { font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--t4); }
+.gc-footer { display:flex; gap:10px; padding:12px 18px; border-top:1px solid var(--bd); }
+.gf-item { flex:1; text-align:center; }
+.gf-val { font-family:'JetBrains Mono',monospace; font-size:0.9rem; font-weight:600; color:var(--t1); }
+.gf-label { font-size:0.6rem; color:var(--t3); margin-top:2px; }
+
+/* ── ECONOMY TIMELINE ── */
+.economy-card {
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2);
+}
+.ec-header { padding:16px 18px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); }
+.ec-title { font-size:0.82rem; font-weight:700; }
+.ec-hero-val { font-family:'JetBrains Mono',monospace; font-size:0.9rem; font-weight:600; color:var(--mint-hi); }
+.ec-body { padding:14px 18px; display:flex; flex-direction:column; gap:10px; }
+.ec-row {
+  display:flex; align-items:center; gap:12px;
+}
+.ec-period { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--t3); width:34px; flex-shrink:0; }
+.ec-track { flex:1; height:7px; background:var(--t5); border-radius:99px; overflow:hidden; }
+.ec-fill { height:100%; border-radius:99px; background:linear-gradient(90deg, var(--mint), var(--gold)); animation:barFill 1.2s var(--ease) forwards; }
+.ec-val { font-family:'JetBrains Mono',monospace; font-size:0.72rem; font-weight:600; color:var(--mint-hi); width:52px; text-align:right; }
+
+/* ── ROI / PAYBACK ── */
+.roi-card {
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2);
+}
+.rc-inner { padding:18px; }
+.rc-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+.rc-title { font-size:0.82rem; font-weight:700; }
+.rc-payback-badge {
+  display:flex; flex-direction:column; align-items:flex-end;
+}
+.rc-pb-val { font-family:'JetBrains Mono',monospace; font-size:1.4rem; font-weight:600; color:var(--gold-hi); line-height:1; }
+.rc-pb-label { font-size:0.6rem; color:var(--t3); }
+
+/* Payback arc / donut */
+.payback-visual {
+  display:flex; align-items:center; gap:16px; margin-bottom:16px;
+}
+.donut-wrap { position:relative; flex-shrink:0; }
+.donut-wrap svg { transform:rotate(-90deg); }
+.donut-bg { fill:none; stroke:var(--t5); stroke-width:5; }
+.donut-fill { fill:none; stroke-width:5; stroke-linecap:round;
+  stroke:var(--mint); transition:stroke-dashoffset 1.5s var(--ease);
+}
+.donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.donut-pct { font-family:'JetBrains Mono',monospace; font-size:0.9rem; font-weight:600; color:var(--mint-hi); }
+.donut-sub { font-size:0.55rem; color:var(--t4); }
+.roi-details { flex:1; display:flex; flex-direction:column; gap:8px; }
+.roi-detail-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--bd); }
+.roi-detail-row:last-child { border:none; }
+.rdr-label { font-size:0.72rem; color:var(--t3); }
+.rdr-val { font-family:'JetBrains Mono',monospace; font-size:0.8rem; font-weight:600; }
+
+/* ── RECOMMENDATION ── */
+.recommend-card {
+  background:linear-gradient(135deg, rgba(9,21,38,0.9), rgba(12,28,48,0.9));
+  border:1px solid var(--mint-bd); border-radius:var(--r2);
+  padding:20px 20px; position:relative; overflow:hidden;
+}
+.recommend-card::after {
+  content:''; position:absolute; bottom:-40px; right:-40px; width:160px; height:160px;
+  border-radius:50%; background:radial-gradient(circle, rgba(24,232,168,0.1) 0%, transparent 70%);
+  pointer-events:none;
+}
+.rec-tag {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:0.62rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--mint); background:var(--mint-lo); border:1px solid var(--mint-bd);
+  border-radius:99px; padding:3px 10px; margin-bottom:12px;
+}
+.rec-icon { font-size:1.4rem; margin-bottom:10px; display:block; }
+.rec-title { font-family:'Clash Display',sans-serif; font-size:1rem; font-weight:600; margin-bottom:8px; }
+.rec-text { font-size:0.8rem; color:var(--t2); line-height:1.65; }
+.rec-actions { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.rec-btn-primary {
+  display:flex; align-items:center; gap:6px;
+  background:linear-gradient(135deg, var(--mint-hi), var(--mint));
+  color:var(--bg-0); font-family:'Cabinet Grotesk',sans-serif; font-size:0.75rem; font-weight:700;
+  border:none; border-radius:99px; padding:8px 18px; cursor:pointer; transition:var(--t-fast);
+}
+.rec-btn-primary:hover { box-shadow:0 4px 20px rgba(24,232,168,0.4); }
+.rec-btn-ghost {
+  display:flex; align-items:center; gap:6px;
+  background:var(--t5); border:1px solid var(--bd-mid);
+  color:var(--t1); font-family:'Cabinet Grotesk',sans-serif; font-size:0.75rem; font-weight:600;
+  border-radius:99px; padding:8px 16px; cursor:pointer; transition:var(--t-fast);
+}
+.rec-btn-ghost:hover { border-color:var(--bd-hi); background:rgba(237,242,255,0.08); }
+
+/* ── PANELS VISUAL ── */
+.panels-card {
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2); padding:18px;
+}
+.panels-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.panels-info { font-size:0.82rem; font-weight:700; }
+.panels-sub { font-size:0.7rem; color:var(--t3); margin-top:2px; }
+.panels-count { font-family:'JetBrains Mono',monospace; font-size:2rem; font-weight:600; color:var(--gold-hi); line-height:1; text-align:right; }
+.panels-count-label { font-size:0.65rem; color:var(--t3); text-align:right; }
+.panels-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; margin-bottom:12px; }
+.panel-cell {
+  aspect-ratio:1.5/1; border-radius:2px;
+  background:linear-gradient(145deg, #0a1e35, #071525);
+  border:1px solid rgba(237,242,255,0.07); transition:var(--t-fast); cursor:pointer;
+}
+.panel-cell:hover { border-color:rgba(24,232,168,0.3); }
+.panel-cell.on { background:linear-gradient(145deg, #0a2e1e, #071c14); border-color:rgba(24,232,168,0.3); }
+.panel-cell.on:hover { border-color:rgba(24,232,168,0.6); }
+.panels-legend { display:flex; gap:14px; font-size:0.65rem; color:var(--t3); }
+.legend-dot { width:8px; height:8px; border-radius:2px; border:1px solid; display:inline-block; margin-right:4px; vertical-align:middle; }
+.legend-dot.on { background:rgba(24,232,168,0.3); border-color:rgba(24,232,168,0.4); }
+.legend-dot.off { background:rgba(10,30,53,0.9); border-color:rgba(237,242,255,0.1); }
+
+/* ── SOLAR ANGLE ── */
+.angle-card {
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2); padding:18px;
+}
+.angle-svg-wrap { text-align:center; }
+
+/* ── RESPONSIVE ── */
+@media (max-width:1200px) {
+  .sim-layout { grid-template-columns:380px 1fr; }
+  .rb-kpis { grid-template-columns:1fr 1fr 1fr; }
+}
+@media (max-width:960px) {
+  .sim-layout { grid-template-columns:1fr; grid-template-rows:auto auto; }
+  .sim-form-panel { max-height:none; position:static; border-right:none; border-bottom:1px solid var(--bd); }
+  .sim-results-panel { max-height:none; }
+}
+@media (max-width:600px) {
+  .topbar { padding:0 14px; gap:8px; }
+  .topbar-breadcrumb { display:none; }
+  .topbar-step-indicator { display:none; }
+  .topbar-sim-id { display:none; }
+  .content { padding:16px; }
+  .sim-form-panel, .sim-results-panel { padding:16px 16px 60px; }
+  .results-grid { grid-template-columns:1fr; }
+  .rb-kpis { grid-template-columns:1fr; }
+  .field-row { grid-template-columns:1fr; }
+}
+
+/* Fade in animation for results */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.anim-fade { animation:fadeUp 0.5s var(--ease) both; }
+.anim-delay-1 { animation-delay:0.05s; }
+.anim-delay-2 { animation-delay:0.1s; }
+.anim-delay-3 { animation-delay:0.15s; }
+.anim-delay-4 { animation-delay:0.2s; }
+.anim-delay-5 { animation-delay:0.25s; }
+.anim-delay-6 { animation-delay:0.3s; }
+.anim-delay-7 { animation-delay:0.35s; }
+.anim-delay-8 { animation-delay:0.4s; }
+
+/* Progress bar in button */
+.progress-track { width:100%; height:3px; background:rgba(3,8,16,0.4); border-radius:99px; overflow:hidden; margin-top:10px; display:none; }
+.progress-fill { height:100%; background:rgba(3,8,16,0.6); border-radius:99px; animation:progressAnim 1.8s ease-out forwards; }
+@keyframes progressAnim { from{width:0} to{width:100%} }
+.btn-simulate.loading .progress-track { display:block; }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-logo">Solar<em>Map</em> AI</div>
+  <div class="ld-track"><div class="ld-fill"></div></div>
+  <div class="ld-msg">Inicializando motor de simulação solar...</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TOPBAR
+════════════════════════════════════════════ -->
+<header class="topbar">
+  <!-- INTEGRAÇÃO FUTURA: link voltará para o dashboard via router SPA -->
+  <a href="dashboard.html" class="topbar-back">← Voltar</a>
+
+  <div class="topbar-breadcrumb">
+    <span>Dashboard</span>
+    <span class="sep">/</span>
+    <span>Simulações</span>
+    <span class="sep">/</span>
+    <span class="cur">Nova Simulação</span>
+  </div>
+
+  <div class="topbar-spacer"></div>
+
+  <!-- Etapas da simulação -->
+  <div class="topbar-step-indicator" title="Etapa do preenchimento">
+    <div class="step-dot done" id="sd1"></div>
+    <div class="step-dot active" id="sd2"></div>
+    <div class="step-dot" id="sd3"></div>
+    <div class="step-dot" id="sd4"></div>
+  </div>
+
+  <!-- ID da simulação -->
+  <div class="topbar-sim-id mono">SIM-2027-0482</div>
+
+  <!-- Botão principal -->
+  <button class="btn-run" onclick="runSimulation()">
+    <span class="run-icon">⚡</span> Calcular Simulação
+  </button>
+</header>
+
+<!-- ════════════════════════════════════════════
+     MAIN LAYOUT
+════════════════════════════════════════════ -->
+<div class="sim-layout">
+
+  <!-- ══════════════════════════════════════
+       COLUNA ESQUERDA — FORMULÁRIO
+  ══════════════════════════════════════ -->
+  <div class="sim-form-panel">
+
+    <!-- ── SEÇÃO 1: LOCALIZAÇÃO ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">01</div>
+        <div class="form-section-title">Localização do Imóvel</div>
+        <div class="form-section-sub">Obrigatório</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          Endereço completo
+          <span class="tip" title="Digite o endereço ou clique em buscar para usar o mapa">?</span>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: campo conectará ao Google Maps Geocoding API / Mapbox Geocoder -->
+        <div class="location-input-wrap">
+          <span class="loc-icon">📍</span>
+          <input class="field-input" id="fLocalizacao" type="text"
+            placeholder="Ex: Av. Paulista, 1000 — São Paulo, SP">
+          <button class="loc-search-btn" onclick="mockGeocode()">🔍 Localizar</button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">País</div>
+          <!-- INTEGRAÇÃO FUTURA: seletor acionará módulo de internacionalização (i18n) e tarifas regionais -->
+          <select class="field-select" id="fPais">
+            <option value="BR">🇧🇷 Brasil</option>
+            <option value="PT">🇵🇹 Portugal</option>
+            <option value="US">🇺🇸 EUA</option>
+            <option value="ES">🇪🇸 Espanha</option>
+            <option value="MX">🇲🇽 México</option>
+            <option value="AR">🇦🇷 Argentina</option>
+            <option value="CO">🇨🇴 Colômbia</option>
+            <option value="OTHER">🌍 Outro</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Estado / Região</div>
+          <input class="field-input" id="fEstado" type="text" placeholder="Ex: SP">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 2: PERFIL DO IMÓVEL ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">02</div>
+        <div class="form-section-title">Perfil do Imóvel</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Tipo de imóvel</div>
+        <div class="pill-selector" id="tipoImovel">
+          <button class="pill active gold" onclick="selectPill(this,'tipoImovel')">🏠 Residencial</button>
+          <button class="pill" onclick="selectPill(this,'tipoImovel')">🏢 Comercial</button>
+          <button class="pill" onclick="selectPill(this,'tipoImovel')">🏭 Industrial</button>
+          <button class="pill" onclick="selectPill(this,'tipoImovel')">🌾 Rural / Fazenda</button>
+          <button class="pill" onclick="selectPill(this,'tipoImovel')">⬜ Terreno</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Finalidade do projeto</div>
+        <div class="pill-selector" id="finalidade">
+          <button class="pill active mint" onclick="selectPill(this,'finalidade')">⬇ Reduzir conta</button>
+          <button class="pill" onclick="selectPill(this,'finalidade')">💡 Autoconsumo</button>
+          <button class="pill" onclick="selectPill(this,'finalidade')">💰 Investimento</button>
+          <button class="pill" onclick="selectPill(this,'finalidade')">🔌 Geração distribuída</button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Área total disponível
+            <span class="tip" title="Área total do telhado ou terreno">?</span>
+          </div>
+          <!-- INTEGRAÇÃO FUTURA: campo preenchido automaticamente pela análise de satélite / Google Solar API -->
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fAreaTotal" type="number" placeholder="0" value="80">
+            <span class="input-suffix">m²</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Área útil estimada
+            <span class="tip" title="Área efetivamente utilizável após descontar obstáculos">?</span>
+          </div>
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fAreaUtil" type="number" placeholder="0" value="64">
+            <span class="input-suffix">m²</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 3: CONSUMO E ENERGIA ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">03</div>
+        <div class="form-section-title">Consumo e Energia</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Consumo mensal de energia
+          <span class="tip" title="Veja na sua conta de luz — kWh/mês">?</span>
+        </div>
+        <div class="range-wrap">
+          <span class="range-val" id="consumoVal">550 kWh</span>
+          <input class="field-range" id="fConsumo" type="range" min="50" max="5000" value="550" step="10"
+            oninput="updateRange(this,'consumoVal',v=>v+' kWh','--pct',50,5000)">
+          <div class="range-labels"><span>50 kWh</span><span>5.000 kWh</span></div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Tarifa de energia
+            <span class="tip" title="Valor em R$/kWh cobrado pela distribuidora">?</span>
+          </div>
+          <!-- INTEGRAÇÃO FUTURA: tarifa preenchida automaticamente pela distribuidora da região (API ANEEL) -->
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fTarifa" type="number" placeholder="0.00" value="0.85" step="0.01">
+            <span class="input-suffix">R$/kWh</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Distribuidora</div>
+          <select class="field-select" id="fDistribuidora">
+            <option>CPFL Paulista</option>
+            <option>Enel SP</option>
+            <option>Cemig</option>
+            <option>Coelba</option>
+            <option>Copel</option>
+            <option>Celpe</option>
+            <option>Outra</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Radiação solar local
+            <span class="tip" title="kWh/m²/dia — média anual da região (fonte: NASA POWER)">?</span>
+          </div>
+          <!-- INTEGRAÇÃO FUTURA: preenchido automaticamente via NASA POWER API com base em lat/lon -->
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fRadiacao" type="number" value="5.4" step="0.1" placeholder="5.4">
+            <span class="input-suffix">kWh/m²</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Horas de sol pico
+            <span class="tip" title="Horas de sol pleno por dia na região">?</span>
+          </div>
+          <!-- INTEGRAÇÃO FUTURA: preenchido via SunCalc API com base em lat/lon e época do ano -->
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fHorasSol" type="number" value="5.5" step="0.1" placeholder="5.5">
+            <span class="input-suffix">h/dia</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 4: CONFIGURAÇÃO DO SISTEMA ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">04</div>
+        <div class="form-section-title">Configuração do Sistema</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Tipo de instalação</div>
+        <div class="segment-control" id="tipoInstalacao">
+          <button class="seg-btn active" onclick="setSegment(this,'tipoInstalacao')">Telhado</button>
+          <button class="seg-btn" onclick="setSegment(this,'tipoInstalacao')">Solo / Terreno</button>
+          <button class="seg-btn" onclick="setSegment(this,'tipoInstalacao')">Estrutura Elevada</button>
+          <button class="seg-btn" onclick="setSegment(this,'tipoInstalacao')">Flutuante</button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Tipo de telhado</div>
+          <select class="field-select" id="fTipoTelhado">
+            <option>Cerâmico</option>
+            <option>Metálico</option>
+            <option>Fibrocimento</option>
+            <option>Laje (flat)</option>
+            <option>Policarbonato</option>
+            <option>Colonial</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Inclinação do telhado
+            <span class="tip" title="Ângulo em graus — 0° = plano, 30-35° = ideal no Brasil">?</span>
+          </div>
+          <div class="range-wrap">
+            <span class="range-val" id="inclinacaoVal">22°</span>
+            <input class="field-range" id="fInclinacao" type="range" min="0" max="60" value="22" step="1"
+              oninput="updateRange(this,'inclinacaoVal',v=>v+'°','--pct',0,60)">
+            <div class="range-labels"><span>0°</span><span>60°</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Orientação solar principal
+          <span class="tip" title="Norte = máxima geração no Brasil">?</span>
+        </div>
+        <div class="segment-control" id="orientacao">
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">N</button>
+          <button class="seg-btn active" onclick="setSegment(this,'orientacao')">NE</button>
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">E</button>
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">SE</button>
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">S</button>
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">SO</button>
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">O</button>
+          <button class="seg-btn" onclick="setSegment(this,'orientacao')">NO</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Nível de sombreamento</div>
+        <div class="shade-selector">
+          <div class="shade-opt active" onclick="selectShade(this)">
+            <span class="shade-icon">☀️</span>
+            <div class="shade-label">Nenhum</div>
+          </div>
+          <div class="shade-opt" onclick="selectShade(this)">
+            <span class="shade-icon">⛅</span>
+            <div class="shade-label">Parcial</div>
+          </div>
+          <div class="shade-opt" onclick="selectShade(this)">
+            <span class="shade-icon">🌥</span>
+            <div class="shade-label">Moderado</div>
+          </div>
+          <div class="shade-opt" onclick="selectShade(this)">
+            <span class="shade-icon">☁️</span>
+            <div class="shade-label">Alto</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 5: EQUIPAMENTOS E CUSTOS ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">05</div>
+        <div class="form-section-title">Equipamentos e Custos</div>
+        <div class="form-section-sub">Editável</div>
+      </div>
+
+      <!-- INTEGRAÇÃO FUTURA: custos preenchidos automaticamente via marketplace de equipamentos por região -->
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Custo por placa solar
+            <span class="tip" title="Preço médio por módulo fotovoltaico (instalado)">?</span>
+          </div>
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fCustoPlaca" type="number" value="1200" step="50">
+            <span class="input-suffix">R$</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Custo de instalação</div>
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fCustoInstalacao" type="number" value="6000" step="100">
+            <span class="input-suffix">R$</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Potência por placa</div>
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fWattsPlaca" type="number" value="550" step="25">
+            <span class="input-suffix">Wp</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Eficiência do inversor</div>
+          <div class="input-suffix-wrap">
+            <input class="field-input" id="fEficiencia" type="number" value="98" step="0.5" min="85" max="100">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Orçamento disponível
+          <span class="tip" title="Deixe em 0 para cálculo sem restrição de orçamento">?</span>
+        </div>
+        <div class="range-wrap">
+          <span class="range-val" id="orcamentoVal">R$ 50.000</span>
+          <input class="field-range" id="fOrcamento" type="range" min="5000" max="500000" value="50000" step="1000"
+            oninput="updateRange(this,'orcamentoVal',v=>'R$ '+Number(v).toLocaleString('pt-BR'),'--pct',5000,500000)">
+          <div class="range-labels"><span>R$ 5k</span><span>R$ 500k</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 6: FINANCIAMENTO ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">06</div>
+        <div class="form-section-title">Financiamento</div>
+        <div class="form-section-sub">Opcional</div>
+      </div>
+
+      <!-- INTEGRAÇÃO FUTURA: opções de financiamento virão de APIs de bancos parceiros -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Simular com financiamento</div>
+          <div class="toggle-sub">Inclui parcelas e taxa de juros no cálculo de ROI</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togFinanciamento" onchange="toggleFinanciamento()">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div id="financiamentoFields" style="display:none; margin-top:12px;">
+        <div class="field-row">
+          <div class="field-group">
+            <div class="field-label">Entrada (%)</div>
+            <div class="input-suffix-wrap">
+              <input class="field-input" id="fEntrada" type="number" value="20" min="0" max="100">
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Taxa de juros</div>
+            <div class="input-suffix-wrap">
+              <input class="field-input" id="fJuros" type="number" value="0.79" step="0.01">
+              <span class="input-suffix">% a.m.</span>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Prazo de financiamento</div>
+          <div class="segment-control" id="prazoFinanciamento">
+            <button class="seg-btn" onclick="setSegment(this,'prazoFinanciamento')">12x</button>
+            <button class="seg-btn" onclick="setSegment(this,'prazoFinanciamento')">24x</button>
+            <button class="seg-btn active" onclick="setSegment(this,'prazoFinanciamento')">36x</button>
+            <button class="seg-btn" onclick="setSegment(this,'prazoFinanciamento')">48x</button>
+            <button class="seg-btn" onclick="setSegment(this,'prazoFinanciamento')">60x</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-row" style="margin-top:8px">
+        <div class="toggle-info">
+          <div class="toggle-label">Meta de prazo de retorno</div>
+          <div class="toggle-sub">Alerta se payback ultrapassar o prazo definido</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togPayback">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO 7: OPÇÕES AVANÇADAS ── -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="form-section-num">07</div>
+        <div class="form-section-title">Opções Avançadas</div>
+        <div class="form-section-sub">Opcional</div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Incluir bateria de armazenamento</div>
+          <div class="toggle-sub">Aumenta autonomia e reduz dependência da rede</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togBateria">
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Calcular geração de crédito de energia</div>
+          <div class="toggle-sub">Simula injeção de excedente na rede (ANEEL 482)</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togCredito" checked>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Projeção com reajuste tarifário</div>
+          <div class="toggle-sub">Considera aumento médio de 7,5% a.a. na tarifa</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togReajuste" checked>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="field-row" style="margin-top:12px">
+        <div class="field-group">
+          <div class="field-label">Moeda de exibição</div>
+          <!-- INTEGRAÇÃO FUTURA: seletor de moeda conectará ao módulo de internacionalização -->
+          <select class="field-select" id="fMoeda">
+            <option value="BRL">R$ — Real Brasileiro</option>
+            <option value="USD">$ — Dólar Americano</option>
+            <option value="EUR">€ — Euro</option>
+            <option value="GBP">£ — Libra Esterlina</option>
+            <option value="MXN">MX$ — Peso Mexicano</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Prazo de análise</div>
+          <select class="field-select" id="fPrazo">
+            <option value="10">10 anos</option>
+            <option value="20">20 anos</option>
+            <option value="25" selected>25 anos</option>
+            <option value="30">30 anos</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÃO SIMULAÇÃO -->
+    <div class="form-cta-bar">
+      <button class="btn-simulate" id="btnSimulate" onclick="runSimulation()">
+        <span id="btnText">⚡ Calcular Simulação Solar</span>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+      </button>
+    </div>
+
+  </div><!-- /form panel -->
+
+  <!-- ══════════════════════════════════════
+       COLUNA DIREITA — RESULTADOS
+  ══════════════════════════════════════ -->
+  <div class="sim-results-panel" id="resultsPanel">
+
+    <!-- ESTADO VAZIO -->
+    <div class="results-empty" id="emptyState">
+      <div class="empty-orb">
+        <div class="empty-ring"></div>
+      </div>
+      <div class="empty-title clash">Pronto para simular</div>
+      <div class="empty-sub">Preencha os dados do imóvel e clique em <strong>Calcular Simulação Solar</strong> para ver seu potencial energético completo.</div>
+      <div class="empty-hint">
+        💡 Estimativa gerada em segundos, sem cadastro
+      </div>
+    </div>
+
+    <!-- CONTEÚDO DOS RESULTADOS (oculto até calcular) -->
+    <div class="results-content" id="resultsContent">
+
+      <!-- ── BANNER RESUMO ── -->
+      <div class="result-banner anim-fade">
+        <div class="rb-top">
+          <div class="rb-tag">Simulação concluída</div>
+          <div class="rb-badge mono" id="simTimestamp">SIM-2027-0482 · 14:38:21</div>
+        </div>
+        <div class="rb-title">Residência — <span class="grad-gold" id="rbEndereco">São Paulo, SP</span></div>
+        <div class="rb-sub" id="rbSub">Sistema solar fotovoltaico residencial com 32 painéis de 550 Wp. Potência instalada: 17,6 kWp. Estimativa baseada em irradiância de 5,4 kWh/m²/dia.</div>
+        <div class="rb-kpis">
+          <div class="rb-kpi">
+            <div class="rb-kpi-val grad-gold mono" id="kpiPlacas">32</div>
+            <div class="rb-kpi-label">Painéis solares</div>
+          </div>
+          <div class="rb-kpi">
+            <div class="rb-kpi-val grad-mint mono" id="kpiPotencia">17,6 kWp</div>
+            <div class="rb-kpi-label">Potência instalada</div>
+          </div>
+          <div class="rb-kpi">
+            <div class="rb-kpi-val mono" style="color:var(--gold-hi)" id="kpiPayback">4,8 anos</div>
+            <div class="rb-kpi-label">Payback estimado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MAPA / TELHADO ── -->
+      <div class="map-card anim-fade anim-delay-1">
+        <div class="map-topbar">
+          <div class="map-title">
+            🛰 Visualização do Imóvel
+            <div class="live-badge"><div class="live-dot"></div> Análise ativa</div>
+          </div>
+          <div class="map-controls">
+            <!-- INTEGRAÇÃO FUTURA: botões controlarão zoom do mapa Mapbox / Google Maps -->
+            <div class="map-ctrl-btn" title="Aproximar">+</div>
+            <div class="map-ctrl-btn" title="Afastar">−</div>
+            <div class="map-ctrl-btn" title="Satélite / Mapa">⬡</div>
+            <div class="map-ctrl-btn" title="Abrir no Google Earth" onclick="alert('Google Earth em breve!')">🌍</div>
+          </div>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: substituir por <div id="mapbox-map"> + Mapbox GL JS -->
+        <!-- ou <div id="google-map"> + Google Maps JavaScript API com Satellite mode -->
+        <!-- Exemplo: map = new mapboxgl.Map({ container: 'mapbox-map', style: 'mapbox://styles/mapbox/satellite-v9', center: [lng, lat], zoom: 18 }); -->
+        <div class="map-viewport">
+          <div class="map-grid-lines"></div>
+          <div class="map-radial"></div>
+          <!-- Simulated buildings -->
+          <div class="bld bld-1"></div>
+          <div class="bld bld-2"></div>
+          <div class="bld bld-3"></div>
+          <div class="bld bld-4"></div>
+          <!-- Highlighted roof with panels -->
+          <div class="roof-zone">
+            <div class="roof-panels-grid" id="roofPanelsGrid"></div>
+          </div>
+          <!-- Location pin -->
+          <div class="mpin">
+            <div class="mpin-pulse"></div>
+            <div class="mpin-head"></div>
+            <div class="mpin-tail"></div>
+          </div>
+          <!-- Solar potential overlay -->
+          <div class="map-solar-badge">
+            <div class="msb-val mono" id="mapSolarPot">5,4 kWh/m²</div>
+            <div class="msb-label">Potencial solar</div>
+          </div>
+          <!-- Coordinates -->
+          <div class="map-coords mono" id="mapCoords">-23.5505°, -46.6333°</div>
+          <!-- Area measurement -->
+          <div class="map-measure">
+            <div class="mm-val mono" id="mapArea">64 m²</div>
+            <div class="mm-label">Área útil analisada</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAINÉIS SOLARES ── -->
+      <div class="panels-card anim-fade anim-delay-2">
+        <div class="panels-header">
+          <div>
+            <div class="panels-info">Configuração dos Painéis</div>
+            <div class="panels-sub">Distribuição na área útil disponível</div>
+          </div>
+          <div>
+            <div class="panels-count mono" id="panelCountBig">32</div>
+            <div class="panels-count-label">painéis · 550 Wp cada</div>
+          </div>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: layout real gerado por algoritmo de bin-packing baseado na geometria do telhado -->
+        <div class="panels-grid" id="panelGridBig"></div>
+        <div class="panels-legend">
+          <span><span class="legend-dot on"></span> Ativo (32)</span>
+          <span><span class="legend-dot off"></span> Sem instalação (8)</span>
+        </div>
+      </div>
+
+      <!-- ── KPI GRID ── -->
+      <div class="results-grid anim-fade anim-delay-3">
+        <!-- Geração diária -->
+        <div class="res-card">
+          <div class="res-card-accent gold"></div>
+          <div class="res-card-inner">
+            <div class="res-card-label"><span class="res-card-icon">☀</span> Geração diária</div>
+            <div class="res-card-val grad-gold mono" id="resGeracaoDia">96,8 kWh</div>
+            <div class="res-card-unit">energia produzida por dia</div>
+            <div class="res-card-bar"><div class="res-card-fill" style="width:78%;background:linear-gradient(90deg,var(--gold),var(--gold-hi))"></div></div>
+          </div>
+        </div>
+        <!-- Geração mensal -->
+        <div class="res-card">
+          <div class="res-card-accent mint"></div>
+          <div class="res-card-inner">
+            <div class="res-card-label"><span class="res-card-icon">📅</span> Geração mensal</div>
+            <div class="res-card-val grad-mint mono" id="resGeracaoMes">2.904 kWh</div>
+            <div class="res-card-unit">energia produzida por mês</div>
+            <div class="res-card-bar"><div class="res-card-fill" style="width:85%;background:linear-gradient(90deg,var(--mint),var(--mint-hi))"></div></div>
+          </div>
+        </div>
+        <!-- Geração anual -->
+        <div class="res-card">
+          <div class="res-card-accent sky"></div>
+          <div class="res-card-inner">
+            <div class="res-card-label"><span class="res-card-icon">📆</span> Geração anual</div>
+            <div class="res-card-val mono" style="color:var(--sky)" id="resGeracaoAno">34.848 kWh</div>
+            <div class="res-card-unit">energia produzida por ano</div>
+            <div class="res-card-bar"><div class="res-card-fill" style="width:92%;background:linear-gradient(90deg,var(--sky),#82BFFF)"></div></div>
+          </div>
+        </div>
+        <!-- Economia mensal -->
+        <div class="res-card">
+          <div class="res-card-accent gold"></div>
+          <div class="res-card-inner">
+            <div class="res-card-label"><span class="res-card-icon">💰</span> Economia mensal</div>
+            <div class="res-card-val grad-gold mono" id="resEconomiaMes">R$ 2.468</div>
+            <div class="res-card-unit">redução na conta de luz</div>
+            <div class="res-card-bar"><div class="res-card-fill" style="width:88%;background:linear-gradient(90deg,var(--gold),var(--gold-hi))"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GRÁFICO DE GERAÇÃO ── -->
+      <div class="gen-chart-card anim-fade anim-delay-4">
+        <div class="gc-header">
+          <div class="gc-title">Curva de Geração Estimada</div>
+          <div class="gc-tabs">
+            <button class="gc-tab active" onclick="setGcTab(this,'mensal')">Mensal</button>
+            <button class="gc-tab" onclick="setGcTab(this,'diario')">Diário</button>
+            <button class="gc-tab" onclick="setGcTab(this,'anual')">Anual</button>
+          </div>
+        </div>
+        <div class="gc-body">
+          <!-- INTEGRAÇÃO FUTURA: dados reais de geração via PVGIS API ou NASA POWER + modelo local -->
+          <div class="bar-chart-wrap" id="genChart"></div>
+        </div>
+        <div class="gc-footer">
+          <div class="gf-item">
+            <div class="gf-val mono grad-mint" id="gcTotalAnual">34.848 kWh</div>
+            <div class="gf-label">Total anual estimado</div>
+          </div>
+          <div class="gf-item">
+            <div class="gf-val mono" id="gcPico">Dez</div>
+            <div class="gf-label">Mês de pico</div>
+          </div>
+          <div class="gf-item">
+            <div class="gf-val mono" id="gcBaixo">Jun</div>
+            <div class="gf-label">Mês mais baixo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ECONOMIA E RETORNO ── -->
+      <div class="economy-card anim-fade anim-delay-5">
+        <div class="ec-header">
+          <div class="ec-title">Economia e Retorno Acumulado</div>
+          <div class="ec-hero-val mono" id="ecTotal">R$ 729.720</div>
+        </div>
+        <div class="ec-body" id="ecBody">
+          <!-- Gerado via JS -->
+        </div>
+      </div>
+
+      <!-- ── ROI / PAYBACK ── -->
+      <div class="roi-card anim-fade anim-delay-6">
+        <div class="rc-inner">
+          <div class="rc-header">
+            <div class="rc-title">ROI e Payback</div>
+            <div class="rc-payback-badge">
+              <div class="rc-pb-val mono" id="rcPayback">4,8a</div>
+              <div class="rc-pb-label">Payback estimado</div>
+            </div>
+          </div>
+          <div class="payback-visual">
+            <!-- Donut chart -->
+            <div class="donut-wrap">
+              <svg width="90" height="90" viewBox="0 0 90 90">
+                <circle class="donut-bg" cx="45" cy="45" r="36"/>
+                <circle class="donut-fill" id="donutFill" cx="45" cy="45" r="36"
+                  stroke-dasharray="226.2" stroke-dashoffset="170"/>
+              </svg>
+              <div class="donut-center">
+                <div class="donut-pct mono" id="donutPct">75%</div>
+                <div class="donut-sub">ROI 10a</div>
+              </div>
+            </div>
+            <!-- Detail rows -->
+            <div class="roi-details">
+              <div class="roi-detail-row">
+                <div class="rdr-label">Investimento total</div>
+                <div class="rdr-val mono" id="rdrInvest">R$ 44.400</div>
+              </div>
+              <div class="roi-detail-row">
+                <div class="rdr-label">Economia anual</div>
+                <div class="rdr-val mono grad-mint" id="rdrEcoAno">R$ 29.621</div>
+              </div>
+              <div class="roi-detail-row">
+                <div class="rdr-label">ROI em 10 anos</div>
+                <div class="rdr-val mono" style="color:var(--gold-hi)" id="rdrRoi10">+567%</div>
+              </div>
+              <div class="roi-detail-row">
+                <div class="rdr-label">VPL (25 anos, TMA 8%)</div>
+                <div class="rdr-val mono grad-mint" id="rdrVpl">R$ 385.200</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Economy bar rows -->
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <div class="roi-detail-row">
+              <div class="rdr-label">CO₂ evitado / ano</div>
+              <div class="rdr-val mono" style="color:var(--mint-hi)" id="rdrCo2">17,4 ton</div>
+            </div>
+            <div class="roi-detail-row">
+              <div class="rdr-label">Equivalente a</div>
+              <div class="rdr-val mono" style="color:var(--mint)" id="rdrArvores">870 árvores</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ÂNGULO SOLAR ── -->
+      <div class="angle-card anim-fade anim-delay-7">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:0.82rem;font-weight:700">Trajetória Solar · São Paulo</div>
+          <div style="font-size:0.65rem;color:var(--t3);font-family:'JetBrains Mono',monospace">Zenith: 68° · Azimuth: 0°</div>
+        </div>
+        <!-- INTEGRAÇÃO FUTURA: dados de azimute e altitude via SunCalc.js com lat/lon do imóvel -->
+        <div class="angle-svg-wrap">
+          <svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px">
+            <defs>
+              <linearGradient id="arcG" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="rgba(212,168,67,0.05)"/>
+                <stop offset="50%" stop-color="rgba(212,168,67,0.4)"/>
+                <stop offset="100%" stop-color="rgba(212,168,67,0.05)"/>
+              </linearGradient>
+              <filter id="glow2"><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="30" y1="120" x2="370" y2="120" stroke="rgba(237,242,255,0.06)" stroke-width="1"/>
+            <line x1="200" y1="10" x2="200" y2="120" stroke="rgba(237,242,255,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+            <!-- Degree markers -->
+            <text x="32" y="128" fill="rgba(237,242,255,0.2)" font-size="8" font-family="JetBrains Mono">Leste</text>
+            <text x="172" y="128" fill="rgba(237,242,255,0.2)" font-size="8" font-family="JetBrains Mono">Zênite</text>
+            <text x="340" y="128" fill="rgba(237,242,255,0.2)" font-size="8" font-family="JetBrains Mono">Oeste</text>
+            <!-- Arc -->
+            <path d="M 40 120 Q 200 -15 360 120" stroke="url(#arcG)" stroke-width="1.5" fill="none" stroke-dasharray="5 3"/>
+            <!-- Time marks on arc -->
+            <circle cx="95" cy="75" r="2" fill="rgba(212,168,67,0.3)"/>
+            <text x="98" y="70" fill="rgba(237,242,255,0.25)" font-size="7" font-family="JetBrains Mono">9h</text>
+            <circle cx="200" cy="28" r="2" fill="rgba(212,168,67,0.4)"/>
+            <text x="203" y="24" fill="rgba(237,242,255,0.25)" font-size="7" font-family="JetBrains Mono">12h</text>
+            <circle cx="305" cy="75" r="2" fill="rgba(212,168,67,0.3)"/>
+            <text x="308" y="70" fill="rgba(237,242,255,0.25)" font-size="7" font-family="JetBrains Mono">15h</text>
+            <!-- Sun position (13h) -->
+            <g filter="url(#glow2)" style="animation:sunAnim 4s ease-in-out infinite">
+              <circle cx="232" cy="40" r="12" fill="rgba(240,201,107,0.15)"/>
+              <circle cx="232" cy="40" r="8" fill="url(#arcG)"/>
+              <circle cx="232" cy="40" r="7" fill="#F2C860" opacity="0.9"/>
+              <text x="229" y="54" fill="var(--gold)" font-size="7" font-family="JetBrains Mono">13h</text>
+            </g>
+            <!-- Roof silhouette -->
+            <rect x="160" y="104" width="80" height="16" fill="var(--bg-2)" stroke="rgba(237,242,255,0.07)" stroke-width="1"/>
+            <polygon points="160,104 200,82 240,104" fill="var(--bg-1)" stroke="rgba(237,242,255,0.07)" stroke-width="1"/>
+            <!-- Panel indicators on roof -->
+            <rect x="168" y="95" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <rect x="178" y="91" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <rect x="188" y="88" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <rect x="198" y="87" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <rect x="208" y="88" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <rect x="218" y="91" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <rect x="228" y="95" width="8" height="6" fill="rgba(24,232,168,0.4)" rx="1"/>
+            <!-- Projection line from sun -->
+            <line x1="232" y1="48" x2="210" y2="104" stroke="rgba(212,168,67,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
+          </svg>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">
+          <div style="text-align:center;padding:10px;background:var(--bg-2);border:1px solid var(--bd);border-radius:var(--r1)">
+            <div class="mono" style="font-size:0.9rem;font-weight:600;color:var(--gold-hi)">5h48</div>
+            <div style="font-size:0.6rem;color:var(--t3);margin-top:2px">Nascer do sol</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:var(--bg-2);border:1px solid var(--bd);border-radius:var(--r1)">
+            <div class="mono" style="font-size:0.9rem;font-weight:600;color:var(--gold)">12h41</div>
+            <div style="font-size:0.6rem;color:var(--t3);margin-top:2px">Zênite solar</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:var(--bg-2);border:1px solid var(--bd);border-radius:var(--r1)">
+            <div class="mono" style="font-size:0.9rem;font-weight:600;color:var(--gold-hi)">18h02</div>
+            <div style="font-size:0.6rem;color:var(--t3);margin-top:2px">Pôr do sol</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:var(--bg-2);border:1px solid var(--bd);border-radius:var(--r1)">
+            <div class="mono" style="font-size:0.9rem;font-weight:600;color:var(--mint-hi)">12,3h</div>
+            <div style="font-size:0.6rem;color:var(--t3);margin-top:2px">Horas úteis</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RECOMENDAÇÃO INTELIGENTE ── -->
+      <div class="recommend-card anim-fade anim-delay-8">
+        <div class="rec-tag">✦ Recomendação IA</div>
+        <span class="rec-icon">🤖</span>
+        <div class="rec-title clash" id="recTitle">Sistema de 17,6 kWp é ideal para seu perfil de consumo</div>
+        <div class="rec-text" id="recText">
+          Com base na área disponível de 64 m², consumo de 550 kWh/mês e irradiância local de 5,4 kWh/m²/dia,
+          o sistema de 32 painéis de 550 Wp cobrirá <strong style="color:var(--mint-hi)">~528%</strong> do seu consumo atual.
+          O excedente pode ser injetado na rede gerando créditos de energia (Lei 14.300/2022).
+          O payback estimado de <strong style="color:var(--gold-hi)">4,8 anos</strong> é 18% abaixo da média nacional.
+          Recomendamos considerar bateria de 10 kWh para maximizar autonomia noturna.
+        </div>
+        <div class="rec-actions">
+          <!-- INTEGRAÇÃO FUTURA: botões conectarão ao marketplace de instaladores e sistema de orçamentos -->
+          <button class="rec-btn-primary">📋 Solicitar orçamento real</button>
+          <button class="rec-btn-ghost">💾 Salvar simulação</button>
+          <button class="rec-btn-ghost">📤 Exportar PDF</button>
+        </div>
+      </div>
+
+    </div><!-- /results-content -->
+  </div><!-- /results panel -->
+</div><!-- /layout -->
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+/* ──────────────────────────────────────────
+   LOADER
+────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('loader').classList.add('out'), 1100);
+});
+
+/* ──────────────────────────────────────────
+   RANGE SLIDERS
+────────────────────────────────────────── */
+function updateRange(el, labelId, formatter, cssVar, min, max) {
+  const val = Number(el.value);
+  document.getElementById(labelId).textContent = formatter(val);
+  const pct = ((val - min) / (max - min) * 100).toFixed(1);
+  el.style.setProperty('--pct', pct + '%');
+}
+// Initialize all ranges on load
+document.querySelectorAll('.field-range').forEach(r => {
+  const min = Number(r.min), max = Number(r.max), val = Number(r.value);
+  const pct = ((val - min) / (max - min) * 100).toFixed(1);
+  r.style.setProperty('--pct', pct + '%');
+});
+
+/* ──────────────────────────────────────────
+   SEGMENT CONTROLS
+────────────────────────────────────────── */
+function setSegment(btn, groupId) {
+  document.querySelectorAll(`#${groupId} .seg-btn`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ──────────────────────────────────────────
+   PILL SELECTORS
+────────────────────────────────────────── */
+function selectPill(btn, groupId) {
+  const group = document.getElementById(groupId);
+  group.querySelectorAll('.pill').forEach(p => p.classList.remove('active','gold','mint'));
+  btn.classList.add('active');
+  // Alternate colors
+  const allGroups = ['tipoImovel','finalidade'];
+  const colors    = ['gold','mint'];
+  const idx = allGroups.indexOf(groupId);
+  btn.classList.add(colors[idx % 2] || 'gold');
+}
+
+/* ──────────────────────────────────────────
+   SHADE SELECTOR
+────────────────────────────────────────── */
+function selectShade(el) {
+  document.querySelectorAll('.shade-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ──────────────────────────────────────────
+   TOGGLE FINANCIAMENTO
+────────────────────────────────────────── */
+function toggleFinanciamento() {
+  const checked = document.getElementById('togFinanciamento').checked;
+  document.getElementById('financiamentoFields').style.display = checked ? 'block' : 'none';
+}
+
+/* ──────────────────────────────────────────
+   MOCK GEOCODE
+   INTEGRAÇÃO FUTURA: substituir por chamada real ao Google Maps Geocoding API
+   Exemplo: fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${addr}&key=API_KEY`)
+────────────────────────────────────────── */
+function mockGeocode() {
+  const input = document.getElementById('fLocalizacao');
+  const addr = input.value.trim() || 'São Paulo, SP';
+  input.value = addr.includes(',') ? addr : addr + ' — São Paulo, SP';
+  input.style.borderColor = 'var(--mint-bd)';
+  setTimeout(() => input.style.borderColor = '', 2000);
+}
+
+/* ──────────────────────────────────────────
+   RENDER PANEL GRID (roof visualization)
+────────────────────────────────────────── */
+function renderRoofPanels(count) {
+  const grid = document.getElementById('roofPanelsGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const div = document.createElement('div');
+    div.className = 'rp';
+    if (i >= count) div.style.opacity = '0.15';
+    grid.appendChild(div);
+  }
+}
+
+function renderPanelGridBig(active, total) {
+  const grid = document.getElementById('panelGridBig');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const div = document.createElement('div');
+    div.className = 'panel-cell' + (i < active ? ' on' : '');
+    grid.appendChild(div);
+  }
+}
+
+/* ──────────────────────────────────────────
+   GENERATION CHART
+   INTEGRAÇÃO FUTURA: dados reais via NASA POWER API ou PVGIS
+   Endpoint exemplo: https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SFC_SW_DWN&community=re&longitude=-46.63&latitude=-23.55&format=json
+────────────────────────────────────────── */
+const chartDataSets = {
+  mensal: {
+    labels: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+    values: [105,100,92,80,68,60,65,75,88,96,102,108],
+    highlight: 11
+  },
+  diario: {
+    labels: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
+    values: [88,95,72,100,85,98,92],
+    highlight: 3
+  },
+  anual: {
+    labels: ['2024','2025','2026','2027','2028','2029'],
+    values: [80,86,90,100,104,108],
+    highlight: 3
+  }
+};
+
+function renderGenChart(type = 'mensal') {
+  const data = chartDataSets[type];
+  const chart = document.getElementById('genChart');
+  if (!chart) return;
+  const maxVal = Math.max(...data.values);
+  chart.innerHTML = data.labels.map((lbl, i) => {
+    const h = (data.values[i] / maxVal * 100).toFixed(0);
+    const isHl = i === data.highlight;
+    return `<div class="bc-col2">
+      <div class="bc-bar2 ${isHl ? 'hl' : ''}" style="height:${h}%" title="${data.values[i]} kWh"></div>
+      <div class="bc-lbl">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+function setGcTab(btn, type) {
+  document.querySelectorAll('.gc-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderGenChart(type);
+}
+
+/* ──────────────────────────────────────────
+   ECONOMY ROWS
+────────────────────────────────────────── */
+function renderEconomyRows(econAno) {
+  const body = document.getElementById('ecBody');
+  if (!body) return;
+  const periods = [
+    { label: '1 ano',   pct: 4,   mult: 1 },
+    { label: '5 anos',  pct: 20,  mult: 5 },
+    { label: '10 anos', pct: 42,  mult: 10 },
+    { label: '15 anos', pct: 60,  mult: 15 },
+    { label: '20 anos', pct: 80,  mult: 20 },
+    { label: '25 anos', pct: 100, mult: 25 },
+  ];
+  body.innerHTML = periods.map(p => {
+    const val = (econAno * p.mult).toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+    return `<div class="ec-row">
+      <div class="ec-period mono">${p.label}</div>
+      <div class="ec-track"><div class="ec-fill" style="width:${p.pct}%"></div></div>
+      <div class="ec-val mono">${val}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ──────────────────────────────────────────
+   CORE SIMULATION ENGINE
+   INTEGRAÇÃO FUTURA: substituir cálculos por chamadas à API backend:
+   POST /api/solar/simulate {lat, lon, area, consumo, tarifa, placas, ...}
+   
+   Motor atual: cálculo estático baseado em inputs do formulário
+   Motor futuro: integração com:
+   - Google Solar API para dados de telhado
+   - NASA POWER API para irradiância real
+   - ANEEL API para tarifas por distribuidora
+   - Motor financeiro com projeção de reajuste tarifário
+────────────────────────────────────────── */
+function calcularSimulacao() {
+  // Inputs
+  const areaUtil    = parseFloat(document.getElementById('fAreaUtil').value)  || 64;
+  const consumoMes  = parseFloat(document.getElementById('fConsumo').value)   || 550;
+  const tarifa      = parseFloat(document.getElementById('fTarifa').value)    || 0.85;
+  const radiacao    = parseFloat(document.getElementById('fRadiacao').value)  || 5.4;
+  const horasSol    = parseFloat(document.getElementById('fHorasSol').value)  || 5.5;
+  const custoPlaca  = parseFloat(document.getElementById('fCustoPlaca').value)  || 1200;
+  const custoInst   = parseFloat(document.getElementById('fCustoInstalacao').value) || 6000;
+  const wattsPlaca  = parseFloat(document.getElementById('fWattsPlaca').value) || 550;
+  const eficiencia  = parseFloat(document.getElementById('fEficiencia').value) / 100 || 0.98;
+  const prazo       = parseInt(document.getElementById('fPrazo').value) || 25;
+
+  // Área por placa (2 m² padrão para módulos 550Wp)
+  const areaPlaca = 2.0;
+  const placas    = Math.floor(areaUtil / areaPlaca);
+
+  // Potência total em kWp
+  const potenciaKwp = (placas * wattsPlaca) / 1000;
+
+  // Geração diária: potencia * HSP * eficiência
+  const geracaoDia = potenciaKwp * horasSol * eficiencia;
+  const geracaoMes = geracaoDia * 30.4;
+  const geracaoAno = geracaoDia * 365;
+
+  // Economia
+  const economiaMes = Math.min(geracaoMes, consumoMes) * tarifa;
+  const economiaAno = economiaMes * 12;
+
+  // Custo total
+  const custoTotal = (placas * custoPlaca) + custoInst;
+
+  // Payback (anos)
+  const payback = economiaAno > 0 ? custoTotal / economiaAno : 0;
+
+  // ROI em 10 anos
+  const roi10 = economiaAno > 0 ? ((economiaAno * 10 - custoTotal) / custoTotal * 100) : 0;
+
+  // VPL simplificado (25 anos, taxa 8% aa)
+  const tma = 0.08;
+  let vpl = -custoTotal;
+  for (let y = 1; y <= prazo; y++) {
+    vpl += economiaAno / Math.pow(1 + tma, y);
+  }
+
+  // CO2 evitado (0.5 kg CO2 por kWh no Brasil)
+  const co2Ano = (geracaoAno * 0.5) / 1000; // toneladas
+  const arvores = Math.round(co2Ano * 50); // ~50 árvores por tonelada
+
+  // Economia total no prazo
+  const economiaTotalPrazo = economiaAno * prazo;
+
+  return {
+    placas, potenciaKwp, geracaoDia, geracaoMes, geracaoAno,
+    economiaMes, economiaAno, custoTotal, payback, roi10,
+    vpl, co2Ano, arvores, economiaTotalPrazo
+  };
+}
+
+/* ──────────────────────────────────────────
+   MAIN RUN SIMULATION
+────────────────────────────────────────── */
+function runSimulation() {
+  const btn = document.getElementById('btnSimulate');
+  const btnText = document.getElementById('btnText');
+
+  // Loading state
+  btn.classList.add('loading');
+  btnText.textContent = '⏳ Calculando...';
+
+  // Simulate async (future: real API call)
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    btnText.textContent = '⚡ Recalcular';
+
+    const res = calcularSimulacao();
+    applyResults(res);
+
+    // Show results, hide empty state
+    document.getElementById('emptyState').classList.add('hidden');
+    document.getElementById('resultsContent').classList.add('visible');
+
+    // Scroll results into view on mobile
+    if (window.innerWidth < 960) {
+      document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 1800);
+}
+
+/* ──────────────────────────────────────────
+   APPLY RESULTS TO DOM
+────────────────────────────────────────── */
+function applyResults(r) {
+  const fmt = (n, decimals = 0) => n.toLocaleString('pt-BR', { maximumFractionDigits: decimals });
+  const fmtR = (n) => 'R$ ' + fmt(Math.round(n));
+
+  // Timestamp
+  const now = new Date();
+  document.getElementById('simTimestamp').textContent =
+    `SIM-2027-0482 · ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+
+  // Banner
+  const locField = document.getElementById('fLocalizacao').value;
+  document.getElementById('rbEndereco').textContent = locField || 'São Paulo, SP';
+  document.getElementById('rbSub').textContent =
+    `Sistema solar fotovoltaico com ${r.placas} painéis de ${document.getElementById('fWattsPlaca').value} Wp. Potência instalada: ${fmt(r.potenciaKwp,1)} kWp. Baseado em irradiância de ${document.getElementById('fRadiacao').value} kWh/m²/dia.`;
+
+  // KPIs banner
+  document.getElementById('kpiPlacas').textContent = r.placas;
+  document.getElementById('kpiPotencia').textContent = fmt(r.potenciaKwp, 1) + ' kWp';
+  document.getElementById('kpiPayback').textContent = fmt(r.payback, 1) + ' anos';
+
+  // Map
+  document.getElementById('mapArea').textContent = document.getElementById('fAreaUtil').value + ' m²';
+  document.getElementById('mapSolarPot').textContent = document.getElementById('fRadiacao').value + ' kWh/m²';
+
+  // Panels
+  document.getElementById('panelCountBig').textContent = r.placas;
+  renderPanelGridBig(r.placas, Math.ceil(r.placas / 10) * 10 + (10 - r.placas % 10 === 10 ? 0 : 10 - r.placas % 10));
+  renderRoofPanels(Math.min(r.placas, 10));
+
+  // Generation cards
+  document.getElementById('resGeracaoDia').textContent = fmt(r.geracaoDia, 1) + ' kWh';
+  document.getElementById('resGeracaoMes').textContent = fmt(r.geracaoMes, 0) + ' kWh';
+  document.getElementById('resGeracaoAno').textContent = fmt(r.geracaoAno, 0) + ' kWh';
+  document.getElementById('resEconomiaMes').textContent = fmtR(r.economiaMes);
+
+  // Chart
+  renderGenChart('mensal');
+  document.getElementById('gcTotalAnual').textContent = fmt(r.geracaoAno, 0) + ' kWh';
+
+  // Economy rows
+  document.getElementById('ecTotal').textContent = fmtR(r.economiaTotalPrazo);
+  renderEconomyRows(r.economiaAno);
+
+  // ROI card
+  const roiPct = Math.min(Math.round(r.roi10), 999);
+  document.getElementById('rcPayback').textContent = fmt(r.payback, 1) + 'a';
+  document.getElementById('rdrInvest').textContent = fmtR(r.custoTotal);
+  document.getElementById('rdrEcoAno').textContent = fmtR(r.economiaAno);
+  document.getElementById('rdrRoi10').textContent = '+' + fmt(roiPct) + '%';
+  document.getElementById('rdrVpl').textContent = fmtR(Math.max(r.vpl, 0));
+  document.getElementById('rdrCo2').textContent = fmt(r.co2Ano, 1) + ' ton';
+  document.getElementById('rdrArvores').textContent = fmt(r.arvores) + ' árvores';
+
+  // Donut
+  const circumference = 226.2;
+  const roiNorm = Math.min(roiPct / 1000, 1); // normalize to 0–1
+  const offset = circumference * (1 - Math.min(roiNorm * 2, 0.92));
+  document.getElementById('donutFill').style.strokeDashoffset = offset;
+  document.getElementById('donutPct').textContent = Math.min(roiPct, 999) + '%';
+
+  // Recommendation
+  const cobertura = ((r.geracaoMes / parseFloat(document.getElementById('fConsumo').value)) * 100).toFixed(0);
+  document.getElementById('recText').innerHTML =
+    `Com base na área disponível de ${document.getElementById('fAreaUtil').value} m², consumo de ${document.getElementById('fConsumo').value} kWh/mês e irradiância de ${document.getElementById('fRadiacao').value} kWh/m²/dia, o sistema de ${r.placas} painéis cobrirá <strong style="color:var(--mint-hi)">~${cobertura}%</strong> do seu consumo atual. O payback estimado de <strong style="color:var(--gold-hi)">${fmt(r.payback,1)} anos</strong> representa um retorno ${r.payback < 6 ? '18% abaixo' : 'acima'} da média nacional. Recomendamos considerar bateria de armazenamento para maximizar autonomia noturna e créditos de energia.`;
+
+  // Step indicator — mark all done
+  ['sd1','sd2','sd3','sd4'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('done','active');
+    if (i < 3) el.classList.add('done');
+    else el.classList.add('active');
+  });
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════
+ * INTEGRAÇÕES FUTURAS — TELA DE SIMULAÇÃO SOLARMAP AI
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * 1. MAPA INTERATIVO (campo Localização)
+ *    - Mapbox GL JS: npm install mapbox-gl
+ *      const map = new mapboxgl.Map({ container:'mapbox-map', style:'mapbox://styles/mapbox/satellite-v9', center:[lng,lat], zoom:18 });
+ *    - Ou Google Maps: new google.maps.Map(el, { mapTypeId:'satellite', zoom:19, center:{lat,lng} });
+ *    - Geocoding: fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${addr}.json?access_token=TOKEN`)
+ *
+ * 2. GOOGLE SOLAR API (cálculo automático de telhado)
+ *    - https://developers.google.com/maps/documentation/solar
+ *    - fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=API_KEY`)
+ *    - Retorna: maxArrayPanelsCount, panelCapacityWatts, panelHeightMeters, panelWidthMeters, maxSunshineHoursPerYear
+ *    - Preenche automaticamente: fAreaUtil, fHorasSol, placas, geração anual
+ *
+ * 3. NASA POWER API (irradiância solar por local)
+ *    - https://power.larc.nasa.gov/api/temporal/monthly/point
+ *    - Parâmetros: ALLSKY_SFC_SW_DWN (irradiância), lat, lon, start=2020, end=2023, format=JSON
+ *    - Preenche automaticamente: fRadiacao, fHorasSol
+ *
+ * 4. ANEEL API (tarifas de energia por distribuidora)
+ *    - https://dadosabertos.aneel.gov.br/dataset/tarifas-de-energia-eletrica-por-distribuidora
+ *    - Filtra por estado/distribuidora → preenche fTarifa automaticamente
+ *
+ * 5. SUNCALC (posição solar em tempo real)
+ *    - npm install suncalc
+ *    - const sun = SunCalc.getPosition(new Date(), lat, lon); // altitude, azimuth
+ *    - const times = SunCalc.getTimes(new Date(), lat, lon);  // sunrise, sunset, solarNoon
+ *
+ * 6. BACKEND DE SIMULAÇÃO (motor financeiro real)
+ *    - POST /api/solar/simulate
+ *    - Body: { lat, lon, area, consumo, tarifa, placas, potenciaSistema, eficiencia, prazo, financiamento, juros }
+ *    - Response: { geracaoDia, geracaoMes, geracaoAno, economiaMes, payback, roi, vpl, tir, co2 }
+ *
+ * 7. MARKETPLACE DE EQUIPAMENTOS
+ *    - GET /api/equipamentos?regiao=SP&potencia_min=400&potencia_max=600
+ *    - Preenche custo por placa com preços reais de distribuidores parceiros
+ *
+ * 8. FINANCIAMENTO (bancos parceiros)
+ *    - POST /api/financing/simulate { valor, entrada_pct, prazo_meses }
+ *    - Response: { parcelas, taxa_efetiva, cet, banco, aprovacao_estimada }
+ *    - APIs: BV Solar API, Santander Solar, BNDES ProGiro
+ *
+ * 9. EXPORTAÇÃO DE RELATÓRIO
+ *    - POST /api/report/pdf { sim_id, template, branding }
+ *    - Response: URL para download do PDF com relatório completo
+ *    - Ou geração client-side com jsPDF + html2canvas
+ *
+ * 10. INTERNACIONALIZAÇÃO (i18n)
+ *     - i18next: i18next.init({ lng:'pt-BR', resources:{...} })
+ *     - Seletor de país → muda língua, moeda, tarifas e formatação de números
+ *     - Formatação automática via Intl.NumberFormat e Intl.DateTimeFormat
+ *
+ * 11. AUTENTICAÇÃO / SALVAR SIMULAÇÃO
+ *     - POST /api/simulations { user_id, form_data, results } → sim_id
+ *     - GET /api/simulations/:id para recuperar simulação salva
+ *     - Auth: Supabase Auth / Firebase Auth / Auth0
+ */
+</script>
+
+</body>
+</html>

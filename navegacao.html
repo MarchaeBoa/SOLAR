@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarMap AI · Arquitetura de Navegação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   SOLARMAP AI · ARQUITETURA DE NAVEGAÇÃO · 2027
+   Typography: Sora (UI/Display) · Fira Code (data/labels)
+   Palette: Tactical Void · Solar Signal · Verdigris · Chrome
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --v0:#020508;--v1:#040C14;--v2:#060F1E;--v3:#091526;--v4:#0D1E38;--v5:#122444;
+  --sol:#EAA800;--sol-hi:#FFD060;--sol-lo:rgba(234,168,0,.09);--sol-bd:rgba(234,168,0,.2);--sol-gl:rgba(234,168,0,.35);
+  --vrd:#00CC88;--vrd-hi:#44FFB8;--vrd-lo:rgba(0,204,136,.07);--vrd-bd:rgba(0,204,136,.18);--vrd-gl:rgba(0,204,136,.3);
+  --sky:#2F8FFF;--sky-lo:rgba(47,143,255,.08);--sky-bd:rgba(47,143,255,.2);
+  --rose:#FF4F6D;--rose-lo:rgba(255,79,109,.08);
+  --lav:#8B6FFF;--lav-lo:rgba(139,111,255,.08);
+  --c1:#EAF0FF;--c2:rgba(234,240,255,.62);--c3:rgba(234,240,255,.36);--c4:rgba(234,240,255,.17);--c5:rgba(234,240,255,.07);--c6:rgba(234,240,255,.03);
+  --bd:rgba(234,240,255,.06);--bd-m:rgba(234,240,255,.11);--bd-h:rgba(234,240,255,.2);
+  --sw:256px;--top:52px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --tf:.18s var(--ease);--tm:.32s var(--ease);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Sora',sans-serif;background:var(--v0);color:var(--c1);overflow:hidden;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Fira Code',monospace}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--c5);border-radius:99px}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.018;background-size:180px;mix-blend-mode:overlay}
+
+/* ── LOADER ── */
+#ldr{position:fixed;inset:0;z-index:8000;background:var(--v0);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .6s var(--ease),visibility .6s}
+#ldr.out{opacity:0;visibility:hidden;pointer-events:none}
+.ldr-ring{width:56px;height:56px;border-radius:50%;border:1.5px solid var(--c5);border-top-color:var(--sol);animation:ldrSpin 1s linear infinite;margin-bottom:4px}
+@keyframes ldrSpin{to{transform:rotate(360deg)}}
+.ldr-name{font-size:1rem;font-weight:800;color:var(--c1);letter-spacing:-.02em}.ldr-name em{font-style:normal;color:var(--sol)}
+.ldr-sub{font-size:.6rem;color:var(--c4);letter-spacing:.12em;text-transform:uppercase;font-family:'Fira Code',monospace}
+
+/* ════════════════════════════════════
+   SHELL
+════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:var(--sw) 1fr;grid-template-rows:var(--top) 1fr;height:100vh;grid-template-areas:"top top""side main"}
+.shell.collapsed{--sw:52px}
+
+/* ════════════════════════════════════
+   TOPBAR
+════════════════════════════════════ */
+.topbar{
+  grid-area:top;z-index:500;
+  background:rgba(4,12,20,.94);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+}
+.tb-toggle{width:28px;height:28px;border-radius:6px;border:1px solid var(--bd);background:var(--c6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:var(--tf);flex-shrink:0}
+.tb-toggle:hover{border-color:var(--bd-m);background:var(--c5)}
+.tb-toggle span{width:12px;height:1.5px;background:var(--c3);border-radius:99px;transition:var(--tf)}
+.tb-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;margin-right:6px}
+.tb-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--sol-hi),var(--sol));display:flex;align-items:center;justify-content:center;font-size:.78rem;box-shadow:0 3px 12px var(--sol-gl)}
+.tb-name{font-size:.85rem;font-weight:800;color:var(--c1);letter-spacing:-.02em}.tb-name em{font-style:normal;color:var(--sol)}
+.tb-div{width:1px;height:18px;background:var(--bd)}
+
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--c3);flex-shrink:0}
+.breadcrumb a{color:var(--c3);text-decoration:none;transition:var(--tf);padding:2px 5px;border-radius:4px}
+.breadcrumb a:hover{color:var(--c1);background:var(--c5)}
+.breadcrumb .sep{color:var(--c4);font-size:.6rem}
+.breadcrumb .cur{color:var(--c2);font-weight:600}
+
+.tb-search{
+  flex:1;max-width:320px;
+  display:flex;align-items:center;gap:7px;
+  background:var(--c6);border:1px solid var(--bd);border-radius:7px;
+  padding:6px 12px;transition:var(--tf);
+}
+.tb-search:focus-within{border-color:var(--sol-bd);background:rgba(4,12,20,.95);box-shadow:0 0 0 3px var(--sol-lo)}
+.tb-search input{background:none;border:none;outline:none;font-family:'Sora',sans-serif;font-size:.74rem;color:var(--c1);width:100%}
+.tb-search input::placeholder{color:var(--c4)}
+.tb-search .s-ico{font-size:.8rem;color:var(--c4);flex-shrink:0}
+.tb-flex{flex:1}
+
+/* Global controls */
+.tb-controls{display:flex;align-items:center;gap:5px}
+.tb-ctrl{
+  display:flex;align-items:center;gap:5px;
+  background:var(--c6);border:1px solid var(--bd);border-radius:6px;
+  padding:5px 10px;font-size:.68rem;color:var(--c3);cursor:pointer;transition:var(--tf);white-space:nowrap;
+}
+.tb-ctrl:hover{border-color:var(--bd-m);color:var(--c1)}
+.tb-ctrl .flag{font-size:.85rem}
+.tb-ico{width:28px;height:28px;border-radius:6px;border:1px solid var(--bd);background:var(--c6);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tf);font-size:.8rem;color:var(--c3);flex-shrink:0;position:relative}
+.tb-ico:hover{border-color:var(--bd-m);color:var(--c1);background:var(--c5)}
+.tb-ico .badge-dot{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--vrd);border:1.5px solid var(--v1);box-shadow:0 0 6px var(--vrd-gl)}
+.tb-avatar{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--vrd),var(--sky));display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;cursor:pointer;border:1px solid rgba(0,204,136,.25)}
+.btn-new-sim{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--sol-hi),var(--sol));color:var(--v0);font-family:'Sora',sans-serif;font-size:.7rem;font-weight:800;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;transition:var(--tm);white-space:nowrap;letter-spacing:.01em}
+.btn-new-sim:hover{box-shadow:0 0 20px var(--sol-gl);transform:translateY(-1px)}
+
+/* ════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════ */
+.sidebar{
+  grid-area:side;
+  background:var(--v2);border-right:1px solid var(--bd);
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+  transition:width var(--tm);
+  z-index:300;width:var(--sw);
+}
+.shell.collapsed .sidebar{width:52px}
+
+/* Profile switcher */
+.profile-switcher{
+  padding:10px;border-bottom:1px solid var(--bd);flex-shrink:0;
+}
+.ps-label{font-size:.55rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--c4);margin-bottom:6px;padding:0 2px;overflow:hidden;white-space:nowrap}
+.ps-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.ps-opt{
+  padding:5px 6px;border-radius:6px;border:1px solid var(--bd);background:none;
+  font-family:'Sora',sans-serif;font-size:.6rem;font-weight:600;color:var(--c3);
+  cursor:pointer;transition:var(--tf);text-align:center;white-space:nowrap;overflow:hidden;
+}
+.ps-opt:hover{border-color:var(--bd-m);color:var(--c1)}
+.ps-opt.on{background:var(--sol-lo);border-color:var(--sol-bd);color:var(--sol-hi)}
+.shell.collapsed .profile-switcher{display:none}
+
+/* Nav section */
+.nav-group{flex-shrink:0}
+.nav-group-label{
+  font-size:.54rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--c4);padding:12px 12px 4px;
+  overflow:hidden;white-space:nowrap;
+}
+.shell.collapsed .nav-group-label{visibility:hidden;height:0;padding:4px 0}
+
+/* Nav item */
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;margin:1px 8px;
+  border-radius:8px;border:1px solid transparent;
+  cursor:pointer;transition:var(--tf);text-decoration:none;
+  position:relative;user-select:none;
+}
+.nav-item:hover{background:var(--c5);border-color:var(--bd)}
+.nav-item.active{background:var(--sol-lo);border-color:var(--sol-bd)}
+.nav-item.active .ni-ico{color:var(--sol-hi)}
+.nav-item.active .ni-txt{color:var(--sol-hi);font-weight:700}
+.nav-item.active::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--sol);border-radius:0 3px 3px 0}
+.ni-ico{font-size:.95rem;flex-shrink:0;width:18px;text-align:center;color:var(--c3);transition:var(--tf)}
+.ni-txt{font-size:.73rem;font-weight:500;color:var(--c2);overflow:hidden;white-space:nowrap;flex:1;transition:var(--tf)}
+.shell.collapsed .ni-txt,.shell.collapsed .ni-right{display:none}
+
+.ni-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.ni-badge{font-size:.52rem;font-weight:700;padding:1px 6px;border-radius:99px;letter-spacing:.06em}
+.nb-new{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.nb-pro{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.nb-soon{color:var(--c3);background:var(--c5);border:1px solid var(--bd)}
+.nb-global{color:var(--sky);background:var(--sky-lo);border:1px solid var(--sky-bd)}
+.ni-count{font-family:'Fira Code',monospace;font-size:.6rem;font-weight:500;color:var(--vrd);background:var(--vrd-lo);border-radius:99px;padding:1px 6px;border:1px solid var(--vrd-bd)}
+.ni-chevron{font-size:.6rem;color:var(--c4);transition:var(--tf)}
+.nav-item.expanded .ni-chevron{transform:rotate(90deg)}
+
+/* Submenu */
+.submenu{
+  overflow:hidden;max-height:0;transition:max-height .32s var(--ease);
+}
+.submenu.open{max-height:600px}
+.sm-item{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 10px 5px 36px;margin:1px 8px;
+  border-radius:6px;cursor:pointer;transition:var(--tf);
+  font-size:.69rem;color:var(--c3);font-weight:400;
+}
+.sm-item:hover{background:var(--c5);color:var(--c1)}
+.sm-item.active{color:var(--sol-hi);font-weight:600;background:var(--sol-lo)}
+.sm-dot{width:5px;height:5px;border-radius:50%;background:var(--c4);flex-shrink:0;transition:var(--tf)}
+.sm-item:hover .sm-dot{background:var(--c2)}
+.sm-item.active .sm-dot{background:var(--sol)}
+.shell.collapsed .submenu{display:none}
+
+/* Nav divider */
+.nav-div{height:1px;background:var(--bd);margin:6px 12px}
+
+/* User area */
+.sidebar-user{
+  margin-top:auto;padding:10px;border-top:1px solid var(--bd);flex-shrink:0;
+}
+.su-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;overflow:hidden}
+.su-avatar{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--vrd),var(--sky));display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+.su-info{flex:1;min-width:0;overflow:hidden}
+.su-name{font-size:.74rem;font-weight:700;color:var(--c1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.su-plan{font-size:.6rem;color:var(--sol);overflow:hidden;white-space:nowrap}
+.shell.collapsed .su-info,.shell.collapsed .su-btn{display:none}
+.su-btn{
+  width:100%;padding:7px;border-radius:7px;
+  background:linear-gradient(135deg,var(--sol-hi),var(--sol));
+  color:var(--v0);font-family:'Sora',sans-serif;font-size:.68rem;font-weight:800;
+  border:none;cursor:pointer;transition:var(--tm);
+}
+.su-btn:hover{box-shadow:0 4px 16px var(--sol-gl)}
+
+/* ════════════════════════════════════
+   MAIN CONTENT AREA
+════════════════════════════════════ */
+.main{
+  grid-area:main;overflow-y:auto;overflow-x:hidden;
+  background:var(--v0);
+  display:flex;flex-direction:column;
+}
+
+/* ── VIEW TABS ── */
+.view-tabs{
+  display:flex;align-items:center;gap:0;
+  background:rgba(4,12,20,.94);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bd);
+  padding:0 24px;flex-shrink:0;overflow-x:auto;
+}
+.vt-btn{
+  display:flex;align-items:center;gap:6px;padding:14px 16px;
+  font-size:.71rem;font-weight:600;color:var(--c3);cursor:pointer;
+  border-bottom:2px solid transparent;transition:var(--tf);white-space:nowrap;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:'Sora',sans-serif;
+}
+.vt-btn:hover{color:var(--c1)}
+.vt-btn.on{color:var(--sol-hi);border-bottom-color:var(--sol)}
+.vt-icon{font-size:.9rem}
+
+/* ── VIEW PANELS ── */
+.view-panel{display:none;flex:1;overflow:auto;padding:24px}
+.view-panel.active{display:block}
+
+/* ════════════════════════════════════
+   VIEW 1 — ARQUITETURA VISUAL
+════════════════════════════════════ */
+
+/* Section */
+.arch-sec{margin-bottom:36px}
+.arch-sec-hd{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.arch-sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--bd-m),transparent)}
+.arch-sec-label{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c3);white-space:nowrap}
+.arch-sec-tag{font-size:.55rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.ast-sol{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.ast-vrd{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.ast-sky{color:var(--sky);background:var(--sky-lo);border:1px solid var(--sky-bd)}
+
+/* Architecture grid overview */
+.arch-overview{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:32px}
+.ao-card{
+  background:var(--v2);border:1px solid var(--bd);border-radius:14px;
+  padding:16px;cursor:pointer;transition:var(--tm);position:relative;overflow:hidden;
+}
+.ao-card:hover{border-color:var(--bd-m);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.ao-card.active-card{border-color:var(--sol-bd);box-shadow:0 0 0 1px var(--sol-bd),0 12px 40px rgba(234,168,0,.08)}
+.ao-card.active-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--sol),var(--sol-hi))}
+.aoc-icon{font-size:1.4rem;margin-bottom:10px;display:block}
+.aoc-name{font-size:.78rem;font-weight:700;color:var(--c1);margin-bottom:4px;line-height:1.3}
+.aoc-count{font-family:'Fira Code',monospace;font-size:.62rem;color:var(--c3);margin-bottom:8px}
+.aoc-tags{display:flex;flex-wrap:wrap;gap:3px}
+.aoc-tag{font-size:.5rem;font-weight:700;padding:1px 6px;border-radius:99px}
+.aot-sol{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.aot-vrd{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.aot-sky{color:var(--sky);background:var(--sky-lo);border:1px solid var(--sky-bd)}
+.aot-dim{color:var(--c3);background:var(--c5);border:1px solid var(--bd)}
+
+/* ════════════════════════════════════
+   VIEW 2 — MAPA DO SISTEMA (SVG)
+════════════════════════════════════ */
+.sys-map-wrap{
+  width:100%;overflow:auto;
+  background:var(--v1);border:1px solid var(--bd);border-radius:14px;
+  padding:24px;min-height:500px;position:relative;
+}
+.sys-map-wrap svg{display:block;margin:0 auto}
+/* SVG node styles */
+.node-main{fill:var(--v3);stroke:var(--sol-bd);stroke-width:1.5;rx:8;ry:8;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))}
+.node-sub{fill:var(--v2);stroke:var(--bd-m);stroke-width:1;rx:6;ry:6}
+.node-future{fill:var(--v1);stroke:rgba(234,240,255,.08);stroke-width:1;stroke-dasharray:4 3;rx:6;ry:6}
+.node-txt{font-family:'Sora',sans-serif;fill:var(--c2);font-size:10px;font-weight:600;text-anchor:middle;dominant-baseline:middle}
+.node-txt-sm{font-family:'Sora',sans-serif;fill:var(--c3);font-size:8px;text-anchor:middle;dominant-baseline:middle}
+.edge-main{stroke:rgba(234,168,0,.3);stroke-width:1.5;fill:none;marker-end:url(#arr)}
+.edge-sub{stroke:rgba(234,240,255,.1);stroke-width:1;fill:none;marker-end:url(#arr2)}
+.edge-future{stroke:rgba(234,240,255,.06);stroke-width:1;fill:none;stroke-dasharray:4 3}
+
+/* ════════════════════════════════════
+   VIEW 3 — HIERARQUIA DE PÁGINAS
+════════════════════════════════════ */
+.hierarchy-tree{display:flex;flex-direction:column;gap:6px}
+.ht-group{
+  background:var(--v2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;
+}
+.ht-group-header{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;
+  background:rgba(5,13,24,.6);transition:var(--tf);
+}
+.ht-group-header:hover{background:rgba(5,13,24,.9)}
+.ht-group-header.open{border-bottom:1px solid var(--bd)}
+.htg-num{
+  width:22px;height:22px;border-radius:6px;flex-shrink:0;
+  background:var(--sol-lo);border:1px solid var(--sol-bd);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fira Code',monospace;font-size:.58rem;font-weight:500;color:var(--sol);
+}
+.htg-name{font-size:.78rem;font-weight:700;color:var(--c1);flex:1}
+.htg-count{font-family:'Fira Code',monospace;font-size:.62rem;color:var(--c3)}
+.htg-chevron{font-size:.65rem;color:var(--c4);transition:var(--tf)}
+.ht-group-header.open .htg-chevron{transform:rotate(90deg)}
+
+.ht-pages{display:none;padding:8px 12px}
+.ht-group-header.open+.ht-pages{display:block}
+.ht-page-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px}
+.ht-page{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 10px;border-radius:7px;background:var(--c6);border:1px solid var(--bd);
+  cursor:pointer;transition:var(--tf);
+}
+.ht-page:hover{border-color:var(--bd-m);background:var(--c5)}
+.ht-page.p-active{border-color:var(--sol-bd);background:var(--sol-lo)}
+.ht-page.p-active .hp-name{color:var(--sol-hi)}
+.ht-page.p-future{opacity:.55}
+.hp-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.hpd-sol{background:var(--sol)}.hpd-vrd{background:var(--vrd)}.hpd-sky{background:var(--sky)}.hpd-dim{background:var(--c4)}.hpd-future{background:var(--c4);border:1px dashed var(--c4);background:transparent}
+.hp-name{font-size:.67rem;font-weight:600;color:var(--c2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hp-badge{font-size:.5rem;font-weight:700;padding:1px 5px;border-radius:99px}
+.hpb-done{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.hpb-wip{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.hpb-soon{color:var(--c3);background:var(--c5);border:1px solid var(--bd)}
+
+/* Sub-pages */
+.ht-subpages{display:flex;flex-wrap:wrap;gap:4px;padding:4px 8px 8px 20px}
+.hp-sub{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:5px;background:var(--c6);border:1px solid var(--bd);cursor:pointer;transition:var(--tf)}
+.hp-sub:hover{border-color:var(--bd-m)}
+.hp-sub span{font-size:.6rem;color:var(--c3)}
+
+/* ════════════════════════════════════
+   VIEW 4 — FLUXO DO USUÁRIO
+════════════════════════════════════ */
+.flow-wrap{overflow-x:auto;padding-bottom:16px}
+.flow-canvas{min-width:960px}
+.flow-header-row{display:flex;gap:12px;margin-bottom:18px}
+.flow-profile-tab{
+  padding:7px 16px;border-radius:99px;font-size:.7rem;font-weight:700;
+  cursor:pointer;border:1px solid var(--bd);background:var(--c6);color:var(--c3);
+  transition:var(--tf);font-family:'Sora',sans-serif;
+}
+.flow-profile-tab:hover{border-color:var(--bd-m);color:var(--c1)}
+.flow-profile-tab.on{background:var(--sol-lo);border-color:var(--sol-bd);color:var(--sol-hi)}
+
+/* Journey steps */
+.journey{display:flex;flex-direction:column;gap:24px}
+.journey-track{display:flex;align-items:stretch;gap:0;position:relative}
+
+/* Connector line */
+.journey-track::before{content:'';position:absolute;top:24px;left:24px;right:24px;height:1px;background:linear-gradient(90deg,var(--sol-bd),rgba(0,204,136,.2),var(--sol-bd));z-index:0}
+.journey-steps{display:flex;gap:0;width:100%;position:relative;z-index:1}
+.js{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;
+}
+.js-circle{
+  width:48px;height:48px;border-radius:50%;
+  background:var(--v3);border:2px solid var(--sol-bd);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;transition:var(--tm);flex-shrink:0;
+  box-shadow:0 0 0 4px var(--v0);position:relative;z-index:2;
+}
+.js:hover .js-circle{border-color:var(--sol);box-shadow:0 0 0 4px var(--v0),0 0 16px var(--sol-gl)}
+.js.active .js-circle{background:var(--sol-lo);border-color:var(--sol);box-shadow:0 0 0 4px var(--v0),0 0 20px var(--sol-gl)}
+.js-num{position:absolute;bottom:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--sol);color:var(--v0);font-size:.48rem;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;border:1.5px solid var(--v0)}
+.js-label{font-size:.62rem;font-weight:700;color:var(--c2);text-align:center;line-height:1.35;max-width:80px}
+.js.active .js-label{color:var(--sol-hi)}
+.js-page{font-family:'Fira Code',monospace;font-size:.55rem;color:var(--c4);text-align:center}
+
+/* Step detail panel */
+.step-detail{
+  background:var(--v3);border:1px solid var(--bd);border-radius:12px;
+  padding:18px 22px;
+}
+.sd-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sd-icon{font-size:1.4rem}
+.sd-title{font-size:.9rem;font-weight:700;color:var(--c1)}
+.sd-page{font-family:'Fira Code',monospace;font-size:.65rem;color:var(--sol);padding:2px 8px;background:var(--sol-lo);border:1px solid var(--sol-bd);border-radius:99px}
+.sd-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.sd-col-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--c4);margin-bottom:7px}
+.sd-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bd)}
+.sd-item:last-child{border:none}
+.sd-item span{font-size:.67rem;color:var(--c2)}
+.sd-dot{width:4px;height:4px;border-radius:50%;background:var(--sol);flex-shrink:0}
+
+/* Parallel flows */
+.parallel-flows{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+.pf-card{
+  background:var(--v2);border:1px solid var(--bd);border-radius:12px;
+  overflow:hidden;
+}
+.pf-header{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+.pf-icon{font-size:.95rem}
+.pf-name{font-size:.75rem;font-weight:700;color:var(--c1)}
+.pf-steps{padding:10px 14px;display:flex;flex-direction:column;gap:5px}
+.pf-step{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:var(--c6);border:1px solid var(--bd)}
+.pf-n{font-family:'Fira Code',monospace;font-size:.58rem;color:var(--sol);width:16px;flex-shrink:0}
+.pf-txt{font-size:.65rem;color:var(--c2)}
+.pf-arrow{font-size:.6rem;color:var(--c4);margin-left:auto}
+
+/* ════════════════════════════════════
+   VIEW 5 — GLOBAL / EXPANSION
+════════════════════════════════════ */
+.global-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.global-card{
+  background:var(--v2);border:1px solid var(--bd);border-radius:14px;
+  padding:18px;transition:var(--tm);
+}
+.global-card:hover{border-color:var(--bd-m)}
+.gc-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.gc-icon{font-size:1.2rem}
+.gc-name{font-size:.8rem;font-weight:700;color:var(--c1)}
+.gc-tag{margin-left:auto;font-size:.52rem;font-weight:700;padding:2px 7px;border-radius:99px}
+.gct-a{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.gct-b{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.gct-c{color:var(--sky);background:var(--sky-lo);border:1px solid var(--sky-bd)}
+.gct-d{color:var(--c3);background:var(--c5);border:1px solid var(--bd)}
+.gc-items{display:flex;flex-direction:column;gap:5px}
+.gc-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;background:var(--c6);border:1px solid var(--bd)}
+.gci-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.gci-label{font-size:.67rem;color:var(--c2);flex:1}
+.gci-status{font-size:.52rem;font-weight:700;padding:1px 6px;border-radius:99px}
+.gcs-live{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.gcs-wip{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.gcs-soon{color:var(--c3);background:var(--c5);border:1px solid var(--bd)}
+
+/* Country matrix */
+.country-matrix{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.cm-card{
+  background:var(--v2);border:1px solid var(--bd);border-radius:10px;
+  padding:12px 8px;text-align:center;transition:var(--tf);cursor:pointer;
+}
+.cm-card:hover{border-color:var(--bd-m);background:var(--v3)}
+.cm-card.cm-live{border-color:var(--vrd-bd)}
+.cm-card.cm-next{border-color:var(--sol-bd)}
+.cm-flag{font-size:1.4rem;display:block;margin-bottom:6px}
+.cm-country{font-size:.6rem;font-weight:700;color:var(--c1);margin-bottom:3px}
+.cm-status{font-size:.52rem;font-weight:700;padding:1px 6px;border-radius:99px;display:inline-block}
+.cms-live{color:var(--vrd);background:var(--vrd-lo);border:1px solid var(--vrd-bd)}
+.cms-next{color:var(--sol);background:var(--sol-lo);border:1px solid var(--sol-bd)}
+.cms-road{color:var(--c3);background:var(--c5);border:1px solid var(--bd)}
+
+/* ════════════════════════════════════
+   VIEW 6 — PERMISSÕES / PERFIS
+════════════════════════════════════ */
+.perm-matrix-wrap{overflow-x:auto}
+.perm-matrix{border-collapse:separate;border-spacing:0;width:100%;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.perm-matrix th{background:rgba(5,13,24,.9);padding:10px 14px;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--c3);text-align:left;border-bottom:1px solid var(--bd);border-right:1px solid var(--bd);white-space:nowrap}
+.perm-matrix th:last-child{border-right:none}
+.perm-matrix td{padding:8px 14px;font-size:.68rem;color:var(--c2);border-bottom:1px solid var(--bd);border-right:1px solid var(--bd);background:var(--v2);white-space:nowrap}
+.perm-matrix tr:last-child td{border-bottom:none}
+.perm-matrix td:last-child{border-right:none}
+.perm-matrix tbody tr:hover td{background:var(--v3)}
+.perm-check{font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.pc-y{color:var(--vrd)}.pc-p{color:var(--sol)}.pc-n{color:var(--rose)}.pc-soon{color:var(--c4);font-size:.6rem;font-weight:700}
+
+/* Mobile toggle */
+.mob-btn{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:600;background:linear-gradient(135deg,var(--sol-hi),var(--sol));color:var(--v0);font-family:'Sora',sans-serif;font-size:.72rem;font-weight:800;border:none;border-radius:99px;padding:10px 22px;cursor:pointer;box-shadow:0 8px 28px var(--sol-gl)}
+@media(max-width:900px){
+  .shell{grid-template-columns:0 1fr}
+  .sidebar{position:fixed;top:var(--top);bottom:0;left:0;width:var(--sw);max-width:280px;transform:translateX(-100%);transition:transform var(--tm)}
+  .sidebar.mob-open{transform:translateX(0);box-shadow:6px 0 32px rgba(0,0,0,.6)}
+  .mob-btn{display:flex;align-items:center;gap:6px}
+  .tb-controls .tb-ctrl:not(:first-child){display:none}
+  .arch-overview{grid-template-columns:repeat(2,1fr)}
+  .sd-body{grid-template-columns:1fr 1fr}
+  .parallel-flows{grid-template-columns:1fr}
+  .global-grid{grid-template-columns:1fr 1fr}
+  .country-matrix{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:560px){
+  .arch-overview{grid-template-columns:1fr}
+  .global-grid{grid-template-columns:1fr}
+  .country-matrix{grid-template-columns:repeat(2,1fr)}
+  .ht-page-row{grid-template-columns:1fr 1fr}
+  .perm-matrix-wrap{font-size:.6rem}
+}
+
+/* Tooltip */
+.tooltip{position:fixed;background:rgba(9,21,38,.96);backdrop-filter:blur(16px);border:1px solid var(--sol-bd);border-radius:8px;padding:7px 12px;font-size:.65rem;color:var(--c1);pointer-events:none;z-index:7000;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:220px}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="ldr">
+  <div class="ldr-ring"></div>
+  <div class="ldr-name">Solar<em>Map</em> AI</div>
+  <div class="ldr-sub">Carregando arquitetura de navegação</div>
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- MOBILE TOGGLE -->
+<button class="mob-btn" onclick="toggleMobileSidebar()">☰ Navegação</button>
+
+<!-- ══════════════════════════════════════════════════
+     SHELL
+══════════════════════════════════════════════════ -->
+<div class="shell" id="shell">
+
+<!-- ─── TOPBAR ─── -->
+<header class="topbar">
+  <!-- Collapse toggle -->
+  <div class="tb-toggle" onclick="toggleCollapse()" title="Recolher menu">
+    <span></span><span></span><span></span>
+  </div>
+
+  <!-- Brand -->
+  <a href="#" class="tb-brand">
+    <div class="tb-mark">☀</div>
+    <span class="tb-name">Solar<em>Map</em> AI</span>
+  </a>
+
+  <div class="tb-div"></div>
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a href="#">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="#">Simulações</a>
+    <span class="sep">/</span>
+    <span class="cur" id="breadcrumbCur">Nova Simulação</span>
+  </nav>
+
+  <div class="tb-div" style="margin-left:6px"></div>
+
+  <!-- Search -->
+  <div class="tb-search">
+    <span class="s-ico">🔍</span>
+    <!-- INTEGRAÇÃO FUTURA: busca global conectará a todos os módulos via /api/search?q= -->
+    <input type="text" placeholder="Buscar projetos, endereços, relatórios...">
+  </div>
+
+  <div class="tb-flex"></div>
+
+  <!-- Global Controls -->
+  <div class="tb-controls">
+    <!-- INTEGRAÇÃO FUTURA: seletor de país mudará tarifas, moeda e regulamentações regionais -->
+    <div class="tb-ctrl" title="País / Região">
+      <span class="flag">🇧🇷</span> Brasil
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: seletor de idioma via i18next – pt-BR, en-US, es-ES, pt-PT -->
+    <div class="tb-ctrl" title="Idioma">
+      🌐 PT-BR
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: seletor de moeda via API de câmbio (Intl.NumberFormat) -->
+    <div class="tb-ctrl" title="Moeda">
+      💱 BRL
+    </div>
+
+    <div class="tb-div"></div>
+
+    <!-- Notifications -->
+    <!-- INTEGRAÇÃO FUTURA: notificações em tempo real via WebSocket / Server-Sent Events -->
+    <div class="tb-ico" title="Notificações">
+      🔔
+      <div class="badge-dot"></div>
+    </div>
+    <!-- INTEGRAÇÃO FUTURA: central de ajuda / chat de suporte integrado -->
+    <div class="tb-ico" title="Ajuda e suporte">❓</div>
+    <!-- INTEGRAÇÃO FUTURA: configurações do usuário / preferências regionais -->
+    <div class="tb-ico" title="Configurações">⚙</div>
+
+    <!-- Avatar -->
+    <div class="tb-avatar" title="Rafael Mendes — Pro Global">RM</div>
+
+    <!-- New Sim CTA -->
+    <!-- INTEGRAÇÃO FUTURA: botão abrirá wizard de nova simulação com seleção de perfil (residencial/rural/empresa) -->
+    <button class="btn-new-sim" onclick="showPage('nova-sim')">＋ Nova Simulação</button>
+  </div>
+</header>
+
+<!-- ─── SIDEBAR ─── -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- Profile switcher -->
+  <!-- INTEGRAÇÃO FUTURA: cada perfil filtrará os módulos visíveis na sidebar via controle de permissões RBAC -->
+  <div class="profile-switcher">
+    <div class="ps-label">Perfil de visualização</div>
+    <div class="ps-grid">
+      <button class="ps-opt on" onclick="setProfile(this,'cliente')">👤 Cliente</button>
+      <button class="ps-opt" onclick="setProfile(this,'integrador')">🔧 Integrador</button>
+      <button class="ps-opt" onclick="setProfile(this,'empresa')">🏢 Empresa</button>
+      <button class="ps-opt" onclick="setProfile(this,'admin')">⚡ Admin</button>
+    </div>
+  </div>
+
+  <!-- ── GRUPO 1: VISÃO GERAL ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Visão geral</div>
+    <div class="nav-item active" onclick="showPage('dashboard')" data-tip="Centro de inteligência solar e métricas principais">
+      <span class="ni-ico">⬡</span>
+      <span class="ni-txt">Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showPage('inteligencia')" data-tip="Centro de análise e inteligência solar geoespacial">
+      <span class="ni-ico">🧠</span>
+      <span class="ni-txt">Centro de Inteligência</span>
+      <div class="ni-right"><span class="ni-badge nb-new">Novo</span></div>
+    </div>
+    <div class="nav-item" onclick="showPage('global')" data-tip="Visão consolidada de toda a operação">
+      <span class="ni-ico">🌍</span>
+      <span class="ni-txt">Visão Global</span>
+      <div class="ni-right"><span class="ni-badge nb-pro">Pro</span></div>
+    </div>
+    <div class="nav-item" onclick="showPage('notificacoes')" data-tip="Alertas, notificações e atualizações do sistema">
+      <span class="ni-ico">🔔</span>
+      <span class="ni-txt">Notificações</span>
+      <div class="ni-right"><span class="ni-count">3</span></div>
+    </div>
+  </div>
+
+  <div class="nav-div"></div>
+
+  <!-- ── GRUPO 2: SIMULAÇÕES ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Simulações</div>
+    <div class="nav-item" onclick="toggleSub(this)" data-tip="Módulo central de simulações solares">
+      <span class="ni-ico">⚡</span>
+      <span class="ni-txt">Simulações</span>
+      <div class="ni-right"><span class="ni-count">8</span><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item active" onclick="showPage('nova-sim')"><div class="sm-dot"></div>Nova simulação</div>
+      <div class="sm-item" onclick="showPage('simulacoes-salvas')"><div class="sm-dot"></div>Simulações salvas</div>
+      <div class="sm-item" onclick="showPage('comparacao')"><div class="sm-dot"></div>Comparação de cenários</div>
+      <div class="sm-item" onclick="showPage('historico')"><div class="sm-dot"></div>Histórico de análises</div>
+      <div class="sm-item" onclick="showPage('resultados-energia')"><div class="sm-dot"></div>Resultados energéticos</div>
+      <div class="sm-item" onclick="showPage('resultados-financeiros')"><div class="sm-dot"></div>Resultados financeiros</div>
+    </div>
+  </div>
+
+  <!-- ── GRUPO 3: MAPA ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Mapa e geolocalização</div>
+    <div class="nav-item" onclick="toggleSub(this)" data-tip="Ferramentas de mapeamento e análise geoespacial">
+      <span class="ni-ico">🗺</span>
+      <span class="ni-txt">Mapa Solar</span>
+      <div class="ni-right"><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item" onclick="showPage('mapa-solar')"><div class="sm-dot"></div>Mapa solar interativo</div>
+      <div class="sm-item" onclick="showPage('telhado')"><div class="sm-dot"></div>Seleção de telhado</div>
+      <div class="sm-item" onclick="showPage('terreno')"><div class="sm-dot"></div>Seleção de terreno</div>
+      <div class="sm-item" onclick="showPage('satelite')"><div class="sm-dot"></div>Vista satélite</div>
+      <div class="sm-item" onclick="showPage('camadas')"><div class="sm-dot"></div>Camadas geoespaciais</div>
+      <div class="sm-item" onclick="showPage('favoritos')"><div class="sm-dot"></div>Áreas favoritas</div>
+      <div class="sm-item" onclick="showPage('georref')"><div class="sm-dot"></div>Georreferenciamento</div>
+    </div>
+  </div>
+
+  <!-- ── GRUPO 4: ANÁLISE TÉCNICA ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Análise técnica</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">📐</span>
+      <span class="ni-txt">Análise Técnica</span>
+      <div class="ni-right"><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item" onclick="showPage('area-util')"><div class="sm-dot"></div>Área útil</div>
+      <div class="sm-item" onclick="showPage('inclinacao')"><div class="sm-dot"></div>Inclinação e orientação</div>
+      <div class="sm-item" onclick="showPage('sombreamento')"><div class="sm-dot"></div>Sombreamento</div>
+      <div class="sm-item" onclick="showPage('capacidade')"><div class="sm-dot"></div>Capacidade de placas</div>
+      <div class="sm-item" onclick="showPage('producao')"><div class="sm-dot"></div>Produção estimada</div>
+      <div class="sm-item" onclick="showPage('eficiencia')"><div class="sm-dot"></div>Eficiência do sistema</div>
+      <div class="sm-item" onclick="showPage('expansao')"><div class="sm-dot"></div>Expansão da instalação</div>
+    </div>
+  </div>
+
+  <div class="nav-div"></div>
+
+  <!-- ── GRUPO 5: ORÇAMENTO ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Orçamento e comercial</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">💰</span>
+      <span class="ni-txt">Orçamento</span>
+      <div class="ni-right"><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item" onclick="showPage('orcamento')"><div class="sm-dot"></div>Orçamento inteligente</div>
+      <div class="sm-item" onclick="showPage('kits')"><div class="sm-dot"></div>Comparação de kits</div>
+      <div class="sm-item" onclick="showPage('equipamentos')"><div class="sm-dot"></div>Equipamentos</div>
+      <div class="sm-item" onclick="showPage('custos-instalacao')"><div class="sm-dot"></div>Custos de instalação</div>
+      <div class="sm-item" onclick="showPage('precos-regiao')"><div class="sm-dot"></div>Preços por região</div>
+      <div class="sm-item" onclick="showPage('propostas')"><div class="sm-dot"></div>Propostas comerciais</div>
+    </div>
+  </div>
+
+  <!-- ── GRUPO 6: FINANCIAMENTO ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Financiamento</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">🏦</span>
+      <span class="ni-txt">Financiamento</span>
+      <div class="ni-right"><span class="ni-badge nb-new">Novo</span><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item" onclick="showPage('pagamento')"><div class="sm-dot"></div>Opções de pagamento</div>
+      <div class="sm-item" onclick="showPage('financiamento')"><div class="sm-dot"></div>Financiamento</div>
+      <div class="sm-item" onclick="showPage('assinatura')"><div class="sm-dot"></div>Assinatura / arrendamento</div>
+      <div class="sm-item" onclick="showPage('parceiros-fin')"><div class="sm-dot"></div>Parceiros financeiros</div>
+      <div class="sm-item" onclick="showPage('comissao')"><div class="sm-dot"></div>Comissão da plataforma</div>
+      <div class="sm-item" onclick="showPage('excedente')"><div class="sm-dot"></div>Monetização de excedente</div>
+      <div class="sm-item" onclick="showPage('roi')"><div class="sm-dot"></div>Retorno do investimento</div>
+    </div>
+  </div>
+
+  <div class="nav-div"></div>
+
+  <!-- ── GRUPO 7: MARKETPLACE ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Marketplace e parceiros</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">🛒</span>
+      <span class="ni-txt">Marketplace</span>
+      <div class="ni-right"><span class="ni-badge nb-soon">Breve</span><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item"><div class="sm-dot"></div>Fornecedores</div>
+      <div class="sm-item"><div class="sm-dot"></div>Instaladores parceiros</div>
+      <div class="sm-item"><div class="sm-dot"></div>Marcas homologadas</div>
+      <div class="sm-item"><div class="sm-dot"></div>Catálogo de equipamentos</div>
+      <div class="sm-item"><div class="sm-dot"></div>Rede de parceiros</div>
+      <div class="sm-item"><div class="sm-dot"></div>Oportunidades comerciais</div>
+    </div>
+  </div>
+
+  <!-- ── GRUPO 8: PROJETOS ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Projetos e carteira</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">📂</span>
+      <span class="ni-txt">Meus Projetos</span>
+      <div class="ni-right"><span class="ni-count">12</span><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item" onclick="showPage('projetos-residenciais')"><div class="sm-dot"></div>Projetos residenciais</div>
+      <div class="sm-item" onclick="showPage('projetos-empresariais')"><div class="sm-dot"></div>Projetos empresariais</div>
+      <div class="sm-item" onclick="showPage('projetos-rurais')"><div class="sm-dot"></div>Projetos rurais</div>
+      <div class="sm-item" onclick="showPage('projetos-investimento')"><div class="sm-dot"></div>Projetos de investimento</div>
+      <div class="sm-item" onclick="showPage('status')"><div class="sm-dot"></div>Status de implantação</div>
+      <div class="sm-item" onclick="showPage('relatorios-projeto')"><div class="sm-dot"></div>Relatórios por projeto</div>
+    </div>
+  </div>
+
+  <!-- ── GRUPO 9: RELATÓRIOS ── -->
+  <div class="nav-group">
+    <div class="nav-group-label">Relatórios e inteligência</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">📊</span>
+      <span class="ni-txt">Relatórios</span>
+      <div class="ni-right"><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item"><div class="sm-dot"></div>Relatórios executivos</div>
+      <div class="sm-item"><div class="sm-dot"></div>Relatórios energéticos</div>
+      <div class="sm-item"><div class="sm-dot"></div>Relatórios financeiros</div>
+      <div class="sm-item"><div class="sm-dot"></div>Exportações</div>
+      <div class="sm-item"><div class="sm-dot"></div>Insights de IA</div>
+      <div class="sm-item"><div class="sm-dot"></div>Tendências regionais</div>
+      <div class="sm-item"><div class="sm-dot"></div>Performance comparativa</div>
+    </div>
+  </div>
+
+  <div class="nav-div"></div>
+
+  <!-- ── GRUPO 10: ADMIN ── -->
+  <!-- INTEGRAÇÃO FUTURA: grupo visível apenas para usuários com role ADMIN ou SUPER_ADMIN -->
+  <div class="nav-group" id="adminGroup">
+    <div class="nav-group-label">⚡ Administração global</div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">🛡</span>
+      <span class="ni-txt">Administração</span>
+      <div class="ni-right"><span class="ni-badge nb-pro">Admin</span><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item"><div class="sm-dot"></div>Usuários e permissões</div>
+      <div class="sm-item"><div class="sm-dot"></div>Planos e assinaturas</div>
+      <div class="sm-item"><div class="sm-dot"></div>Países e regiões</div>
+      <div class="sm-item"><div class="sm-dot"></div>Idiomas e moedas</div>
+      <div class="sm-item"><div class="sm-dot"></div>Tabelas de preço</div>
+      <div class="sm-item"><div class="sm-dot"></div>Configurações fiscais</div>
+      <div class="sm-item"><div class="sm-dot"></div>Integrações</div>
+      <div class="sm-item"><div class="sm-dot"></div>Auditoria</div>
+      <div class="sm-item"><div class="sm-dot"></div>Config. da plataforma</div>
+    </div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <span class="ni-ico">🌐</span>
+      <span class="ni-txt">Expansão Global</span>
+      <div class="ni-right"><span class="ni-badge nb-global">Global</span><span class="ni-chevron">›</span></div>
+    </div>
+    <div class="submenu">
+      <div class="sm-item"><div class="sm-dot"></div>Multi-idioma</div>
+      <div class="sm-item"><div class="sm-dot"></div>Multi-moeda</div>
+      <div class="sm-item"><div class="sm-dot"></div>Impostos por país</div>
+      <div class="sm-item"><div class="sm-dot"></div>Fornecedores locais</div>
+      <div class="sm-item"><div class="sm-dot"></div>Rede financ. internacional</div>
+      <div class="sm-item"><div class="sm-dot"></div>Compliance e regulação</div>
+      <div class="sm-item"><div class="sm-dot"></div>Afiliados e comissões</div>
+    </div>
+  </div>
+
+  <!-- User area -->
+  <div class="sidebar-user">
+    <div class="su-row">
+      <div class="su-avatar">RM</div>
+      <div class="su-info">
+        <div class="su-name">Rafael Mendes</div>
+        <!-- INTEGRAÇÃO FUTURA: plano via /api/user/subscription -->
+        <div class="su-plan">✦ Pro Global · Ativo</div>
+      </div>
+    </div>
+    <button class="su-btn">↑ Fazer Upgrade</button>
+  </div>
+
+</aside><!-- /sidebar -->
+
+<!-- ─── MAIN ─── -->
+<main class="main">
+
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <button class="vt-btn on" onclick="setView(this,'arch')" ><span class="vt-icon">⬡</span>Visão geral da arquitetura</button>
+    <button class="vt-btn" onclick="setView(this,'map')"><span class="vt-icon">🗺</span>Mapa do sistema</button>
+    <button class="vt-btn" onclick="setView(this,'hier')"><span class="vt-icon">📋</span>Hierarquia de páginas</button>
+    <button class="vt-btn" onclick="setView(this,'flow')"><span class="vt-icon">⚡</span>Fluxo do usuário</button>
+    <button class="vt-btn" onclick="setView(this,'global')"><span class="vt-icon">🌍</span>Expansão global</button>
+    <button class="vt-btn" onclick="setView(this,'perm')"><span class="vt-icon">🛡</span>Perfis e permissões</button>
+  </div>
+
+  <!-- ═══════════ VIEW 1 — ARQUITETURA ═══════════ -->
+  <div class="view-panel active" id="vp-arch">
+    <div class="arch-sec">
+      <div class="arch-sec-hd">
+        <div class="arch-sec-label">Grupos de módulos</div>
+        <div class="arch-sec-line"></div>
+        <div class="arch-sec-tag ast-sol">10 grupos · 60+ páginas</div>
+      </div>
+      <div class="arch-overview">
+        <div class="ao-card active-card" onclick="setView(document.querySelector('.vt-btn:nth-child(3)'),  'hier')">
+          <span class="aoc-icon">⬡</span>
+          <div class="aoc-name">Visão geral e Dashboard</div>
+          <div class="aoc-count">4 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-vrd">Ativo</span><span class="aoc-tag aot-dim">Desktop</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">⚡</span>
+          <div class="aoc-name">Simulações solares</div>
+          <div class="aoc-count">6 páginas + subfluxos</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-vrd">Ativo</span><span class="aoc-tag aot-sol">Core</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">🗺</span>
+          <div class="aoc-name">Mapa e geolocalização</div>
+          <div class="aoc-count">7 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-vrd">Ativo</span><span class="aoc-tag aot-sol">Canvas</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">📐</span>
+          <div class="aoc-name">Análise técnica</div>
+          <div class="aoc-count">7 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-sol">Em desenvolvimento</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">💰</span>
+          <div class="aoc-name">Orçamento e comercial</div>
+          <div class="aoc-count">6 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-vrd">Ativo</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">🏦</span>
+          <div class="aoc-name">Financiamento</div>
+          <div class="aoc-count">7 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-sol">Q3 2025</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">🛒</span>
+          <div class="aoc-name">Marketplace e parceiros</div>
+          <div class="aoc-count">6 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-dim">Em breve</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">📂</span>
+          <div class="aoc-name">Projetos e carteira</div>
+          <div class="aoc-count">6 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-vrd">Ativo</span><span class="aoc-tag aot-sky">Pro</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">📊</span>
+          <div class="aoc-name">Relatórios e inteligência</div>
+          <div class="aoc-count">7 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-sol">Q4 2025</span></div>
+        </div>
+        <div class="ao-card" onclick="">
+          <span class="aoc-icon">🌍</span>
+          <div class="aoc-name">Administração global</div>
+          <div class="aoc-count">12 páginas</div>
+          <div class="aoc-tags"><span class="aoc-tag aot-sky">Admin only</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation components overview -->
+    <div class="arch-sec">
+      <div class="arch-sec-hd">
+        <div class="arch-sec-label">Componentes de navegação</div>
+        <div class="arch-sec-line"></div>
+        <div class="arch-sec-tag ast-vrd">4 componentes globais</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div class="ao-card"><span class="aoc-icon">◧</span><div class="aoc-name">Sidebar premium</div><div class="aoc-count">10 grupos · 60+ itens · colapso inteligente</div><div class="aoc-tags"><span class="aoc-tag aot-vrd">Implementado</span></div></div>
+        <div class="ao-card"><span class="aoc-icon">▬</span><div class="aoc-name">Topbar global</div><div class="aoc-count">Busca · País · Idioma · Moeda · Perfil</div><div class="aoc-tags"><span class="aoc-tag aot-vrd">Implementado</span></div></div>
+        <div class="ao-card"><span class="aoc-icon">⋯</span><div class="aoc-name">Breadcrumbs</div><div class="aoc-count">Navegação contextual em todas as páginas</div><div class="aoc-tags"><span class="aoc-tag aot-vrd">Implementado</span></div></div>
+        <div class="ao-card"><span class="aoc-icon">⊞</span><div class="aoc-name">View Tabs internas</div><div class="aoc-count">Tabs horizontais por módulo</div><div class="aoc-tags"><span class="aoc-tag aot-vrd">Implementado</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ VIEW 2 — MAPA DO SISTEMA ═══════════ -->
+  <div class="view-panel" id="vp-map">
+    <div class="arch-sec-hd" style="margin-bottom:16px">
+      <div class="arch-sec-label">Mapa completo do sistema</div>
+      <div class="arch-sec-line"></div>
+      <div class="arch-sec-tag ast-sol">Conexões entre módulos</div>
+    </div>
+    <div class="sys-map-wrap">
+      <svg id="sysMapSVG" xmlns="http://www.w3.org/2000/svg" width="1100" height="680" viewBox="0 0 1100 680">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(234,168,0,.5)"/>
+          </marker>
+          <marker id="arr2" markerWidth="6" markerHeight="5" refX="4" refY="2.5" orient="auto">
+            <path d="M0,0 L6,2.5 L0,5 Z" fill="rgba(234,240,255,.15)"/>
+          </marker>
+          <marker id="arrd" markerWidth="6" markerHeight="5" refX="4" refY="2.5" orient="auto">
+            <path d="M0,0 L6,2.5 L0,5 Z" fill="rgba(234,240,255,.06)"/>
+          </marker>
+          <filter id="glow-sol"><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="glow-vrd"><feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+
+        <!-- TOPBAR (full width) -->
+        <rect x="20" y="10" width="1060" height="36" rx="8" fill="rgba(9,21,38,.8)" stroke="rgba(234,168,0,.2)" stroke-width="1"/>
+        <text x="550" y="29" font-family="Sora" fill="rgba(234,240,255,.4)" font-size="9" text-anchor="middle" font-weight="600" letter-spacing="2">TOPBAR GLOBAL  ·  Busca  ·  País  ·  Idioma  ·  Moeda  ·  Notificações  ·  Perfil  ·  Nova Simulação</text>
+
+        <!-- SIDEBAR column -->
+        <rect x="20" y="55" width="120" height="600" rx="8" fill="rgba(6,15,30,.9)" stroke="rgba(234,240,255,.08)" stroke-width="1"/>
+        <text x="80" y="75" font-family="Sora" fill="rgba(234,168,0,.6)" font-size="7" text-anchor="middle" font-weight="700" letter-spacing="2">SIDEBAR</text>
+        <!-- Sidebar items labels -->
+        <g font-family="Sora" fill="rgba(234,240,255,.35)" font-size="7" text-anchor="middle">
+          <text x="80" y="95">Dashboard</text>
+          <text x="80" y="112">Inteligência</text>
+          <text x="80" y="129">Simulações</text>
+          <text x="80" y="146">Mapa Solar</text>
+          <text x="80" y="163">An. Técnica</text>
+          <text x="80" y="180">Orçamento</text>
+          <text x="80" y="197">Financiamento</text>
+          <text x="80" y="214">Marketplace</text>
+          <text x="80" y="231">Projetos</text>
+          <text x="80" y="248">Relatórios</text>
+          <text x="80" y="265">Administração</text>
+          <text x="80" y="282">Expansão Global</text>
+        </g>
+
+        <!-- MAIN content area background -->
+        <rect x="152" y="55" width="928" height="600" rx="8" fill="rgba(4,12,20,.5)" stroke="rgba(234,240,255,.04)" stroke-width="1"/>
+
+        <!-- CORE MODULES — row 1 -->
+        <!-- Dashboard -->
+        <rect x="170" y="68" width="130" height="56" rx="7" fill="rgba(13,30,56,.9)" stroke="rgba(234,168,0,.35)" stroke-width="1.5" filter="url(#glow-sol)"/>
+        <text x="235" y="90" font-family="Sora" fill="rgba(255,208,96,.9)" font-size="10" text-anchor="middle" font-weight="700">⬡ Dashboard</text>
+        <text x="235" y="106" font-family="Sora" fill="rgba(234,240,255,.4)" font-size="7" text-anchor="middle">Centro de inteligência solar</text>
+        <text x="235" y="118" font-family="Fira Code" fill="rgba(0,204,136,.5)" font-size="7" text-anchor="middle">/dashboard</text>
+
+        <!-- Nova Simulação -->
+        <rect x="318" y="68" width="130" height="56" rx="7" fill="rgba(13,30,56,.9)" stroke="rgba(234,168,0,.3)" stroke-width="1.5"/>
+        <text x="383" y="90" font-family="Sora" fill="rgba(255,208,96,.8)" font-size="10" text-anchor="middle" font-weight="700">⚡ Simulação</text>
+        <text x="383" y="106" font-family="Sora" fill="rgba(234,240,255,.4)" font-size="7" text-anchor="middle">Nova · Salvas · Cenários</text>
+        <text x="383" y="118" font-family="Fira Code" fill="rgba(0,204,136,.5)" font-size="7" text-anchor="middle">/simulacoes</text>
+
+        <!-- Mapa Solar -->
+        <rect x="466" y="68" width="130" height="56" rx="7" fill="rgba(13,30,56,.9)" stroke="rgba(234,168,0,.25)" stroke-width="1.5"/>
+        <text x="531" y="90" font-family="Sora" fill="rgba(255,208,96,.7)" font-size="10" text-anchor="middle" font-weight="700">🗺 Mapa Solar</text>
+        <text x="531" y="106" font-family="Sora" fill="rgba(234,240,255,.4)" font-size="7" text-anchor="middle">Satélite · Telhado · Terreno</text>
+        <text x="531" y="118" font-family="Fira Code" fill="rgba(0,204,136,.5)" font-size="7" text-anchor="middle">/mapa-solar</text>
+
+        <!-- Análise Técnica -->
+        <rect x="614" y="68" width="130" height="56" rx="7" fill="rgba(13,30,56,.9)" stroke="rgba(234,168,0,.2)" stroke-width="1"/>
+        <text x="679" y="90" font-family="Sora" fill="rgba(255,208,96,.6)" font-size="10" text-anchor="middle" font-weight="700">📐 Análise Tec.</text>
+        <text x="679" y="106" font-family="Sora" fill="rgba(234,240,255,.35)" font-size="7" text-anchor="middle">Área · Inclinação · Sombra</text>
+        <text x="679" y="118" font-family="Fira Code" fill="rgba(234,240,255,.25)" font-size="7" text-anchor="middle">/analise</text>
+
+        <!-- Orçamento -->
+        <rect x="762" y="68" width="130" height="56" rx="7" fill="rgba(13,30,56,.9)" stroke="rgba(234,168,0,.2)" stroke-width="1"/>
+        <text x="827" y="90" font-family="Sora" fill="rgba(255,208,96,.6)" font-size="10" text-anchor="middle" font-weight="700">💰 Orçamento</text>
+        <text x="827" y="106" font-family="Sora" fill="rgba(234,240,255,.35)" font-size="7" text-anchor="middle">Kits · Regiões · Propostas</text>
+        <text x="827" y="118" font-family="Fira Code" fill="rgba(234,240,255,.25)" font-size="7" text-anchor="middle">/orcamento</text>
+
+        <!-- Financiamento -->
+        <rect x="910" y="68" width="150" height="56" rx="7" fill="rgba(13,30,56,.9)" stroke="rgba(234,168,0,.2)" stroke-width="1"/>
+        <text x="985" y="90" font-family="Sora" fill="rgba(255,208,96,.6)" font-size="10" text-anchor="middle" font-weight="700">🏦 Financ.</text>
+        <text x="985" y="106" font-family="Sora" fill="rgba(234,240,255,.35)" font-size="7" text-anchor="middle">Pagamento · Parceiros</text>
+        <text x="985" y="118" font-family="Fira Code" fill="rgba(234,240,255,.25)" font-size="7" text-anchor="middle">/financiamento</text>
+
+        <!-- MAIN FLOW ARROWS (row 1) -->
+        <path d="M 300,96 L 318,96" class="edge-main"/>
+        <path d="M 448,96 L 466,96" class="edge-main"/>
+        <path d="M 596,96 L 614,96" class="edge-main"/>
+        <path d="M 744,96 L 762,96" class="edge-main"/>
+        <path d="M 892,96 L 910,96" class="edge-main"/>
+
+        <!-- ROW 2 — Secondary modules -->
+        <rect x="170" y="160" width="130" height="48" rx="6" fill="rgba(9,21,38,.7)" stroke="rgba(234,240,255,.08)" stroke-width="1"/>
+        <text x="235" y="179" font-family="Sora" fill="rgba(234,240,255,.5)" font-size="9" text-anchor="middle" font-weight="600">📂 Projetos</text>
+        <text x="235" y="196" font-family="Sora" fill="rgba(234,240,255,.3)" font-size="7" text-anchor="middle">Carteira de projetos</text>
+
+        <rect x="318" y="160" width="130" height="48" rx="6" fill="rgba(9,21,38,.7)" stroke="rgba(234,240,255,.08)" stroke-width="1"/>
+        <text x="383" y="179" font-family="Sora" fill="rgba(234,240,255,.5)" font-size="9" text-anchor="middle" font-weight="600">📊 Relatórios</text>
+        <text x="383" y="196" font-family="Sora" fill="rgba(234,240,255,.3)" font-size="7" text-anchor="middle">Executivo · Energético</text>
+
+        <rect x="466" y="160" width="130" height="48" rx="6" fill="rgba(9,21,38,.7)" stroke="rgba(234,240,255,.08)" stroke-width="1"/>
+        <text x="531" y="179" font-family="Sora" fill="rgba(234,240,255,.5)" font-size="9" text-anchor="middle" font-weight="600">🛒 Marketplace</text>
+        <text x="531" y="196" font-family="Sora" fill="rgba(234,240,255,.3)" font-size="7" text-anchor="middle">Forn. · Instal. · Parceiros</text>
+
+        <rect x="614" y="160" width="130" height="48" rx="6" fill="rgba(9,21,38,.7)" stroke="rgba(234,240,255,.08)" stroke-width="1"/>
+        <text x="679" y="179" font-family="Sora" fill="rgba(234,240,255,.5)" font-size="9" text-anchor="middle" font-weight="600">🛡 Administração</text>
+        <text x="679" y="196" font-family="Sora" fill="rgba(234,240,255,.3)" font-size="7" text-anchor="middle">Usuários · Planos · Fiscal</text>
+
+        <rect x="762" y="160" width="130" height="48" rx="6" fill="rgba(9,21,38,.7)" stroke="rgba(234,240,255,.08)" stroke-width="1"/>
+        <text x="827" y="179" font-family="Sora" fill="rgba(234,240,255,.5)" font-size="9" text-anchor="middle" font-weight="600">🌐 Expansão</text>
+        <text x="827" y="196" font-family="Sora" fill="rgba(234,240,255,.3)" font-size="7" text-anchor="middle">Multi-país · Multi-moeda</text>
+
+        <!-- Connections row1 → row2 -->
+        <path d="M 235,124 L 235,160" class="edge-sub"/>
+        <path d="M 383,124 L 383,160" class="edge-sub"/>
+        <path d="M 531,124 L 531,160" class="edge-sub"/>
+        <path d="M 679,124 L 679,160" class="edge-sub"/>
+        <path d="M 827,124 L 827,160" class="edge-sub"/>
+
+        <!-- ROW 3 — External integrations -->
+        <text x="550" y="242" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle" letter-spacing="3" font-weight="600">INTEGRAÇÕES EXTERNAS</text>
+
+        <rect x="170" y="258" width="100" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="220" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">🗺 Google Maps</text>
+        <text x="220" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">Mapbox GL</text>
+
+        <rect x="284" y="258" width="100" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="334" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">☀ NASA POWER</text>
+        <text x="334" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">PVGIS · Solar API</text>
+
+        <rect x="398" y="258" width="100" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="448" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">🏦 Bancos Solar</text>
+        <text x="448" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">BV · Santander · BNDES</text>
+
+        <rect x="512" y="258" width="100" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="562" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">📋 ANEEL API</text>
+        <text x="562" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">Tarifas · GD · Normas</text>
+
+        <rect x="626" y="258" width="100" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="676" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">📦 Distribuidores</text>
+        <text x="676" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">Jinko · Fronius · WEG</text>
+
+        <rect x="740" y="258" width="100" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="790" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">🔐 Auth / RBAC</text>
+        <text x="790" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">Supabase · Auth0</text>
+
+        <rect x="854" y="258" width="106" height="40" rx="6" fill="rgba(5,10,18,.6)" stroke="rgba(234,240,255,.06)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="907" y="274" font-family="Sora" fill="rgba(234,240,255,.2)" font-size="8" text-anchor="middle">📈 Analytics</text>
+        <text x="907" y="287" font-family="Sora" fill="rgba(234,240,255,.13)" font-size="7" text-anchor="middle">GA4 · Mixpanel · HJ</text>
+
+        <!-- Future horizontal separator -->
+        <line x1="152" y1="320" x2="1080" y2="320" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="6 4"/>
+        <text x="616" y="335" font-family="Sora" fill="rgba(234,240,255,.12)" font-size="7" text-anchor="middle" letter-spacing="4">MÓDULOS FUTUROS — ROADMAP 2026+</text>
+
+        <!-- Future modules row -->
+        <rect x="170" y="350" width="110" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="225" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">🌿 Crédito CO₂</text>
+        <text x="225" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">VERRA · I-REC</text>
+
+        <rect x="294" y="350" width="110" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="349" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">🔋 Bateria IoT</text>
+        <text x="349" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">Powerwall · Monitor</text>
+
+        <rect x="418" y="350" width="110" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="473" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">🤖 IA Generativa</text>
+        <text x="473" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">GPT-5 · Solar LLM</text>
+
+        <rect x="542" y="350" width="110" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="597" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">🌐 Rede Global</text>
+        <text x="597" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">47 países · Multi-tenant</text>
+
+        <rect x="666" y="350" width="110" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="721" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">📱 App Mobile</text>
+        <text x="721" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">iOS · Android</text>
+
+        <rect x="790" y="350" width="110" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="845" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">🏗 EPC Global</text>
+        <text x="845" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">Contratação full-service</text>
+
+        <rect x="914" y="350" width="146" height="36" rx="6" fill="rgba(4,8,16,.4)" stroke="rgba(234,240,255,.05)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="987" y="364" font-family="Sora" fill="rgba(234,240,255,.18)" font-size="7.5" text-anchor="middle">💎 White-label</text>
+        <text x="987" y="378" font-family="Sora" fill="rgba(234,240,255,.1)" font-size="6" text-anchor="middle">API para terceiros</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════════ VIEW 3 — HIERARQUIA ═══════════ -->
+  <div class="view-panel" id="vp-hier">
+    <div class="arch-sec-hd" style="margin-bottom:14px">
+      <div class="arch-sec-label">Hierarquia completa de páginas</div>
+      <div class="arch-sec-line"></div>
+      <div class="arch-sec-tag ast-sol">60+ páginas · 4 níveis de profundidade</div>
+    </div>
+    <div class="hierarchy-tree" id="hierarchyTree">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+
+  <!-- ═══════════ VIEW 4 — FLUXO ═══════════ -->
+  <div class="view-panel" id="vp-flow">
+    <div class="arch-sec-hd" style="margin-bottom:14px">
+      <div class="arch-sec-label">Jornada principal do usuário</div>
+      <div class="arch-sec-line"></div>
+      <div class="arch-sec-tag ast-sol">13 etapas · Fluxo end-to-end</div>
+    </div>
+
+    <div class="flow-wrap">
+      <div class="flow-canvas">
+        <!-- Profile selector -->
+        <div class="flow-header-row">
+          <button class="flow-profile-tab on" onclick="setFlowProfile(this,'cliente')">👤 Cliente final</button>
+          <button class="flow-profile-tab" onclick="setFlowProfile(this,'integrador')">🔧 Integrador</button>
+          <button class="flow-profile-tab" onclick="setFlowProfile(this,'empresa')">🏢 Empresa</button>
+          <button class="flow-profile-tab" onclick="setFlowProfile(this,'admin')">⚡ Admin</button>
+        </div>
+
+        <div class="journey">
+          <!-- Main journey track -->
+          <div class="journey-track">
+            <div class="journey-steps" id="journeySteps"></div>
+          </div>
+
+          <!-- Step detail -->
+          <div class="step-detail" id="stepDetail">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Parallel flows -->
+        <div class="arch-sec-hd" style="margin:20px 0 14px">
+          <div class="arch-sec-label">Fluxos paralelos</div>
+          <div class="arch-sec-line"></div>
+        </div>
+        <div class="parallel-flows">
+          <div class="pf-card">
+            <div class="pf-header"><div class="pf-icon">💰</div><div class="pf-name">Orçamento direto</div></div>
+            <div class="pf-steps">
+              <div class="pf-step"><div class="pf-n">1</div><div class="pf-txt">Selecionar kit solar</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">2</div><div class="pf-txt">Comparar equipamentos</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">3</div><div class="pf-txt">Analisar preços por região</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">4</div><div class="pf-txt">Gerar proposta comercial</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">5</div><div class="pf-txt">Contratar instalador</div><div class="pf-arrow">✓</div></div>
+            </div>
+          </div>
+          <div class="pf-card">
+            <div class="pf-header"><div class="pf-icon">📂</div><div class="pf-name">Gestão de carteira</div></div>
+            <div class="pf-steps">
+              <div class="pf-step"><div class="pf-n">1</div><div class="pf-txt">Ver todos os projetos</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">2</div><div class="pf-txt">Filtrar por status/tipo</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">3</div><div class="pf-txt">Analisar retorno consolidado</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">4</div><div class="pf-txt">Exportar relatórios</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">5</div><div class="pf-txt">Apresentar ao cliente</div><div class="pf-arrow">✓</div></div>
+            </div>
+          </div>
+          <div class="pf-card">
+            <div class="pf-header"><div class="pf-icon">🌍</div><div class="pf-name">Admin global</div></div>
+            <div class="pf-steps">
+              <div class="pf-step"><div class="pf-n">1</div><div class="pf-txt">Configurar novo país</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">2</div><div class="pf-txt">Definir tarifas e moeda</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">3</div><div class="pf-txt">Cadastrar parceiros locais</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">4</div><div class="pf-txt">Publicar kits regionais</div><div class="pf-arrow">›</div></div>
+              <div class="pf-step"><div class="pf-n">5</div><div class="pf-txt">Monitorar performance</div><div class="pf-arrow">✓</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ VIEW 5 — GLOBAL ═══════════ -->
+  <div class="view-panel" id="vp-global">
+    <div class="arch-sec-hd" style="margin-bottom:14px">
+      <div class="arch-sec-label">Matriz de países</div>
+      <div class="arch-sec-line"></div>
+      <div class="arch-sec-tag ast-vrd">47 países no roadmap</div>
+    </div>
+
+    <div class="country-matrix" style="margin-bottom:28px">
+      <div class="cm-card cm-live"><span class="cm-flag">🇧🇷</span><div class="cm-country">Brasil</div><span class="cm-status cms-live">Ativo</span></div>
+      <div class="cm-card cm-next"><span class="cm-flag">🇵🇹</span><div class="cm-country">Portugal</div><span class="cm-status cms-next">Q3 2025</span></div>
+      <div class="cm-card cm-next"><span class="cm-flag">🇪🇸</span><div class="cm-country">Espanha</div><span class="cm-status cms-next">Q3 2025</span></div>
+      <div class="cm-card"><span class="cm-flag">🇺🇸</span><div class="cm-country">EUA</div><span class="cm-status cms-road">2026</span></div>
+      <div class="cm-card"><span class="cm-flag">🇲🇽</span><div class="cm-country">México</div><span class="cm-status cms-road">2026</span></div>
+      <div class="cm-card"><span class="cm-flag">🇦🇷</span><div class="cm-country">Argentina</div><span class="cm-status cms-road">2026</span></div>
+      <div class="cm-card"><span class="cm-flag">🇨🇴</span><div class="cm-country">Colômbia</div><span class="cm-status cms-road">2026</span></div>
+      <div class="cm-card"><span class="cm-flag">🇨🇱</span><div class="cm-country">Chile</div><span class="cm-status cms-road">2026</span></div>
+      <div class="cm-card"><span class="cm-flag">🇩🇪</span><div class="cm-country">Alemanha</div><span class="cm-status cms-road">2027</span></div>
+      <div class="cm-card"><span class="cm-flag">🇫🇷</span><div class="cm-country">França</div><span class="cm-status cms-road">2027</span></div>
+      <div class="cm-card"><span class="cm-flag">🇮🇹</span><div class="cm-country">Itália</div><span class="cm-status cms-road">2027</span></div>
+      <div class="cm-card"><span class="cm-flag">🌍</span><div class="cm-country">+35 países</div><span class="cm-status cms-road">Roadmap</span></div>
+    </div>
+
+    <div class="arch-sec-hd" style="margin-bottom:14px">
+      <div class="arch-sec-label">Módulos de expansão global</div>
+      <div class="arch-sec-line"></div>
+    </div>
+
+    <div class="global-grid">
+      <div class="global-card">
+        <div class="gc-header"><div class="gc-icon">🌐</div><div class="gc-name">Multi-idioma (i18n)</div><div class="gc-tag gct-b">Q3 2025</div></div>
+        <div class="gc-items">
+          <div class="gc-item"><div class="gci-dot" style="background:var(--vrd)"></div><div class="gci-label">Português (Brasil)</div><span class="gci-status gcs-live">Ativo</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">Inglês (EUA)</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">Espanhol</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">Português (PT)</div><span class="gci-status gcs-soon">Breve</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">Francês · Alemão</div><span class="gci-status gcs-soon">2026</span></div>
+        </div>
+      </div>
+      <div class="global-card">
+        <div class="gc-header"><div class="gc-icon">💱</div><div class="gc-name">Multi-moeda</div><div class="gc-tag gct-b">Q3 2025</div></div>
+        <div class="gc-items">
+          <div class="gc-item"><div class="gci-dot" style="background:var(--vrd)"></div><div class="gci-label">BRL — Real Brasileiro</div><span class="gci-status gcs-live">Ativo</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">USD — Dólar Americano</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">EUR — Euro</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">GBP · CAD · AUD</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">MXN · ARS · CLP · COP</div><span class="gci-status gcs-soon">2026</span></div>
+        </div>
+      </div>
+      <div class="global-card">
+        <div class="gc-header"><div class="gc-icon">⚖</div><div class="gc-name">Compliance e regulação</div><div class="gc-tag gct-c">Por país</div></div>
+        <div class="gc-items">
+          <div class="gc-item"><div class="gci-dot" style="background:var(--vrd)"></div><div class="gci-label">ANEEL · Lei 14.300/2022 · BR</div><span class="gci-status gcs-live">Ativo</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">DGEG · DL 162/2019 · PT</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">IDAE · ES · REE</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">FERC · NEM 3.0 · ITC 30% · US</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">EU Taxonomy · Red II</div><span class="gci-status gcs-soon">2026</span></div>
+        </div>
+      </div>
+      <div class="global-card">
+        <div class="gc-header"><div class="gc-icon">🏦</div><div class="gc-name">Rede financeira global</div><div class="gc-tag gct-b">Q4 2025</div></div>
+        <div class="gc-items">
+          <div class="gc-item"><div class="gci-dot" style="background:var(--vrd)"></div><div class="gci-label">BV Solar · Santander · BR</div><span class="gci-status gcs-live">Ativo</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--vrd)"></div><div class="gci-label">BNDES ProGiro · BR</div><span class="gci-status gcs-live">Ativo</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">EDP · CGD · PT</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">Mosaic Solar · GoodLeap · US</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">IFC · EBRD · Global</div><span class="gci-status gcs-soon">2027</span></div>
+        </div>
+      </div>
+      <div class="global-card">
+        <div class="gc-header"><div class="gc-icon">🛒</div><div class="gc-name">Marketplace global</div><div class="gc-tag gct-d">2026</div></div>
+        <div class="gc-items">
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">JinkoSolar · Canadian Solar</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">Fronius · SMA · Huawei</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">Rede de instaladores global</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">White-label para integradores</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">API pública B2B</div><span class="gci-status gcs-soon">2027</span></div>
+        </div>
+      </div>
+      <div class="global-card">
+        <div class="gc-header"><div class="gc-icon">🤖</div><div class="gc-name">IA e automação</div><div class="gc-tag gct-d">2026</div></div>
+        <div class="gc-items">
+          <div class="gc-item"><div class="gci-dot" style="background:var(--vrd)"></div><div class="gci-label">Motor de recomendação solar</div><span class="gci-status gcs-live">Ativo</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--sol)"></div><div class="gci-label">Análise automática de telhado</div><span class="gci-status gcs-wip">Em dev.</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">Geração automática de proposta</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">ChatSolar (LLM especializado)</div><span class="gci-status gcs-soon">2026</span></div>
+          <div class="gc-item"><div class="gci-dot" style="background:var(--c4)"></div><div class="gci-label">Previsão de geração com IA</div><span class="gci-status gcs-soon">2027</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ VIEW 6 — PERMISSÕES ═══════════ -->
+  <div class="view-panel" id="vp-perm">
+    <div class="arch-sec-hd" style="margin-bottom:14px">
+      <div class="arch-sec-label">Matriz de permissões por perfil</div>
+      <div class="arch-sec-line"></div>
+      <!-- INTEGRAÇÃO FUTURA: permissões gerenciadas via RBAC (Role-Based Access Control) -->
+      <!-- Supabase Row Level Security / Auth0 RBAC / custom middleware -->
+      <div class="arch-sec-tag ast-sky">RBAC · 4 perfis · 30+ módulos</div>
+    </div>
+    <div class="perm-matrix-wrap">
+      <table class="perm-matrix" id="permMatrix"></table>
+    </div>
+  </div>
+
+</main>
+</div><!-- /shell -->
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ── LOADER ── */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('ldr').classList.add('out');
+    buildHierarchy();
+    buildJourney();
+    buildPermMatrix();
+  }, 900);
+});
+
+/* ── SIDEBAR COLLAPSE ── */
+function toggleCollapse() {
+  document.getElementById('shell').classList.toggle('collapsed');
+}
+
+/* ── MOBILE SIDEBAR ── */
+function toggleMobileSidebar() {
+  document.getElementById('sidebar').classList.toggle('mob-open');
+}
+
+/* ── VIEW TABS ── */
+function setView(btn, view) {
+  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('vp-' + view).classList.add('active');
+}
+
+/* ── PROFILE SWITCHER ── */
+const profileModules = {
+  cliente:   ['Visão geral', 'Simulações', 'Mapa e geolocalização', 'Orçamento e comercial', 'Financiamento'],
+  integrador:['Visão geral', 'Simulações', 'Mapa e geolocalização', 'Análise técnica', 'Orçamento e comercial', 'Financiamento', 'Marketplace e parceiros', 'Projetos e carteira', 'Relatórios e inteligência'],
+  empresa:   ['Visão geral', 'Simulações', 'Mapa e geolocalização', 'Análise técnica', 'Orçamento e comercial', 'Financiamento', 'Projetos e carteira', 'Relatórios e inteligência'],
+  admin:     null // all
+};
+
+function setProfile(btn, profile) {
+  document.querySelectorAll('.ps-opt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  /* INTEGRAÇÃO FUTURA: perfil virá do JWT do usuário autenticado
+     e filtrará os módulos via RBAC middleware no backend */
+  const adminGroup = document.getElementById('adminGroup');
+  adminGroup.style.display = profile === 'admin' ? 'block' : 'none';
+}
+
+/* ── SUBMENU TOGGLE ── */
+function toggleSub(el) {
+  const next = el.nextElementSibling;
+  if (!next || !next.classList.contains('submenu')) return;
+  el.classList.toggle('expanded');
+  next.classList.toggle('open');
+}
+
+/* ── NAV ITEM ── */
+function showPage(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.sm-item').forEach(n => n.classList.remove('active'));
+  // Update breadcrumb
+  const labels = {
+    'dashboard':'Dashboard','nova-sim':'Nova Simulação','mapa-solar':'Mapa Solar',
+    'orcamento':'Orçamento Inteligente','simulacoes-salvas':'Simulações Salvas',
+    'telhado':'Seleção de Telhado','terreno':'Seleção de Terreno',
+    'kits':'Comparação de Kits','financiamento':'Financiamento',
+    'inteligencia':'Centro de Inteligência','global':'Visão Global',
+    'projetos-residenciais':'Projetos Residenciais',
+  };
+  const label = labels[page] || page.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  document.getElementById('breadcrumbCur').textContent = label;
+}
+
+/* ── TOOLTIP ── */
+const tip = document.getElementById('tooltip');
+document.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mouseenter', e => {
+    tip.textContent = el.dataset.tip;
+    tip.style.display = 'block';
+    positionTip(e);
+  });
+  el.addEventListener('mousemove', positionTip);
+  el.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+});
+function positionTip(e) {
+  tip.style.left = (e.clientX + 14) + 'px';
+  tip.style.top  = (e.clientY - 36) + 'px';
+}
+
+/* ══════════════════════════════════════════════
+   HIERARCHY DATA
+══════════════════════════════════════════════ */
+const hierData = [
+  { num:'01', name:'Visão geral e Dashboard', icon:'⬡', pages:[
+    {name:'Dashboard principal', dot:'sol', badge:'wip', route:'/dashboard', subs:['KPIs globais','Centro de inteligência','Alertas ativos']},
+    {name:'Centro de Inteligência Solar', dot:'sol', badge:'wip', route:'/inteligencia', subs:['Análise solar em tempo real','Insights de IA']},
+    {name:'Visão global da operação', dot:'sky', badge:'soon', route:'/visao-global'},
+    {name:'Notificações e alertas', dot:'vrd', badge:'done', route:'/notificacoes'},
+  ]},
+  { num:'02', name:'Simulações', icon:'⚡', pages:[
+    {name:'Nova simulação', dot:'sol', badge:'done', route:'/simulacoes/nova', subs:['Localização','Tipo de imóvel','Configuração','Resultados']},
+    {name:'Simulações salvas', dot:'vrd', badge:'done', route:'/simulacoes'},
+    {name:'Comparação de cenários', dot:'sol', badge:'wip', route:'/simulacoes/comparar'},
+    {name:'Histórico de análises', dot:'vrd', badge:'done', route:'/simulacoes/historico'},
+    {name:'Resultados energéticos', dot:'sol', badge:'wip', route:'/simulacoes/energia'},
+    {name:'Resultados financeiros', dot:'sol', badge:'wip', route:'/simulacoes/financeiro'},
+  ]},
+  { num:'03', name:'Mapa e geolocalização', icon:'🗺', pages:[
+    {name:'Mapa solar interativo', dot:'sol', badge:'done', route:'/mapa', subs:['Satélite','Mapa de ruas','Híbrido','Camadas']},
+    {name:'Seleção de telhado', dot:'sol', badge:'done', route:'/mapa/telhado', subs:['Polígono','Retângulo','Pontos manuais']},
+    {name:'Seleção de terreno', dot:'sol', badge:'wip', route:'/mapa/terreno'},
+    {name:'Camadas geoespaciais', dot:'sky', badge:'wip', route:'/mapa/camadas', subs:['Incidência solar','Sombra','Orientação','Potencial']},
+    {name:'Áreas favoritas', dot:'dim', badge:'soon', route:'/mapa/favoritos'},
+    {name:'Georreferenciamento', dot:'dim', badge:'soon', route:'/mapa/georref'},
+  ]},
+  { num:'04', name:'Análise técnica', icon:'📐', pages:[
+    {name:'Área útil', dot:'sol', badge:'wip', route:'/analise/area'},
+    {name:'Inclinação e orientação', dot:'sol', badge:'wip', route:'/analise/inclinacao'},
+    {name:'Sombreamento', dot:'sol', badge:'wip', route:'/analise/sombra'},
+    {name:'Capacidade de placas', dot:'sol', badge:'wip', route:'/analise/placas'},
+    {name:'Produção estimada', dot:'sol', badge:'wip', route:'/analise/producao'},
+    {name:'Eficiência do sistema', dot:'dim', badge:'soon', route:'/analise/eficiencia'},
+    {name:'Expansão da instalação', dot:'dim', badge:'soon', route:'/analise/expansao'},
+  ]},
+  { num:'05', name:'Orçamento e comercial', icon:'💰', pages:[
+    {name:'Orçamento inteligente', dot:'sol', badge:'done', route:'/orcamento', subs:['Resumo do projeto','Tabela detalhada','Preços por região']},
+    {name:'Comparação de kits', dot:'sol', badge:'done', route:'/orcamento/kits'},
+    {name:'Equipamentos', dot:'sol', badge:'wip', route:'/orcamento/equipamentos'},
+    {name:'Custos de instalação', dot:'sol', badge:'wip', route:'/orcamento/instalacao'},
+    {name:'Preços por região', dot:'sol', badge:'wip', route:'/orcamento/regioes'},
+    {name:'Propostas comerciais', dot:'dim', badge:'soon', route:'/propostas'},
+  ]},
+  { num:'06', name:'Financiamento', icon:'🏦', pages:[
+    {name:'Opções de pagamento', dot:'sol', badge:'wip', route:'/financiamento'},
+    {name:'Financiamento bancário', dot:'sol', badge:'wip', route:'/financiamento/banco'},
+    {name:'Solar por assinatura', dot:'dim', badge:'soon', route:'/financiamento/assinatura'},
+    {name:'Parceiros financeiros', dot:'dim', badge:'soon', route:'/financiamento/parceiros'},
+    {name:'Comissão da plataforma', dot:'dim', badge:'soon', route:'/financiamento/comissao'},
+    {name:'Monetização de excedente', dot:'dim', badge:'soon', route:'/financiamento/excedente'},
+    {name:'Retorno do investimento', dot:'sol', badge:'wip', route:'/financiamento/roi'},
+  ]},
+  { num:'07', name:'Marketplace e parceiros', icon:'🛒', pages:[
+    {name:'Fornecedores', dot:'dim', badge:'soon', route:'/marketplace/fornecedores'},
+    {name:'Instaladores parceiros', dot:'dim', badge:'soon', route:'/marketplace/instaladores'},
+    {name:'Marcas homologadas', dot:'dim', badge:'soon', route:'/marketplace/marcas'},
+    {name:'Catálogo de equipamentos', dot:'dim', badge:'soon', route:'/marketplace/catalogo'},
+    {name:'Rede de parceiros', dot:'dim', badge:'soon', route:'/marketplace/rede'},
+    {name:'Oportunidades comerciais', dot:'dim', badge:'soon', route:'/marketplace/oportunidades'},
+  ]},
+  { num:'08', name:'Projetos e carteira', icon:'📂', pages:[
+    {name:'Todos os projetos', dot:'vrd', badge:'done', route:'/projetos', subs:['Lista','Mapa','Kanban','Calendário']},
+    {name:'Projetos residenciais', dot:'vrd', badge:'done', route:'/projetos/residencial'},
+    {name:'Projetos empresariais', dot:'sol', badge:'wip', route:'/projetos/empresarial'},
+    {name:'Projetos rurais', dot:'sol', badge:'wip', route:'/projetos/rural'},
+    {name:'Status de implantação', dot:'sol', badge:'wip', route:'/projetos/status'},
+    {name:'Relatórios por projeto', dot:'dim', badge:'soon', route:'/projetos/relatorios'},
+  ]},
+  { num:'09', name:'Relatórios e inteligência', icon:'📊', pages:[
+    {name:'Relatórios executivos', dot:'sol', badge:'wip', route:'/relatorios/executivo'},
+    {name:'Relatórios energéticos', dot:'sol', badge:'wip', route:'/relatorios/energia'},
+    {name:'Relatórios financeiros', dot:'sol', badge:'wip', route:'/relatorios/financeiro'},
+    {name:'Exportações', dot:'dim', badge:'soon', route:'/relatorios/exportar'},
+    {name:'Insights de IA', dot:'sol', badge:'wip', route:'/relatorios/ia'},
+    {name:'Tendências regionais', dot:'dim', badge:'soon', route:'/relatorios/tendencias'},
+    {name:'Performance comparativa', dot:'dim', badge:'soon', route:'/relatorios/performance'},
+  ]},
+  { num:'10', name:'Administração global', icon:'🛡', pages:[
+    {name:'Usuários e permissões', dot:'sky', badge:'wip', route:'/admin/usuarios'},
+    {name:'Planos e assinaturas', dot:'sky', badge:'wip', route:'/admin/planos'},
+    {name:'Países e regiões', dot:'sky', badge:'wip', route:'/admin/paises'},
+    {name:'Idiomas e moedas', dot:'dim', badge:'soon', route:'/admin/i18n'},
+    {name:'Tabelas de preço', dot:'sky', badge:'wip', route:'/admin/precos'},
+    {name:'Configurações fiscais', dot:'dim', badge:'soon', route:'/admin/fiscal'},
+    {name:'Integrações', dot:'sky', badge:'wip', route:'/admin/integracoes'},
+    {name:'Auditoria', dot:'dim', badge:'soon', route:'/admin/auditoria'},
+    {name:'Config. da plataforma', dot:'sky', badge:'wip', route:'/admin/config'},
+  ]},
+];
+
+function buildHierarchy() {
+  const tree = document.getElementById('hierarchyTree');
+  tree.innerHTML = hierData.map((group, gi) => {
+    const pagesHTML = `
+      <div class="ht-page-row">
+        ${group.pages.map(p => {
+          const dotClass = `hpd-${p.dot}`;
+          const badgeClass = p.badge === 'done' ? 'hpb-done' : p.badge === 'wip' ? 'hpb-wip' : 'hpb-soon';
+          const badgeText = p.badge === 'done' ? '✓ Ativo' : p.badge === 'wip' ? 'Em dev.' : 'Breve';
+          const isFuture = p.badge === 'soon';
+          return `<div class="ht-page ${isFuture?'p-future':''}" onclick="showPage('${p.route||p.name}')">
+            <div class="hp-dot ${dotClass}"></div>
+            <div class="hp-name" title="${p.route||''}">${p.name}</div>
+            <span class="hp-badge ${badgeClass}">${badgeText}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      ${group.pages.filter(p=>p.subs?.length).map(p=>`
+        <div class="ht-subpages">
+          ${p.subs.map(s=>`<div class="hp-sub"><span>↳ ${s}</span></div>`).join('')}
+        </div>`).join('')}
+    `;
+    return `
+      <div class="ht-group">
+        <div class="ht-group-header ${gi===0?'open':''}" onclick="toggleHier(this)">
+          <div class="htg-num">${group.num}</div>
+          <div class="htg-name">${group.icon} ${group.name}</div>
+          <div class="htg-count">${group.pages.length} páginas</div>
+          <div class="htg-chevron">${gi===0?'⌄':'›'}</div>
+        </div>
+        <div class="ht-pages" ${gi===0?'style="display:block"':''}>
+          ${pagesHTML}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleHier(hd) {
+  hd.classList.toggle('open');
+  const pages = hd.nextElementSibling;
+  pages.style.display = hd.classList.contains('open') ? 'block' : 'none';
+  hd.querySelector('.htg-chevron').textContent = hd.classList.contains('open') ? '⌄' : '›';
+}
+
+/* ══════════════════════════════════════════════
+   JOURNEY DATA
+══════════════════════════════════════════════ */
+const journeySteps = [
+  {n:1,ico:'⬡',lbl:'Dashboard',page:'/dashboard',actions:['Ver KPIs','Ver projetos recentes','Acessar notificações'],data:['Métricas de performance','Projetos em andamento','Alertas'],nav:['Nova Simulação','Meus Projetos']},
+  {n:2,ico:'⚡',lbl:'Nova Simulação',page:'/simulacoes/nova',actions:['Inserir endereço','Selecionar tipo de imóvel','Configurar consumo'],data:['Formulário de simulação','Perfil energético','Configurações avançadas'],nav:['Mapa Solar','Salvar rascunho']},
+  {n:3,ico:'📍',lbl:'Localização',page:'/simulacoes/nova#local',actions:['Buscar endereço','Inserir coordenadas','Usar GPS'],data:['Geocoding API','Coordenadas lat/lon','País e região'],nav:['Próximo passo','Mapa Solar']},
+  {n:4,ico:'🗺',lbl:'Mapa Solar',page:'/mapa-solar',actions:['Visualizar imóvel','Selecionar modo de vista','Ativar camadas'],data:['Imagem satelital','Posição GPS','Camadas ativas'],nav:['Selecionar telhado','Selecionar terreno']},
+  {n:5,ico:'✏️',lbl:'Selecionar Área',page:'/mapa/telhado',actions:['Desenhar polígono','Ajustar vértices','Confirmar seleção'],data:['Área em m²','Perímetro','Coordenadas do polígono'],nav:['Validar área','Cancelar']},
+  {n:6,ico:'📐',lbl:'Validar Área',page:'/analise/area',actions:['Confirmar metragem','Ajustar área útil','Ver análise técnica'],data:['Área útil','Inclinação','Orientação solar'],nav:['Ver capacidade','Refazer seleção']},
+  {n:7,ico:'☀',lbl:'Capacidade Solar',page:'/analise/placas',actions:['Ver placas estimadas','Alterar kit','Ver eficiência'],data:['Nº de módulos','Potência kWp','Eficiência %'],nav:['Ver geração','Comparar kits']},
+  {n:8,ico:'📊',lbl:'Geração e Economia',page:'/simulacoes/nova#resultado',actions:['Ver geração anual','Ver economia','Analisar ROI'],data:['kWh/ano','R$/mês economizado','Payback em anos'],nav:['Ver orçamento','Salvar simulação']},
+  {n:9,ico:'💰',lbl:'Orçamento',page:'/orcamento',actions:['Comparar kits','Ver preços','Selecionar instalador'],data:['Custo total','Economia projetada','ROI'],nav:['Escolher financiamento','Gerar proposta']},
+  {n:10,ico:'🏦',lbl:'Financiamento',page:'/financiamento',actions:['Comparar opções','Simular parcelas','Selecionar banco'],data:['Parcelas','Taxa juros','CET'],nav:['Gerar proposta','Salvar']},
+  {n:11,ico:'📄',lbl:'Gerar Proposta',page:'/propostas/nova',actions:['Revisar proposta','Personalizar PDF','Assinar digitalmente'],data:['Proposta completa','PDF premium','Link compartilhável'],nav:['Compartilhar','Salvar projeto']},
+  {n:12,ico:'💾',lbl:'Salvar Projeto',page:'/projetos',actions:['Salvar projeto','Adicionar notas','Definir status'],data:['ID do projeto','Status de implantação','Dados do cliente'],nav:['Compartilhar','Contratar']},
+  {n:13,ico:'✅',lbl:'Contratar',page:'/projetos/contratar',actions:['Confirmar contratação','Assinar contrato','Agendar instalação'],data:['Contrato digital','Data de instalação','Instalador parceiro'],nav:['Acompanhar progresso','Dashboard']},
+];
+
+let activeStep = 0;
+
+function buildJourney() {
+  const container = document.getElementById('journeySteps');
+  container.innerHTML = journeySteps.map((s,i) => `
+    <div class="js ${i===activeStep?'active':''}" onclick="selectStep(${i})">
+      <div class="js-circle">
+        ${s.ico}
+        <div class="js-num">${s.n}</div>
+      </div>
+      <div class="js-label">${s.lbl}</div>
+      <div class="js-page mono">${s.page}</div>
+    </div>`).join('');
+  renderStepDetail(activeStep);
+}
+
+function selectStep(i) {
+  activeStep = i;
+  document.querySelectorAll('.js').forEach((el,idx) => el.classList.toggle('active', idx===i));
+  renderStepDetail(i);
+}
+
+function renderStepDetail(i) {
+  const s = journeySteps[i];
+  document.getElementById('stepDetail').innerHTML = `
+    <div class="sd-header">
+      <div class="sd-icon">${s.ico}</div>
+      <div class="sd-title">Etapa ${s.n} — ${s.lbl}</div>
+      <div class="sd-page mono">${s.page}</div>
+    </div>
+    <div class="sd-body">
+      <div>
+        <div class="sd-col-title">Ações disponíveis</div>
+        ${s.actions.map(a=>`<div class="sd-item"><div class="sd-dot"></div><span>${a}</span></div>`).join('')}
+      </div>
+      <div>
+        <div class="sd-col-title">Dados exibidos</div>
+        ${s.data.map(d=>`<div class="sd-item"><div class="sd-dot" style="background:var(--vrd)"></div><span>${d}</span></div>`).join('')}
+      </div>
+      <div>
+        <div class="sd-col-title">Navegação</div>
+        ${s.nav.map(n=>`<div class="sd-item"><div class="sd-dot" style="background:var(--sky)"></div><span>${n}</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function setFlowProfile(btn, profile) {
+  document.querySelectorAll('.flow-profile-tab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  /* INTEGRAÇÃO FUTURA: filtrará as etapas do fluxo conforme o perfil de usuário
+     Cliente: etapas 1–13 simplificadas
+     Integrador: etapas com multi-projetos e propostas em bulk
+     Empresa: etapas com análise de múltiplas propriedades
+     Admin: acesso a todas as etapas + configurações */
+}
+
+/* ══════════════════════════════════════════════
+   PERMISSIONS MATRIX
+   INTEGRAÇÃO FUTURA: dados carregados via GET /api/admin/permissions
+   Middleware RBAC verificará roles do JWT em cada rota
+   Papéis: CLIENTE, INTEGRADOR, EMPRESA, ADMIN, SUPER_ADMIN
+══════════════════════════════════════════════ */
+const permData = {
+  headers: ['Módulo / Recurso', '👤 Cliente', '🔧 Integrador', '🏢 Empresa', '⚡ Admin'],
+  rows: [
+    ['Dashboard principal', 'y','y','y','y'],
+    ['Nova simulação', 'y','y','y','y'],
+    ['Simulações salvas', 'y','y','y','y'],
+    ['Comparação de cenários', 'n','y','y','y'],
+    ['Mapa solar interativo', 'y','y','y','y'],
+    ['Seleção de telhado/terreno', 'y','y','y','y'],
+    ['Camadas geoespaciais avançadas', 'p','y','y','y'],
+    ['Análise técnica completa', 'p','y','y','y'],
+    ['Orçamento inteligente', 'y','y','y','y'],
+    ['Comparação de kits', 'y','y','y','y'],
+    ['Preços por região', 'n','y','y','y'],
+    ['Propostas comerciais', 'n','y','y','y'],
+    ['Financiamento básico', 'y','y','y','y'],
+    ['Parceiros financeiros', 'n','y','y','y'],
+    ['Comissão da plataforma', 'n','y','y','y'],
+    ['Marketplace (fornecedores)', 'n','p','y','y'],
+    ['Gestão de projetos', 'y','y','y','y'],
+    ['Múltiplos projetos', 'n','y','y','y'],
+    ['Relatórios executivos', 'n','y','y','y'],
+    ['Exportação de relatórios', 'n','p','y','y'],
+    ['Insights de IA', 'n','p','y','y'],
+    ['Gestão de usuários', 'n','n','n','y'],
+    ['Gestão de países/regiões', 'n','n','n','y'],
+    ['Configurações fiscais', 'n','n','n','y'],
+    ['Integrações do sistema', 'n','n','n','y'],
+    ['Administração da plataforma', 'n','n','n','y'],
+    ['Expansão global', 'n','n','n','y'],
+  ]
+};
+
+function buildPermMatrix() {
+  const table = document.getElementById('permMatrix');
+  const iconMap = {y:'<span class="perm-check pc-y">✓</span>', n:'<span class="perm-check pc-n">✕</span>', p:'<span class="perm-check pc-p">◑</span>', soon:'<span class="perm-check pc-soon">Breve</span>'};
+  const thead = `<thead><tr>${permData.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${permData.rows.map(r=>`<tr><td>${r[0]}</td>${r.slice(1).map(v=>`<td style="text-align:center">${iconMap[v]||v}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  table.innerHTML = thead + tbody;
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ * INTEGRAÇÕES FUTURAS — ARQUITETURA DE NAVEGAÇÃO SOLARMAP AI
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * 1. CONTROLE DE PERMISSÕES (RBAC)
+ *    Backend: Supabase Row Level Security / Auth0 RBAC / custom Express middleware
+ *    Frontend: proteger rotas com HOC/guards baseados no role do JWT
+ *    GET /api/user/permissions → { role, modules: [], actions: [] }
+ *    Cada item da sidebar verificará seu módulo contra user.permissions
+ *
+ * 2. MULTI-IDIOMA (i18n)
+ *    Biblioteca: i18next + react-i18next / vue-i18n
+ *    Namespaces: navigation, simulation, budget, map, financing, admin
+ *    Seletor de idioma na topbar → i18n.changeLanguage('en-US')
+ *    Locale automático: Intl.DateTimeFormat, Intl.NumberFormat
+ *
+ * 3. MULTI-MOEDA
+ *    API de câmbio: https://api.exchangerate-api.com/v4/latest/BRL
+ *    Contexto React/Vue com exchangeRate e formatCurrency(value, currency)
+ *    Atualização a cada 30 minutos em background
+ *    Intl.NumberFormat(locale, { style:'currency', currency:'USD' })
+ *
+ * 4. GESTÃO REGIONAL
+ *    GET /api/regions?country=BR → { states, utilities, tariffs, regulations }
+ *    Seletor de país na topbar popula o contexto global de região
+ *    Afeta: tarifas de energia, impostos, kits disponíveis, instaladores
+ *
+ * 5. REGRAS POR PAÍS
+ *    Table: country_rules { country_code, tariff_kwh, net_metering, tax_incentives, currency, language }
+ *    Motor de simulação adapta cálculos automaticamente por país selecionado
+ *    Compliance: cada país tem sua UI de regulamentação específica
+ *
+ * 6. INTEGRAÇÕES COM MAPAS
+ *    Mapbox GL JS: sidebar item "Mapa Solar" → abre mapboxgl.Map com satellite-v9
+ *    Google Maps JS API: alternativa para mercados sem Mapbox
+ *    Google Solar API: análise automática de telhado por coordenada
+ *    SunCalc.js: posição solar em tempo real
+ *
+ * 7. INTEGRAÇÕES FINANCEIRAS
+ *    BV Solar API: GET /financing/simulate { valor, prazo, taxa }
+ *    Santander Solar API: idem
+ *    BNDES ProGiro: linha governamental com taxa subsidiada
+ *    Stripe / Asaas / Iugu: cobrança de assinaturas do SaaS
+ *
+ * 8. MARKETPLACE
+ *    GET /api/marketplace/kits?regiao=SP&potencia=17kWp
+ *    POST /api/marketplace/order { kit_id, project_id, quantity }
+ *    Webhook de confirmação de pedido dos distribuidores parceiros
+ *    Rating e reviews verificados via backend
+ *
+ * 9. COMPLIANCE E FISCAL
+ *    Brasil: ICMS por UF, PIS/COFINS, ANEEL GD Lei 14.300
+ *    Portugal: IVA 23%, DGEG, DL 162/2019
+ *    EUA: ITC 30%, NEM policies por estado (DSIRE database)
+ *    EU: VAT variável, EU Taxonomy, RED II directive
+ *
+ * 10. RELATÓRIOS AVANÇADOS
+ *     Backend: dados agregados por projeto, região, período
+ *     Exportação: PDF via Puppeteer + Handlebars template
+ *     Excel/CSV: json2csv + xlsx para relatórios financeiros
+ *     BI integration: Metabase / Grafana embed para dashboards avançados
+ *
+ * 11. AUTOMAÇÃO DE PROPOSTA E CONTRATAÇÃO
+ *     DocuSign / D4Sign: assinatura digital de propostas e contratos
+ *     Webhook pós-assinatura: aciona fluxo de instalação
+ *     CRM integration: HubSpot / RD Station para pipeline comercial
+ *     Email automation: SendGrid / Brevo para follow-up automático
+ *
+ * 12. MOBILE APP
+ *     React Native / Expo: reutilizar lógica e tipos do core web
+ *     Navigation: React Navigation com deep links
+ *     Offline: SQLite local para simulações sem internet
+ *     Push notifications: Firebase Cloud Messaging
+ */
+</script>
+</body>
+</html>
