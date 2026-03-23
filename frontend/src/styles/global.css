@@ -259,3 +259,39 @@ a {
 .leaflet-popup-close-button:hover {
   color: var(--text-1) !important;
 }
+
+/* Leaflet Draw dark theme */
+.leaflet-draw-toolbar a {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-mid) !important;
+  color: var(--text-2) !important;
+}
+
+.leaflet-draw-toolbar a:hover {
+  background-color: var(--bg-elevated) !important;
+}
+
+.leaflet-draw-actions {
+  background: var(--bg-card) !important;
+  border-color: var(--border-mid) !important;
+}
+
+.leaflet-draw-actions a {
+  background: var(--bg-elevated) !important;
+  color: var(--text-1) !important;
+  border-color: var(--border-mid) !important;
+}
+
+.leaflet-draw-actions a:hover {
+  background: var(--bg-hover) !important;
+}
+
+.leaflet-draw-tooltip {
+  background: var(--bg-card) !important;
+  color: var(--text-1) !important;
+  border-color: var(--gold-border) !important;
+}
+
+.leaflet-draw-tooltip-subtext {
+  color: var(--text-3) !important;
+}

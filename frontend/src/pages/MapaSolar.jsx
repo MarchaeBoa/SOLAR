@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, FeatureGroup } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
 import L from 'leaflet';
-import { Search, Layers, Filter, Satellite, Map as MapIcon, Navigation } from 'lucide-react';
+import { Search, Layers, Filter, Satellite, Map as MapIcon, Navigation, PenTool, Trash2, Save, Zap, LayoutGrid } from 'lucide-react';
 import Card from '../components/Card';
 
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
 
 // Fix default marker icon issue with bundlers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -51,6 +53,49 @@ const TILES = {
   },
 };
 
+// Haversine-based area calculation for geographic polygons (m²)
+function calcularAreaPoligono(latlngs) {
+  if (!latlngs || latlngs.length < 3) return 0;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371000; // Earth radius in meters
+  let area = 0;
+  const n = latlngs.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const k = (i + 2) % n;
+    area += toRad(latlngs[j].lng - latlngs[i].lng) * Math.sin(toRad(latlngs[k].lat));
+    area -= toRad(latlngs[j].lng - latlngs[k].lng) * Math.sin(toRad(latlngs[i].lat));
+  }
+  return Math.abs((area * R * R) / 2);
+}
+
+// Calculate perimeter using Haversine distance
+function calcularPerimetro(latlngs) {
+  if (!latlngs || latlngs.length < 2) return 0;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371000;
+  let perimetro = 0;
+  for (let i = 0; i < latlngs.length; i++) {
+    const p1 = latlngs[i];
+    const p2 = latlngs[(i + 1) % latlngs.length];
+    const dLat = toRad(p2.lat - p1.lat);
+    const dLng = toRad(p2.lng - p1.lng);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(p1.lat)) * Math.cos(toRad(p2.lat)) * Math.sin(dLng / 2) ** 2;
+    perimetro += 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  return perimetro;
+}
+
+function formatArea(m2) {
+  if (m2 >= 10000) return `${(m2 / 10000).toFixed(2)} ha`;
+  return `${m2.toFixed(1)} m²`;
+}
+
+function formatDistance(m) {
+  if (m >= 1000) return `${(m / 1000).toFixed(2)} km`;
+  return `${m.toFixed(1)} m`;
+}
+
 // Component to handle map movements from parent
 function MapController({ center, zoom }) {
   const map = useMap();
@@ -81,8 +126,14 @@ export default function MapaSolar() {
   const [isSearching, setIsSearching] = useState(false);
   const [flyTo, setFlyTo] = useState(null);
   const [flyZoom, setFlyZoom] = useState(null);
+  const [drawnArea, setDrawnArea] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [panelCalc, setPanelCalc] = useState(null);
+  const [isCalculating, setIsCalculating] = useState(false);
   const mapRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const featureGroupRef = useRef(null);
 
   const BRASIL_CENTER = [-14.235, -51.925];
   const INITIAL_ZOOM = 4;
@@ -162,18 +213,123 @@ export default function MapaSolar() {
     setRegiaoSelecionada(null);
   };
 
-  const getIrradiacaoColor = (irradiacao) => {
-    if (irradiacao >= 5.5) return '#D4A843';
-    if (irradiacao >= 5.0) return '#F0C96B';
-    if (irradiacao >= 4.5) return '#1FD8A4';
-    return '#4A9EFF';
+  // Draw handlers
+  const handleCreated = (e) => {
+    const { layer } = e;
+    const latlngs = layer.getLatLngs()[0];
+    const coords = latlngs.map(ll => ({ lat: ll.lat, lng: ll.lng }));
+    const area = calcularAreaPoligono(coords);
+    const perimetro = calcularPerimetro(coords);
+
+    const newArea = {
+      coordenadas: coords,
+      area_m2: area,
+      perimetro_m: perimetro,
+      pontos: coords.length,
+    };
+    setDrawnArea(newArea);
+    setSaveStatus(null);
+    calcularPlacas(area);
+  };
+
+  const handleEdited = (e) => {
+    const layers = e.layers;
+    layers.eachLayer((layer) => {
+      const latlngs = layer.getLatLngs()[0];
+      const coords = latlngs.map(ll => ({ lat: ll.lat, lng: ll.lng }));
+      const area = calcularAreaPoligono(coords);
+      const perimetro = calcularPerimetro(coords);
+
+      const newArea = {
+        coordenadas: coords,
+        area_m2: area,
+        perimetro_m: perimetro,
+        pontos: coords.length,
+      };
+      setDrawnArea(newArea);
+      calcularPlacas(area);
+    });
+    setSaveStatus(null);
+  };
+
+  const handleDeleted = () => {
+    setDrawnArea(null);
+    setPanelCalc(null);
+    setSaveStatus(null);
+  };
+
+  const saveArea = async () => {
+    if (!drawnArea) return;
+    setIsSaving(true);
+    setSaveStatus(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/mapa/areas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nome: searchMarker?.label?.split(',')[0] || 'Área selecionada',
+          coordenadas: drawnArea.coordenadas,
+          area_m2: drawnArea.area_m2,
+          perimetro_m: drawnArea.perimetro_m,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSaveStatus({ type: 'success', message: `Salvo com ID #${data.id}` });
+      } else {
+        setSaveStatus({ type: 'error', message: 'Erro ao salvar' });
+      }
+    } catch (err) {
+      setSaveStatus({ type: 'error', message: 'Erro de conexão' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Calculate panels for drawn area
+  const calcularPlacas = async (area_m2) => {
+    setIsCalculating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/mapa/calcular-placas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ area_m2 }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPanelCalc(data);
+      }
+    } catch (err) {
+      console.error('Erro ao calcular placas:', err);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const clearDrawing = () => {
+    if (featureGroupRef.current) {
+      featureGroupRef.current.clearLayers();
+    }
+    setDrawnArea(null);
+    setPanelCalc(null);
+    setSaveStatus(null);
   };
 
   return (
     <div>
       <div className="page-header">
         <h1>Mapa Solar</h1>
-        <p>Visualize a irradiação solar em todo o território brasileiro</p>
+        <p>Visualize a irradiação solar e selecione áreas no território brasileiro</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px' }}>
@@ -344,6 +500,44 @@ export default function MapaSolar() {
             <MapController center={flyTo} zoom={flyZoom} />
             <MapEvents onMapReady={handleMapReady} />
 
+            {/* Drawing tools */}
+            <FeatureGroup ref={featureGroupRef}>
+              <EditControl
+                position="topleft"
+                onCreated={handleCreated}
+                onEdited={handleEdited}
+                onDeleted={handleDeleted}
+                draw={{
+                  polygon: {
+                    allowIntersection: false,
+                    showArea: true,
+                    shapeOptions: {
+                      color: '#D4A843',
+                      fillColor: '#D4A843',
+                      fillOpacity: 0.2,
+                      weight: 2,
+                    },
+                  },
+                  rectangle: {
+                    shapeOptions: {
+                      color: '#D4A843',
+                      fillColor: '#D4A843',
+                      fillOpacity: 0.2,
+                      weight: 2,
+                    },
+                  },
+                  circle: false,
+                  circlemarker: false,
+                  marker: false,
+                  polyline: false,
+                }}
+                edit={{
+                  edit: { selectedPathOptions: { color: '#F0C96B', fillColor: '#F0C96B' } },
+                  remove: true,
+                }}
+              />
+            </FeatureGroup>
+
             {/* Region circles for irradiance overlay */}
             {camadaAtiva.find(c => c.id === 'irradiacao')?.ativo &&
               regioes.map((r, i) => (
@@ -407,9 +601,14 @@ export default function MapaSolar() {
           }}>
             <span>Irradiação: kWh/m²/dia</span>
             <span>Fonte: INPE/Atlas Solar</span>
+            {drawnArea && (
+              <span style={{ color: 'var(--gold)' }}>
+                Área: {formatArea(drawnArea.area_m2)}
+              </span>
+            )}
             {searchMarker && (
               <span style={{ color: 'var(--gold)' }}>
-                📍 {searchMarker.lat.toFixed(4)}, {searchMarker.lng.toFixed(4)}
+                {searchMarker.lat.toFixed(4)}, {searchMarker.lng.toFixed(4)}
               </span>
             )}
           </div>
@@ -417,6 +616,176 @@ export default function MapaSolar() {
 
         {/* Sidebar panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Area info - shown when polygon is drawn */}
+          {drawnArea && (
+            <Card style={{ borderColor: 'var(--gold-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <PenTool size={18} color="var(--gold)" />
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Área Selecionada</h3>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Área Total
+                  </div>
+                  <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--gold)' }}>
+                    {formatArea(drawnArea.area_m2)}
+                  </div>
+                  <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: '2px' }}>
+                    {drawnArea.area_m2.toFixed(1)} m²
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Perímetro
+                  </div>
+                  <div className="mono" style={{ fontSize: '1.0rem', fontWeight: 700, color: 'var(--green)' }}>
+                    {formatDistance(drawnArea.perimetro_m)}
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Pontos do Polígono
+                  </div>
+                  <div className="mono" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-1)' }}>
+                    {drawnArea.pontos} vértices
+                  </div>
+                </div>
+
+                {/* Coordinates list */}
+                <div style={{
+                  padding: '10px 12px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--r-sm)',
+                  maxHeight: '100px',
+                  overflowY: 'auto',
+                }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Coordenadas
+                  </div>
+                  {drawnArea.coordenadas.map((c, i) => (
+                    <div key={i} className="mono" style={{ fontSize: '0.7rem', color: 'var(--text-2)', lineHeight: 1.6 }}>
+                      P{i + 1}: {c.lat.toFixed(6)}, {c.lng.toFixed(6)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={saveArea}
+                    disabled={isSaving}
+                    className="btn btn-primary"
+                    style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', opacity: isSaving ? 0.6 : 1 }}
+                  >
+                    <Save size={14} />
+                    {isSaving ? 'Salvando...' : 'Salvar Área'}
+                  </button>
+                  <button
+                    onClick={clearDrawing}
+                    className="btn btn-secondary"
+                    style={{ padding: '10px 14px' }}
+                    title="Limpar desenho"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+
+                {saveStatus && (
+                  <div style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--r-sm)',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    background: saveStatus.type === 'success' ? 'var(--green-dim)' : 'var(--coral-dim)',
+                    color: saveStatus.type === 'success' ? 'var(--green)' : 'var(--coral)',
+                    border: `1px solid ${saveStatus.type === 'success' ? 'var(--green-border)' : 'rgba(255,107,107,0.22)'}`,
+                  }}>
+                    {saveStatus.message}
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Panel calculation results */}
+          {panelCalc && (
+            <Card style={{ borderColor: 'var(--green-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <LayoutGrid size={18} color="var(--green)" />
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Placas Solares</h3>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Quantidade de Placas
+                  </div>
+                  <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--green)' }}>
+                    {panelCalc.quantidade_placas}
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                    Potência Total
+                  </div>
+                  <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--gold)' }}>
+                    <Zap size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+                    {panelCalc.potencia_total_kwp} kWp
+                  </div>
+                  <div className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: '2px' }}>
+                    {panelCalc.potencia_total_wp.toLocaleString('pt-BR')} Wp
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div style={{ padding: '10px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '2px' }}>
+                      Área Útil
+                    </div>
+                    <div className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>
+                      {panelCalc.area_util_m2} m²
+                    </div>
+                  </div>
+                  <div style={{ padding: '10px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '2px' }}>
+                      Ocupação
+                    </div>
+                    <div className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-1)' }}>
+                      {panelCalc.percentual_ocupacao}%
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: '10px 12px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--r-sm)',
+                  fontSize: '0.72rem',
+                  color: 'var(--text-3)',
+                  lineHeight: 1.5,
+                }}>
+                  Placa: {panelCalc.especificacoes.area_painel_m2} m² |
+                  Espaçamento: {(panelCalc.especificacoes.espacamento_m2 * 100).toFixed(0)} cm |
+                  Potência: {panelCalc.especificacoes.potencia_painel_wp} Wp |
+                  Aproveitamento: {(panelCalc.especificacoes.fator_aproveitamento * 100).toFixed(0)}%
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {isCalculating && (
+            <Card>
+              <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-3)', fontSize: '0.82rem' }}>
+                Calculando placas...
+              </div>
+            </Card>
+          )}
+
           {/* Layers */}
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>

@@ -28,6 +28,19 @@ function initTables() {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS areas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      nome TEXT NOT NULL DEFAULT 'Área selecionada',
+      coordenadas TEXT NOT NULL,
+      area_m2 REAL NOT NULL,
+      perimetro_m REAL NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `);
+
   // Create default admin if not exists
   const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@solarmap.com');
   if (!adminExists) {

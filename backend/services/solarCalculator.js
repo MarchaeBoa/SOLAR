@@ -75,8 +75,44 @@ function getProjetosAtivos() {
   ];
 }
 
+// Calculate how many panels fit in an area
+const AREA_PAINEL_M2 = 2.0;       // Average panel size (1m x 2m)
+const ESPACAMENTO_M2 = 0.3;       // Spacing between panels (30cm)
+const AREA_EFETIVA_PAINEL = AREA_PAINEL_M2 + ESPACAMENTO_M2; // Total area per panel
+const FATOR_APROVEITAMENTO = 0.80; // 80% usable area (edges, obstructions, walkways)
+const POTENCIA_PAINEL_WP = 550;    // 550Wp per panel (modern panel)
+
+function calcularPlacasNaArea(area_m2) {
+  const areaM2 = parseFloat(area_m2);
+  if (!areaM2 || areaM2 <= 0) return null;
+
+  const areaUtil = areaM2 * FATOR_APROVEITAMENTO;
+  const quantidadePlacas = Math.floor(areaUtil / AREA_EFETIVA_PAINEL);
+  const potenciaTotalWp = quantidadePlacas * POTENCIA_PAINEL_WP;
+  const potenciaTotalKWp = potenciaTotalWp / 1000;
+  const areaOcupada = quantidadePlacas * AREA_PAINEL_M2;
+  const percentualOcupacao = (areaOcupada / areaM2) * 100;
+
+  return {
+    area_total_m2: parseFloat(areaM2.toFixed(1)),
+    area_util_m2: parseFloat(areaUtil.toFixed(1)),
+    quantidade_placas: quantidadePlacas,
+    potencia_total_kwp: parseFloat(potenciaTotalKWp.toFixed(2)),
+    potencia_total_wp: potenciaTotalWp,
+    area_ocupada_m2: parseFloat(areaOcupada.toFixed(1)),
+    percentual_ocupacao: parseFloat(percentualOcupacao.toFixed(1)),
+    especificacoes: {
+      area_painel_m2: AREA_PAINEL_M2,
+      espacamento_m2: ESPACAMENTO_M2,
+      fator_aproveitamento: FATOR_APROVEITAMENTO,
+      potencia_painel_wp: POTENCIA_PAINEL_WP,
+    },
+  };
+}
+
 module.exports = {
   calcularSimulacao,
+  calcularPlacasNaArea,
   getDashboardStats,
   getGeracaoMensal,
   getProjetosAtivos,
