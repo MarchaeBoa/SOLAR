@@ -208,10 +208,134 @@ function calculateSolarProduction({
   };
 }
 
+/**
+ * Calcula o retorno financeiro de um sistema solar.
+ *
+ * @param {Object} params
+ * @param {number} params.custoSistema - Custo total do sistema em R$
+ * @param {number} params.tarifaEnergia - Tarifa de energia em R$/kWh
+ * @param {number} params.geracaoMensalKWh - Geração mensal estimada em kWh
+ * @param {number} [params.reajusteAnual=6] - Reajuste anual da tarifa em % (default 6%)
+ * @param {number} [params.vidaUtilAnos=25] - Vida útil do sistema em anos (default 25)
+ * @returns {Object} Dados de retorno financeiro
+ */
+function calculateFinancialReturn({
+  custoSistema,
+  tarifaEnergia,
+  geracaoMensalKWh,
+  reajusteAnual = 6,
+  vidaUtilAnos = 25,
+}) {
+  const custo = parseFloat(custoSistema);
+  const tarifa = parseFloat(tarifaEnergia);
+  const geracao = parseFloat(geracaoMensalKWh);
+
+  if (!custo || custo <= 0) {
+    return { error: 'Custo do sistema deve ser um número positivo.' };
+  }
+  if (!tarifa || tarifa <= 0) {
+    return { error: 'Tarifa de energia deve ser um número positivo.' };
+  }
+  if (!geracao || geracao <= 0) {
+    return { error: 'Geração mensal deve ser um número positivo.' };
+  }
+
+  const reajuste = Math.max(0, Math.min(30, parseFloat(reajusteAnual) || 6));
+  const vidaUtil = Math.max(1, Math.min(40, parseInt(vidaUtilAnos) || 25));
+
+  // Economia mensal e anual (primeiro ano)
+  const economiaMensal = geracao * tarifa;
+  const economiaAnual = economiaMensal * 12;
+
+  // Payback simples (sem reajuste)
+  const paybackSimplesMeses = Math.ceil(custo / economiaMensal);
+  const paybackSimplesAnos = parseFloat((paybackSimplesMeses / 12).toFixed(1));
+
+  // Payback descontado (com reajuste anual da tarifa)
+  let acumulado = 0;
+  let paybackDescontadoMeses = 0;
+  let encontrouPayback = false;
+
+  for (let ano = 0; ano < vidaUtil; ano++) {
+    const tarifaAno = tarifa * Math.pow(1 + reajuste / 100, ano);
+    const economiaMesAno = geracao * tarifaAno;
+
+    for (let mes = 0; mes < 12; mes++) {
+      acumulado += economiaMesAno;
+      paybackDescontadoMeses++;
+      if (acumulado >= custo && !encontrouPayback) {
+        encontrouPayback = true;
+        break;
+      }
+    }
+    if (encontrouPayback) break;
+  }
+
+  if (!encontrouPayback) {
+    paybackDescontadoMeses = vidaUtil * 12;
+  }
+
+  const paybackDescontadoAnos = parseFloat((paybackDescontadoMeses / 12).toFixed(1));
+
+  // Economia acumulada ao longo da vida útil (com reajuste)
+  let economiaTotal = 0;
+  const fluxoAnual = [];
+
+  for (let ano = 1; ano <= vidaUtil; ano++) {
+    const tarifaAno = tarifa * Math.pow(1 + reajuste / 100, ano - 1);
+    const economiaAno = geracao * tarifaAno * 12;
+    economiaTotal += economiaAno;
+
+    fluxoAnual.push({
+      ano,
+      tarifaEstimada: parseFloat(tarifaAno.toFixed(4)),
+      economiaAno: parseFloat(economiaAno.toFixed(2)),
+      economiaAcumulada: parseFloat(economiaTotal.toFixed(2)),
+      lucroAcumulado: parseFloat((economiaTotal - custo).toFixed(2)),
+    });
+  }
+
+  // ROI
+  const roi = ((economiaTotal - custo) / custo) * 100;
+
+  // VPL (Valor Presente Líquido) com taxa de desconto = reajuste
+  const taxaDesconto = reajuste / 100;
+  let vpl = -custo;
+  for (let ano = 1; ano <= vidaUtil; ano++) {
+    const tarifaAno = tarifa * Math.pow(1 + taxaDesconto, ano - 1);
+    const economiaAno = geracao * tarifaAno * 12;
+    vpl += economiaAno / Math.pow(1 + taxaDesconto, ano);
+  }
+
+  return {
+    entrada: {
+      custoSistema: custo,
+      tarifaEnergia: tarifa,
+      geracaoMensalKWh: geracao,
+      reajusteAnual: reajuste,
+      vidaUtilAnos: vidaUtil,
+    },
+    economiaMensal: parseFloat(economiaMensal.toFixed(2)),
+    economiaAnual: parseFloat(economiaAnual.toFixed(2)),
+    payback: {
+      simplesMeses: paybackSimplesMeses,
+      simplesAnos: paybackSimplesAnos,
+      descontadoMeses: paybackDescontadoMeses,
+      descontadoAnos: paybackDescontadoAnos,
+    },
+    roi: parseFloat(roi.toFixed(1)),
+    economiaTotal: parseFloat(economiaTotal.toFixed(2)),
+    lucroTotal: parseFloat((economiaTotal - custo).toFixed(2)),
+    vpl: parseFloat(vpl.toFixed(2)),
+    fluxoAnual,
+  };
+}
+
 module.exports = {
   calcularSimulacao,
   calcularPlacasNaArea,
   calculateSolarProduction,
+  calculateFinancialReturn,
   getDashboardStats,
   getGeracaoMensal,
   getProjetosAtivos,

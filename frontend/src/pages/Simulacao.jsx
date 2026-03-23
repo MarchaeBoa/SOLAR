@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, BarChart3, Globe } from 'lucide-react';
+import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, BarChart3, Globe, DollarSign, TrendingUp, Clock, PiggyBank } from 'lucide-react';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatNumber } from '../utils/formatters';
@@ -209,6 +209,101 @@ export default function Simulacao() {
       usarCustom: false,
     });
     setProducaoResultado(null);
+  };
+
+  // Estado para calculadora de retorno financeiro
+  const [financeiroForm, setFinanceiroForm] = useState({
+    custoSistema: '',
+    tarifaEnergia: '0.85',
+    geracaoMensalKWh: '',
+    reajusteAnual: '6',
+    vidaUtilAnos: '25',
+  });
+  const [financeiroResultado, setFinanceiroResultado] = useState(null);
+
+  const handleFinanceiroChange = (field, value) => {
+    setFinanceiroForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const calcularFinanceiro = () => {
+    const custo = parseFloat(financeiroForm.custoSistema) || 0;
+    const tarifa = parseFloat(financeiroForm.tarifaEnergia) || 0;
+    const geracao = parseFloat(financeiroForm.geracaoMensalKWh) || 0;
+    const reajuste = parseFloat(financeiroForm.reajusteAnual) || 6;
+    const vidaUtil = parseInt(financeiroForm.vidaUtilAnos) || 25;
+
+    if (custo <= 0 || tarifa <= 0 || geracao <= 0) return;
+
+    const economiaMensal = geracao * tarifa;
+    const economiaAnual = economiaMensal * 12;
+
+    // Payback simples
+    const paybackSimplesMeses = Math.ceil(custo / economiaMensal);
+    const paybackSimplesAnos = parseFloat((paybackSimplesMeses / 12).toFixed(1));
+
+    // Payback descontado (com reajuste)
+    let acumulado = 0;
+    let paybackDescontadoMeses = 0;
+    let encontrou = false;
+
+    for (let ano = 0; ano < vidaUtil; ano++) {
+      const tarifaAno = tarifa * Math.pow(1 + reajuste / 100, ano);
+      const economiaMesAno = geracao * tarifaAno;
+      for (let mes = 0; mes < 12; mes++) {
+        acumulado += economiaMesAno;
+        paybackDescontadoMeses++;
+        if (acumulado >= custo && !encontrou) {
+          encontrou = true;
+          break;
+        }
+      }
+      if (encontrou) break;
+    }
+
+    if (!encontrou) paybackDescontadoMeses = vidaUtil * 12;
+    const paybackDescontadoAnos = parseFloat((paybackDescontadoMeses / 12).toFixed(1));
+
+    // Economia total e fluxo anual
+    let economiaTotal = 0;
+    const fluxoAnual = [];
+    for (let ano = 1; ano <= vidaUtil; ano++) {
+      const tarifaAno = tarifa * Math.pow(1 + reajuste / 100, ano - 1);
+      const economiaAno = geracao * tarifaAno * 12;
+      economiaTotal += economiaAno;
+      fluxoAnual.push({
+        ano,
+        economiaAno: parseFloat(economiaAno.toFixed(2)),
+        economiaAcumulada: parseFloat(economiaTotal.toFixed(2)),
+        lucroAcumulado: parseFloat((economiaTotal - custo).toFixed(2)),
+      });
+    }
+
+    const roi = ((economiaTotal - custo) / custo) * 100;
+
+    setFinanceiroResultado({
+      economiaMensal: parseFloat(economiaMensal.toFixed(2)),
+      economiaAnual: parseFloat(economiaAnual.toFixed(2)),
+      paybackSimplesMeses,
+      paybackSimplesAnos,
+      paybackDescontadoMeses,
+      paybackDescontadoAnos,
+      roi: parseFloat(roi.toFixed(1)),
+      economiaTotal: parseFloat(economiaTotal.toFixed(2)),
+      lucroTotal: parseFloat((economiaTotal - custo).toFixed(2)),
+      fluxoAnual,
+      custoSistema: custo,
+    });
+  };
+
+  const resetarFinanceiro = () => {
+    setFinanceiroForm({
+      custoSistema: '',
+      tarifaEnergia: '0.85',
+      geracaoMensalKWh: '',
+      reajusteAnual: '6',
+      vidaUtilAnos: '25',
+    });
+    setFinanceiroResultado(null);
   };
 
   const inputStyle = {
@@ -808,6 +903,227 @@ export default function Simulacao() {
                 <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Produção de Energia</h3>
                 <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
                   Informe a potência do sistema para calcular a geração de energia diária, mensal e anual.
+                </p>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+      {/* Calculadora de Retorno Financeiro */}
+      <div style={{ marginTop: '40px' }}>
+        <div className="page-header">
+          <h2 style={{ fontSize: '1.3rem' }}>Retorno Financeiro</h2>
+          <p>Calcule economia, payback e ROI do seu sistema solar</p>
+        </div>
+
+        <div className="grid-2">
+          <Card>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <DollarSign size={18} color="var(--gold)" /> Dados Financeiros
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={labelStyle}>
+                  <DollarSign size={16} color="var(--gold)" /> Custo do sistema (R$)
+                </label>
+                <input
+                  type="number"
+                  step="100"
+                  placeholder="Ex: 25000"
+                  value={financeiroForm.custoSistema}
+                  onChange={e => handleFinanceiroChange('custoSistema', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Zap size={16} color="var(--gold)" /> Tarifa de energia (R$/kWh)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 0.85"
+                  value={financeiroForm.tarifaEnergia}
+                  onChange={e => handleFinanceiroChange('tarifaEnergia', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Sun size={16} color="var(--gold)" /> Geração mensal estimada (kWh)
+                </label>
+                <input
+                  type="number"
+                  step="10"
+                  placeholder="Ex: 500"
+                  value={financeiroForm.geracaoMensalKWh}
+                  onChange={e => handleFinanceiroChange('geracaoMensalKWh', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>
+                    Reajuste anual (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    placeholder="6"
+                    value={financeiroForm.reajusteAnual}
+                    onChange={e => handleFinanceiroChange('reajusteAnual', e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>
+                    Vida útil (anos)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="25"
+                    value={financeiroForm.vidaUtilAnos}
+                    onChange={e => handleFinanceiroChange('vidaUtilAnos', e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="btn btn-primary" onClick={calcularFinanceiro} style={{ flex: 1 }}>
+                  <TrendingUp size={16} /> Calcular Retorno
+                </button>
+                <button className="btn btn-secondary" onClick={resetarFinanceiro}>
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {financeiroResultado ? (
+              <>
+                <Card style={{ borderColor: 'var(--gold-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                    <TrendingUp size={20} color="var(--gold)" />
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Resultado Financeiro</h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    {[
+                      { label: 'Economia Mensal', value: formatCurrency(financeiroResultado.economiaMensal), color: 'var(--green)' },
+                      { label: 'Economia Anual', value: formatCurrency(financeiroResultado.economiaAnual), color: 'var(--green)' },
+                      { label: 'Payback Simples', value: `${financeiroResultado.paybackSimplesAnos} anos`, color: 'var(--gold)' },
+                      { label: 'Payback c/ Reajuste', value: `${financeiroResultado.paybackDescontadoAnos} anos`, color: 'var(--gold)' },
+                      { label: 'ROI', value: `${formatNumber(financeiroResultado.roi, 1)}%`, color: 'var(--blue)' },
+                      { label: 'Lucro Total', value: formatCurrency(financeiroResultado.lucroTotal), color: 'var(--green)' },
+                    ].map((item, i) => (
+                      <div key={i} style={{
+                        padding: '16px',
+                        background: 'var(--bg-elevated)',
+                        borderRadius: 'var(--r-sm)',
+                        border: '1px solid var(--border)',
+                        textAlign: 'center',
+                      }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                          {item.label}
+                        </div>
+                        <div className="mono" style={{ fontSize: '1.15rem', fontWeight: 700, color: item.color }}>
+                          {item.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'var(--bg-elevated)',
+                    borderRadius: 'var(--r-sm)',
+                    border: '1px solid var(--border)',
+                  }}>
+                    {[
+                      { label: 'Investimento', value: formatCurrency(financeiroResultado.custoSistema) },
+                      { label: 'Economia total (vida útil)', value: formatCurrency(financeiroResultado.economiaTotal) },
+                      { label: 'Payback simples', value: `${financeiroResultado.paybackSimplesMeses} meses (${financeiroResultado.paybackSimplesAnos} anos)` },
+                      { label: 'Payback com reajuste', value: `${financeiroResultado.paybackDescontadoMeses} meses (${financeiroResultado.paybackDescontadoAnos} anos)` },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
+                        <span style={{ fontSize: '0.83rem', color: 'var(--text-2)' }}>{item.label}</span>
+                        <span className="mono" style={{ fontSize: '0.83rem', fontWeight: 600 }}>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card style={{ borderColor: 'var(--green-border)' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>
+                    Evolução do Retorno
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '300px', overflowY: 'auto' }}>
+                    {financeiroResultado.fluxoAnual
+                      .filter((_, i) => i < 10 || (i + 1) % 5 === 0)
+                      .map((item, i) => {
+                        const maxEconomia = financeiroResultado.fluxoAnual[financeiroResultado.fluxoAnual.length - 1].economiaAcumulada;
+                        const barWidth = maxEconomia > 0 ? (item.economiaAcumulada / maxEconomia) * 100 : 0;
+                        const isPastPayback = item.lucroAcumulado >= 0;
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-2)', width: '50px', textAlign: 'right' }}>Ano {item.ano}</span>
+                            <div style={{ flex: 1, height: '16px', background: 'var(--bg-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{
+                                width: `${barWidth}%`,
+                                height: '100%',
+                                background: isPastPayback
+                                  ? 'linear-gradient(90deg, var(--gold), var(--green))'
+                                  : 'linear-gradient(90deg, var(--gold), var(--gold))',
+                                borderRadius: '4px',
+                                transition: 'width 0.3s ease',
+                              }} />
+                            </div>
+                            <span className="mono" style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              width: '90px',
+                              textAlign: 'right',
+                              color: isPastPayback ? 'var(--green)' : 'var(--text-2)',
+                            }}>
+                              {formatCurrency(item.lucroAcumulado)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </Card>
+              </>
+            ) : (
+              <Card style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '400px',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: 'var(--gold-dim)',
+                  border: '1px solid var(--gold-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px',
+                }}>
+                  <PiggyBank size={36} color="var(--gold)" />
+                </div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Retorno Financeiro</h3>
+                <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
+                  Informe o custo do sistema, tarifa e geração para calcular economia, payback e ROI.
                 </p>
               </Card>
             )}
