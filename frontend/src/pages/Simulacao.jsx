@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun } from 'lucide-react';
+import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, BarChart3, Globe } from 'lucide-react';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatNumber } from '../utils/formatters';
-import { TIPOS_TELHADO, EFICIENCIA_PAINEL, CUSTO_KWP, PRECO_KWH, VIDA_UTIL_ANOS } from '../utils/constants';
+import { TIPOS_TELHADO, EFICIENCIA_PAINEL, CUSTO_KWP, PRECO_KWH, VIDA_UTIL_ANOS, IRRADIACAO_MEDIA } from '../utils/constants';
 
 export default function Simulacao() {
   const { state, dispatch } = useApp();
@@ -108,6 +108,107 @@ export default function Simulacao() {
       potenciaPlacaW: '550',
     });
     setPlacasResultado(null);
+  };
+
+  // Estado para calculadora de produção solar
+  const LOCALIZACOES = [
+    { id: 'norte', nome: 'Norte', radiacao: 5.5, horasSol: 5.0 },
+    { id: 'nordeste', nome: 'Nordeste', radiacao: 5.8, horasSol: 5.8 },
+    { id: 'centro_oeste', nome: 'Centro-Oeste', radiacao: 5.4, horasSol: 5.2 },
+    { id: 'sudeste', nome: 'Sudeste', radiacao: 4.8, horasSol: 4.6 },
+    { id: 'sul', nome: 'Sul', radiacao: 4.3, horasSol: 4.2 },
+  ];
+
+  const [producaoForm, setProducaoForm] = useState({
+    potenciaKWp: '',
+    localizacao: 'sudeste',
+    eficiencia: '80',
+    radiacaoCustom: '',
+    horasSolCustom: '',
+    usarCustom: false,
+  });
+  const [producaoResultado, setProducaoResultado] = useState(null);
+
+  const handleProducaoChange = (field, value) => {
+    setProducaoForm(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'localizacao' && !prev.usarCustom) {
+        const loc = LOCALIZACOES.find(l => l.id === value);
+        if (loc) {
+          updated.radiacaoCustom = '';
+          updated.horasSolCustom = '';
+        }
+      }
+      return updated;
+    });
+  };
+
+  const calcularProducao = () => {
+    const potencia = parseFloat(producaoForm.potenciaKWp) || 0;
+    if (potencia <= 0) return;
+
+    const ef = (parseFloat(producaoForm.eficiencia) || 80) / 100;
+    const loc = LOCALIZACOES.find(l => l.id === producaoForm.localizacao) || LOCALIZACOES[3];
+    const radiacao = producaoForm.usarCustom && producaoForm.radiacaoCustom
+      ? parseFloat(producaoForm.radiacaoCustom)
+      : loc.radiacao;
+    const horasSol = producaoForm.usarCustom && producaoForm.horasSolCustom
+      ? parseFloat(producaoForm.horasSolCustom)
+      : loc.horasSol;
+
+    const diasPorMes = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    // Radiação mensal simulada com variação sazonal
+    const radiacaoMensal = {
+      norte: [5.2, 5.0, 4.8, 5.0, 5.3, 5.5, 5.8, 6.0, 5.9, 5.6, 5.3, 5.1],
+      nordeste: [6.0, 5.8, 5.5, 5.4, 5.2, 5.0, 5.3, 5.8, 6.2, 6.4, 6.3, 6.1],
+      centro_oeste: [5.0, 5.0, 5.2, 5.4, 5.3, 5.2, 5.5, 5.8, 5.6, 5.4, 5.1, 4.9],
+      sudeste: [5.2, 5.0, 4.8, 4.5, 4.2, 4.0, 4.2, 4.5, 4.8, 5.0, 5.2, 5.3],
+      sul: [5.0, 4.8, 4.5, 3.8, 3.5, 3.2, 3.4, 3.8, 4.2, 4.5, 5.0, 5.2],
+    };
+
+    const radMensal = producaoForm.usarCustom && producaoForm.radiacaoCustom
+      ? diasPorMes.map(() => radiacao)
+      : (radiacaoMensal[producaoForm.localizacao] || radiacaoMensal.sudeste);
+
+    const detalhamento = radMensal.map((rad, i) => ({
+      mes: nomesMeses[i],
+      dias: diasPorMes[i],
+      radiacao: rad,
+      geracaoKWh: parseFloat((potencia * rad * ef * diasPorMes[i]).toFixed(1)),
+    }));
+
+    const geracaoAnual = detalhamento.reduce((acc, m) => acc + m.geracaoKWh, 0);
+    const geracaoMediaDiaria = potencia * radiacao * ef;
+    const geracaoMediaMensal = geracaoAnual / 12;
+
+    setProducaoResultado({
+      potenciaKWp: potencia,
+      localizacao: loc.nome,
+      radiacao,
+      horasSol,
+      eficiencia: ef,
+      producao: {
+        diaria: parseFloat(geracaoMediaDiaria.toFixed(2)),
+        mensal: parseFloat(geracaoMediaMensal.toFixed(1)),
+        anual: parseFloat(geracaoAnual.toFixed(1)),
+      },
+      detalhamento,
+      co2EvitadoAnual: parseFloat((geracaoAnual * 0.084 / 1000).toFixed(3)),
+    });
+  };
+
+  const resetarProducao = () => {
+    setProducaoForm({
+      potenciaKWp: '',
+      localizacao: 'sudeste',
+      eficiencia: '80',
+      radiacaoCustom: '',
+      horasSolCustom: '',
+      usarCustom: false,
+    });
+    setProducaoResultado(null);
   };
 
   const inputStyle = {
@@ -470,6 +571,243 @@ export default function Simulacao() {
                 <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Calculadora de Placas</h3>
                 <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
                   Informe a área disponível para descobrir quantas placas solares cabem e a potência total do sistema.
+                </p>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Calculadora de Produção Solar */}
+      <div style={{ marginTop: '40px' }}>
+        <div className="page-header">
+          <h2 style={{ fontSize: '1.3rem' }}>Produção de Energia Solar</h2>
+          <p>Calcule a geração diária, mensal e anual com base na radiação solar e eficiência</p>
+        </div>
+
+        <div className="grid-2">
+          <Card>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BarChart3 size={18} color="var(--gold)" /> Parâmetros de Produção
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={labelStyle}>
+                  <Zap size={16} color="var(--gold)" /> Potência instalada (kWp)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Ex: 5.0"
+                  value={producaoForm.potenciaKWp}
+                  onChange={e => handleProducaoChange('potenciaKWp', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Globe size={16} color="var(--gold)" /> Localização / Região
+                </label>
+                <select
+                  value={producaoForm.localizacao}
+                  onChange={e => handleProducaoChange('localizacao', e.target.value)}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                  disabled={producaoForm.usarCustom}
+                >
+                  {LOCALIZACOES.map(l => (
+                    <option key={l.id} value={l.id}>
+                      {l.nome} — {l.radiacao} kWh/m²/dia | {l.horasSol}h sol
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Sun size={16} color="var(--gold)" /> Eficiência do sistema (%)
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  placeholder="80"
+                  value={producaoForm.eficiencia}
+                  onChange={e => handleProducaoChange('eficiencia', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{
+                padding: '12px 16px',
+                background: 'var(--bg-elevated)',
+                borderRadius: 'var(--r-sm)',
+                border: '1px solid var(--border)',
+              }}>
+                <label style={{ ...labelStyle, cursor: 'pointer', marginBottom: '12px' }}>
+                  <input
+                    type="checkbox"
+                    checked={producaoForm.usarCustom}
+                    onChange={e => handleProducaoChange('usarCustom', e.target.checked)}
+                    style={{ accentColor: 'var(--gold)' }}
+                  />
+                  Usar radiação e horas de sol customizadas
+                </label>
+
+                {producaoForm.usarCustom && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ ...labelStyle, fontSize: '0.8rem' }}>
+                        Radiação (kWh/m²/dia)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="Ex: 5.0"
+                        value={producaoForm.radiacaoCustom}
+                        onChange={e => handleProducaoChange('radiacaoCustom', e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ ...labelStyle, fontSize: '0.8rem' }}>
+                        Horas de sol/dia
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="Ex: 5.0"
+                        value={producaoForm.horasSolCustom}
+                        onChange={e => handleProducaoChange('horasSolCustom', e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="btn btn-primary" onClick={calcularProducao} style={{ flex: 1 }}>
+                  <BarChart3 size={16} /> Calcular Produção
+                </button>
+                <button className="btn btn-secondary" onClick={resetarProducao}>
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {producaoResultado ? (
+              <>
+                <Card style={{ borderColor: 'var(--gold-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                    <BarChart3 size={20} color="var(--gold)" />
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Produção Estimada</h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    {[
+                      { label: 'Diária', value: `${formatNumber(producaoResultado.producao.diaria, 1)}`, sub: 'kWh', color: 'var(--gold)' },
+                      { label: 'Mensal', value: `${formatNumber(producaoResultado.producao.mensal, 0)}`, sub: 'kWh', color: 'var(--green)' },
+                      { label: 'Anual', value: `${formatNumber(producaoResultado.producao.anual, 0)}`, sub: 'kWh', color: 'var(--blue)' },
+                    ].map((item, i) => (
+                      <div key={i} style={{
+                        padding: '16px',
+                        background: 'var(--bg-elevated)',
+                        borderRadius: 'var(--r-sm)',
+                        border: '1px solid var(--border)',
+                        textAlign: 'center',
+                      }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                          {item.label}
+                        </div>
+                        <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 700, color: item.color }}>
+                          {item.value}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: '2px' }}>
+                          {item.sub}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'var(--bg-elevated)',
+                    borderRadius: 'var(--r-sm)',
+                    border: '1px solid var(--border)',
+                  }}>
+                    {[
+                      { label: 'Potência', value: `${producaoResultado.potenciaKWp} kWp` },
+                      { label: 'Região', value: producaoResultado.localizacao },
+                      { label: 'Radiação', value: `${producaoResultado.radiacao} kWh/m²/dia` },
+                      { label: 'Horas de sol', value: `${producaoResultado.horasSol}h/dia` },
+                      { label: 'Eficiência', value: `${(producaoResultado.eficiencia * 100).toFixed(0)}%` },
+                      { label: 'CO₂ evitado/ano', value: `${producaoResultado.co2EvitadoAnual} ton` },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
+                        <span style={{ fontSize: '0.83rem', color: 'var(--text-2)' }}>{item.label}</span>
+                        <span className="mono" style={{ fontSize: '0.83rem', fontWeight: 600 }}>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card style={{ borderColor: 'var(--green-border)' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>
+                    Detalhamento Mensal
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {producaoResultado.detalhamento.map((m, i) => {
+                      const maxGeracao = Math.max(...producaoResultado.detalhamento.map(d => d.geracaoKWh));
+                      const barWidth = maxGeracao > 0 ? (m.geracaoKWh / maxGeracao) * 100 : 0;
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-2)', width: '32px', textAlign: 'right' }}>{m.mes}</span>
+                          <div style={{ flex: 1, height: '18px', background: 'var(--bg-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${barWidth}%`,
+                              height: '100%',
+                              background: 'linear-gradient(90deg, var(--gold), var(--green))',
+                              borderRadius: '4px',
+                              transition: 'width 0.3s ease',
+                            }} />
+                          </div>
+                          <span className="mono" style={{ fontSize: '0.78rem', fontWeight: 600, width: '70px', textAlign: 'right' }}>
+                            {formatNumber(m.geracaoKWh, 0)} kWh
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </>
+            ) : (
+              <Card style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '400px',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: 'var(--gold-dim)',
+                  border: '1px solid var(--gold-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px',
+                }}>
+                  <BarChart3 size={36} color="var(--gold)" />
+                </div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Produção de Energia</h3>
+                <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
+                  Informe a potência do sistema para calcular a geração de energia diária, mensal e anual.
                 </p>
               </Card>
             )}
