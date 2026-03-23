@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw } from 'lucide-react';
+import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun } from 'lucide-react';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatNumber } from '../utils/formatters';
@@ -14,6 +14,16 @@ export default function Simulacao() {
     tipoTelhado: state.simulacao.tipoTelhado || 'ceramico',
   });
   const [resultado, setResultado] = useState(state.simulacao.resultado);
+
+  // Estado para calculadora de placas
+  const [placasForm, setPlacasForm] = useState({
+    areaM2: '',
+    tamanhoPlacaM2: '2.0',
+    espacamentoPercent: '10',
+    perdasPercent: '5',
+    potenciaPlacaW: '550',
+  });
+  const [placasResultado, setPlacasResultado] = useState(null);
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -56,6 +66,48 @@ export default function Simulacao() {
     setForm({ localizacao: '', areaM2: '', consumoMensal: '', tipoTelhado: 'ceramico' });
     setResultado(null);
     dispatch({ type: 'RESET_SIMULACAO' });
+  };
+
+  const handlePlacasChange = (field, value) => {
+    setPlacasForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const calcularPlacas = () => {
+    const area = parseFloat(placasForm.areaM2) || 0;
+    const tamanhoPlaca = parseFloat(placasForm.tamanhoPlacaM2) || 2.0;
+    const espacamento = parseFloat(placasForm.espacamentoPercent) || 10;
+    const perdas = parseFloat(placasForm.perdasPercent) || 5;
+    const potenciaPlaca = parseFloat(placasForm.potenciaPlacaW) || 550;
+
+    if (area <= 0) return;
+
+    const fatorEspacamento = 1 - espacamento / 100;
+    const fatorPerdas = 1 - perdas / 100;
+    const areaUtil = area * fatorEspacamento * fatorPerdas;
+    const quantidadePlacas = Math.floor(areaUtil / tamanhoPlaca);
+    const potenciaTotalKWp = parseFloat(((quantidadePlacas * potenciaPlaca) / 1000).toFixed(2));
+    const areaOcupada = parseFloat((quantidadePlacas * tamanhoPlaca).toFixed(2));
+    const aproveitamento = parseFloat(((areaOcupada / area) * 100).toFixed(1));
+
+    setPlacasResultado({
+      areaTotal: area,
+      areaUtil: parseFloat(areaUtil.toFixed(2)),
+      areaOcupada,
+      quantidadePlacas,
+      potenciaTotalKWp,
+      aproveitamento,
+    });
+  };
+
+  const resetarPlacas = () => {
+    setPlacasForm({
+      areaM2: '',
+      tamanhoPlacaM2: '2.0',
+      espacamentoPercent: '10',
+      perdasPercent: '5',
+      potenciaPlacaW: '550',
+    });
+    setPlacasResultado(null);
   };
 
   const inputStyle = {
@@ -242,6 +294,186 @@ export default function Simulacao() {
               </p>
             </Card>
           )}
+        </div>
+      </div>
+
+      {/* Calculadora de Placas */}
+      <div style={{ marginTop: '40px' }}>
+        <div className="page-header">
+          <h2 style={{ fontSize: '1.3rem' }}>Calculadora de Placas</h2>
+          <p>Descubra quantas placas solares cabem na sua área disponível</p>
+        </div>
+
+        <div className="grid-2">
+          <Card>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Grid3X3 size={18} color="var(--gold)" /> Parâmetros da Área
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={labelStyle}>
+                  <Ruler size={16} color="var(--gold)" /> Área disponível (m²)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ex: 100"
+                  value={placasForm.areaM2}
+                  onChange={e => handlePlacasChange('areaM2', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Sun size={16} color="var(--gold)" /> Tamanho da placa (m²)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Ex: 2.0"
+                  value={placasForm.tamanhoPlacaM2}
+                  onChange={e => handlePlacasChange('tamanhoPlacaM2', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Zap size={16} color="var(--gold)" /> Potência por placa (W)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ex: 550"
+                  value={placasForm.potenciaPlacaW}
+                  onChange={e => handlePlacasChange('potenciaPlacaW', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>
+                    Espaçamento (%)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="10"
+                    value={placasForm.espacamentoPercent}
+                    onChange={e => handlePlacasChange('espacamentoPercent', e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>
+                    Perdas (%)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="5"
+                    value={placasForm.perdasPercent}
+                    onChange={e => handlePlacasChange('perdasPercent', e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="btn btn-primary" onClick={calcularPlacas} style={{ flex: 1 }}>
+                  <Grid3X3 size={16} /> Calcular Placas
+                </button>
+                <button className="btn btn-secondary" onClick={resetarPlacas}>
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {placasResultado ? (
+              <Card style={{ borderColor: 'var(--gold-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                  <Grid3X3 size={20} color="var(--gold)" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Resultado do Cálculo</h3>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {[
+                    { label: 'Placas', value: `${placasResultado.quantidadePlacas}`, sub: 'unidades', color: 'var(--gold)' },
+                    { label: 'Potência Total', value: `${placasResultado.potenciaTotalKWp}`, sub: 'kWp', color: 'var(--green)' },
+                    { label: 'Área Útil', value: `${placasResultado.areaUtil}`, sub: 'm²', color: 'var(--blue)' },
+                    { label: 'Aproveitamento', value: `${placasResultado.aproveitamento}`, sub: '%', color: 'var(--green)' },
+                  ].map((item, i) => (
+                    <div key={i} style={{
+                      padding: '16px',
+                      background: 'var(--bg-elevated)',
+                      borderRadius: 'var(--r-sm)',
+                      border: '1px solid var(--border)',
+                      textAlign: 'center',
+                    }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                        {item.label}
+                      </div>
+                      <div className="mono" style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color }}>
+                        {item.value}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: '2px' }}>
+                        {item.sub}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--r-sm)',
+                  border: '1px solid var(--border)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Área total</span>
+                    <span className="mono" style={{ fontWeight: 600 }}>{placasResultado.areaTotal} m²</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Área ocupada pelas placas</span>
+                    <span className="mono" style={{ fontWeight: 600 }}>{placasResultado.areaOcupada} m²</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Área não utilizada</span>
+                    <span className="mono" style={{ fontWeight: 600 }}>{(placasResultado.areaTotal - placasResultado.areaOcupada).toFixed(2)} m²</span>
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Card style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '400px',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: 'var(--gold-dim)',
+                  border: '1px solid var(--gold-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px',
+                }}>
+                  <Grid3X3 size={36} color="var(--gold)" />
+                </div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Calculadora de Placas</h3>
+                <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
+                  Informe a área disponível para descobrir quantas placas solares cabem e a potência total do sistema.
+                </p>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
     </div>

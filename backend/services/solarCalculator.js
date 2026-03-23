@@ -75,8 +75,57 @@ function getProjetosAtivos() {
   ];
 }
 
+/**
+ * Calcula quantas placas solares cabem em uma área disponível.
+ * Considera tamanho médio da placa, espaçamento entre placas e perdas por formato do telhado.
+ *
+ * @param {Object} params
+ * @param {number} params.areaM2 - Área disponível em m²
+ * @param {number} [params.tamanhoPlacaM2=2.0] - Tamanho médio de cada placa em m²
+ * @param {number} [params.espacamentoPercent=10] - Percentual da área perdido com espaçamento (0-100)
+ * @param {number} [params.perdasPercent=5] - Percentual de perdas por formato/obstruções (0-100)
+ * @param {number} [params.potenciaPlacaW=550] - Potência de cada placa em Watts
+ */
+function calcularPlacasNaArea({
+  areaM2,
+  tamanhoPlacaM2 = 2.0,
+  espacamentoPercent = 10,
+  perdasPercent = 5,
+  potenciaPlacaW = 550,
+}) {
+  const area = parseFloat(areaM2);
+  if (!area || area <= 0) {
+    return { error: 'Área deve ser um número positivo.' };
+  }
+
+  const fatorEspacamento = 1 - espacamentoPercent / 100;
+  const fatorPerdas = 1 - perdasPercent / 100;
+
+  const areaUtil = area * fatorEspacamento * fatorPerdas;
+  const quantidadePlacas = Math.floor(areaUtil / tamanhoPlacaM2);
+  const potenciaTotalKWp = parseFloat(((quantidadePlacas * potenciaPlacaW) / 1000).toFixed(2));
+  const areaOcupada = parseFloat((quantidadePlacas * tamanhoPlacaM2).toFixed(2));
+  const aproveitamento = parseFloat(((areaOcupada / area) * 100).toFixed(1));
+
+  return {
+    areaTotal: area,
+    areaUtil: parseFloat(areaUtil.toFixed(2)),
+    areaOcupada,
+    quantidadePlacas,
+    potenciaTotalKWp,
+    aproveitamento,
+    parametros: {
+      tamanhoPlacaM2,
+      espacamentoPercent,
+      perdasPercent,
+      potenciaPlacaW,
+    },
+  };
+}
+
 module.exports = {
   calcularSimulacao,
+  calcularPlacasNaArea,
   getDashboardStats,
   getGeracaoMensal,
   getProjetosAtivos,
