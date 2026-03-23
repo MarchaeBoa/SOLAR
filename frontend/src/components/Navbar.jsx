@@ -1,7 +1,7 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Bell, Search, User } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Bell, Search, User, LogOut, Shield, Briefcase } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const pageTitles = {
   '/': 'Dashboard',
@@ -10,10 +10,23 @@ const pageTitles = {
   '/orcamento': 'Orçamento',
 };
 
+const roleLabels = {
+  admin: { label: 'Admin', color: 'var(--coral)' },
+  consultor: { label: 'Consultor', color: 'var(--blue)' },
+  usuario: { label: 'Usuário', color: 'var(--green)' },
+};
+
 export default function Navbar() {
-  const { state } = useApp();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const title = pageTitles[location.pathname] || 'SolarMap AI';
+  const roleInfo = roleLabels[user?.role] || roleLabels.usuario;
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login');
+  }
 
   return (
     <header style={{
@@ -82,12 +95,11 @@ export default function Navbar() {
           }} />
         </button>
 
-        {/* User */}
+        {/* User info */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          cursor: 'pointer',
         }}>
           <div style={{
             width: 34,
@@ -101,10 +113,38 @@ export default function Navbar() {
           }}>
             <User size={16} color="var(--gold)" />
           </div>
-          <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>
-            {state.user.name}
-          </span>
+          <div style={{ lineHeight: 1.2 }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: 500, display: 'block' }}>
+              {user?.name || 'Usuário'}
+            </span>
+            <span style={{
+              fontSize: '0.68rem',
+              fontWeight: 600,
+              color: roleInfo.color,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              {roleInfo.label}
+            </span>
+          </div>
         </div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          title="Sair"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r-sm)',
+            padding: '8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <LogOut size={18} color="var(--text-2)" />
+        </button>
       </div>
     </header>
   );
