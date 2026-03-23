@@ -8,6 +8,7 @@ const pageTitles = {
   '/simulacao': 'Simulação Solar',
   '/mapa': 'Mapa Solar',
   '/orcamento': 'Orçamento',
+  '/kits': 'Kits Solares',
 };
 
 const roleLabels = {
