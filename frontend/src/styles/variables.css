@@ -1,0 +1,52 @@
+/* ================================================================
+   SOLARMAP AI — DESIGN TOKENS
+   Paleta: Deep Navy · Solar Gold · Energy Green · Arctic White
+   Tipografia: Outfit (UI) · JetBrains Mono (dados)
+   ================================================================ */
+
+:root {
+  /* Backgrounds */
+  --bg-base:      #04090F;
+  --bg-surface:   #070E1A;
+  --bg-card:      #0A1525;
+  --bg-elevated:  #0D1C30;
+  --bg-hover:     #101F35;
+
+  /* Sidebar */
+  --sidebar-bg:   #060C18;
+  --sidebar-w:    260px;
+
+  /* Accents */
+  --gold:         #D4A843;
+  --gold-light:   #F0C96B;
+  --gold-dim:     rgba(212, 168, 67, 0.15);
+  --gold-border:  rgba(212, 168, 67, 0.22);
+
+  --green:        #1FD8A4;
+  --green-dim:    rgba(31, 216, 164, 0.12);
+  --green-border: rgba(31, 216, 164, 0.22);
+
+  --blue:         #4A9EFF;
+  --blue-dim:     rgba(74, 158, 255, 0.12);
+
+  --coral:        #FF6B6B;
+  --coral-dim:    rgba(255, 107, 107, 0.12);
+
+  /* Text */
+  --text-1:       #EEF4FF;
+  --text-2:       rgba(238, 244, 255, 0.65);
+  --text-3:       rgba(238, 244, 255, 0.38);
+
+  /* Borders */
+  --border:       rgba(238, 244, 255, 0.07);
+  --border-mid:   rgba(238, 244, 255, 0.12);
+
+  /* Radius */
+  --r-sm:  8px;
+  --r:     12px;
+  --r-lg:  18px;
+  --r-xl:  24px;
+
+  /* Transitions */
+  --t: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
