@@ -2,19 +2,45 @@
  * Calcula o total de um orçamento
  */
 function calcularTotal(itens, desconto = 0) {
+  // Validate each item has required properties
+  for (const item of itens) {
+    if (item.preco == null || item.qtd == null || isNaN(item.preco) || isNaN(item.qtd)) {
+      return {
+        error: 'Cada item deve ter "preco" e "qtd" como valores numéricos.',
+        subtotal: 0,
+        desconto: 0,
+        descontoPercent: 0,
+        total: 0,
+        totalItens: 0,
+      };
+    }
+    if (item.qtd < 0 || item.preco < 0) {
+      return {
+        error: 'Preço e quantidade devem ser valores positivos.',
+        subtotal: 0,
+        desconto: 0,
+        descontoPercent: 0,
+        total: 0,
+        totalItens: 0,
+      };
+    }
+  }
+
+  const descontoSafe = Math.max(0, Math.min(100, parseFloat(desconto) || 0));
+
   const subtotal = itens.reduce((acc, item) => {
-    return acc + (item.preco * item.qtd);
+    return acc + (parseFloat(item.preco) * parseFloat(item.qtd));
   }, 0);
 
-  const descontoValor = subtotal * (desconto / 100);
+  const descontoValor = subtotal * (descontoSafe / 100);
   const total = subtotal - descontoValor;
 
   return {
     subtotal: parseFloat(subtotal.toFixed(2)),
     desconto: parseFloat(descontoValor.toFixed(2)),
-    descontoPercent: desconto,
+    descontoPercent: descontoSafe,
     total: parseFloat(total.toFixed(2)),
-    totalItens: itens.reduce((acc, item) => acc + item.qtd, 0),
+    totalItens: itens.reduce((acc, item) => acc + parseFloat(item.qtd), 0),
   };
 }
 

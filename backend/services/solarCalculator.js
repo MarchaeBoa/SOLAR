@@ -11,31 +11,47 @@ const CUSTO_KWP = 4500;
 const PRECO_KWH = 0.85;
 const VIDA_UTIL_ANOS = 25;
 const IRRADIACAO_MEDIA = 5.2; // kWh/m²/dia (média Brasil)
+const CO2_FATOR_KG_KWH = 0.084; // kg CO2/kWh (grid mix Brasil)
+const TAMANHO_PLACA_M2 = 2.0; // m² por painel padrão
+const ESPACAMENTO_PERCENT = 10; // percentual perdido com espaçamento
 
 function calcularSimulacao({ areaM2, consumoMensal, tipoTelhado = 'ceramico', localizacao = '' }) {
   const area = parseFloat(areaM2);
+  const consumo = parseFloat(consumoMensal);
   const fator = TIPOS_TELHADO[tipoTelhado] || 1.0;
+
+  // Validate tipoTelhado
+  if (tipoTelhado && !TIPOS_TELHADO[tipoTelhado]) {
+    return { error: `Tipo de telhado inválido: ${tipoTelhado}. Válidos: ${Object.keys(TIPOS_TELHADO).join(', ')}` };
+  }
 
   const potenciaKWp = area * EFICIENCIA_PAINEL * fator;
   const geracaoMensal = potenciaKWp * IRRADIACAO_MEDIA * 30 * 0.8;
   const economiaMensal = geracaoMensal * PRECO_KWH;
   const investimento = potenciaKWp * CUSTO_KWP;
-  const paybackMeses = economiaMensal > 0 ? Math.round(investimento / economiaMensal) : 0;
+  // Use Math.ceil for conservative payback estimate (always round up)
+  const paybackMeses = economiaMensal > 0 ? Math.ceil(investimento / economiaMensal) : 0;
   const economiaVidaUtil = economiaMensal * 12 * VIDA_UTIL_ANOS;
-  const co2Anual = (geracaoMensal * 12 * 0.084) / 1000;
-  const paineis = Math.ceil(area / 2);
+  const co2Anual = (geracaoMensal * 12 * CO2_FATOR_KG_KWH) / 1000;
+
+  // Panel count: account for spacing between panels
+  const areaUtil = area * (1 - ESPACAMENTO_PERCENT / 100);
+  const paineis = Math.floor(areaUtil / TAMANHO_PLACA_M2);
 
   return {
-    potenciaKWp: parseFloat(potenciaKWp.toFixed(1)),
+    potenciaKWp: Math.round(potenciaKWp * 10) / 10,
     geracaoMensal: Math.round(geracaoMensal),
-    economiaMensal: parseFloat(economiaMensal.toFixed(2)),
-    investimento: parseFloat(investimento.toFixed(2)),
+    consumoMensal: consumo,
+    economiaMensal: Math.round(economiaMensal * 100) / 100,
+    investimento: Math.round(investimento * 100) / 100,
     paybackMeses,
-    economiaVidaUtil: parseFloat(economiaVidaUtil.toFixed(2)),
-    co2Anual: parseFloat(co2Anual.toFixed(2)),
+    paybackAnos: Math.round((paybackMeses / 12) * 10) / 10,
+    economiaVidaUtil: Math.round(economiaVidaUtil * 100) / 100,
+    co2Anual: Math.round(co2Anual * 100) / 100,
     paineis,
     localizacao,
     tipoTelhado,
+    viabilidade: paybackMeses > 0 && paybackMeses <= VIDA_UTIL_ANOS * 12 ? 'viavel' : 'inviavel',
   };
 }
 
@@ -203,7 +219,7 @@ function calculateSolarProduction({
       anual: parseFloat(geracaoAnual.toFixed(1)),
     },
     detalhamentoMensal: geracaoMensal,
-    co2EvitadoAnual: parseFloat((geracaoAnual * 0.084 / 1000).toFixed(3)),
+    co2EvitadoAnual: parseFloat((geracaoAnual * CO2_FATOR_KG_KWH / 1000).toFixed(3)),
     localizacoesDisponiveis: Object.keys(RADIACAO_POR_LOCALIZACAO),
   };
 }
@@ -307,6 +323,17 @@ function calculateFinancialReturn({
     vpl += economiaAno / Math.pow(1 + taxaDesconto, ano);
   }
 
+  const vplFinal = parseFloat(vpl.toFixed(2));
+  const lucroTotal = parseFloat((economiaTotal - custo).toFixed(2));
+
+  // Determine viability based on NPV and payback
+  let viabilidade = 'viavel';
+  if (vplFinal < 0) {
+    viabilidade = 'inviavel';
+  } else if (paybackSimplesAnos > vidaUtil * 0.6) {
+    viabilidade = 'marginal';
+  }
+
   return {
     entrada: {
       custoSistema: custo,
@@ -325,8 +352,9 @@ function calculateFinancialReturn({
     },
     roi: parseFloat(roi.toFixed(1)),
     economiaTotal: parseFloat(economiaTotal.toFixed(2)),
-    lucroTotal: parseFloat((economiaTotal - custo).toFixed(2)),
-    vpl: parseFloat(vpl.toFixed(2)),
+    lucroTotal,
+    vpl: vplFinal,
+    viabilidade,
     fluxoAnual,
   };
 }

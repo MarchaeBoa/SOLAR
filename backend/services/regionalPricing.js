@@ -235,12 +235,21 @@ function getRegionalSimulationParams(countryCode) {
  */
 function formatCurrencyValue(value, currencyCode, locale) {
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(locale || 'en-US', {
       style: 'currency',
       currency: currencyCode,
     }).format(value);
   } catch {
-    return `${currencyCode} ${value.toFixed(2)}`;
+    // Fallback: try locale-aware number formatting at minimum
+    try {
+      const formatted = new Intl.NumberFormat(locale || 'en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+      return `${currencyCode} ${formatted}`;
+    } catch {
+      return `${currencyCode} ${Number(value).toFixed(2)}`;
+    }
   }
 }
 

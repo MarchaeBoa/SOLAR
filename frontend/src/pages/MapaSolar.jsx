@@ -41,12 +41,23 @@ function MapController({ center, zoom }) {
 
 // Geocoding via Nominatim (free, no API key)
 async function geocodeAddress(query) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=5`;
-  const res = await fetch(url, {
-    headers: { 'Accept-Language': 'pt-BR' },
-  });
-  if (!res.ok) throw new Error('Erro na busca de endereço');
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=5`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept-Language': 'pt-BR',
+        'User-Agent': 'SolarMapAI/1.0',
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error('Erro na busca de endereço');
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // Calculate area of polygon using Shoelace formula with Haversine for real m²
@@ -135,6 +146,7 @@ export default function MapaSolar() {
   const [areaInfo, setAreaInfo] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
+  const [searchError, setSearchError] = useState(null);
   const mapRef = useRef(null);
   const featureGroupRef = useRef(null);
 
@@ -143,6 +155,7 @@ export default function MapaSolar() {
     if (!searchQuery.trim()) return;
     setSearching(true);
     setSearchResults([]);
+    setSearchError(null);
     try {
       const results = await geocodeAddress(searchQuery);
       setSearchResults(results);
@@ -152,9 +165,11 @@ export default function MapaSolar() {
         setSearchMarker({ position: coords, name: results[0].display_name });
         setFlyTo(coords);
         setFlyZoom(14);
+      } else {
+        setSearchError('Nenhum resultado encontrado.');
       }
-    } catch {
-      // silently fail
+    } catch (err) {
+      setSearchError(err.name === 'AbortError' ? 'Busca expirou. Tente novamente.' : 'Erro ao buscar endereço.');
     } finally {
       setSearching(false);
     }
@@ -349,6 +364,26 @@ export default function MapaSolar() {
                   {r.display_name}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Search error message */}
+          {searchError && (
+            <div style={{
+              position: 'absolute',
+              top: '52px',
+              left: '60px',
+              zIndex: 1000,
+              width: 'min(380px, calc(100% - 140px))',
+              padding: '8px 12px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--coral, #ff6b6b)',
+              borderRadius: 'var(--r-sm)',
+              color: 'var(--coral, #ff6b6b)',
+              fontSize: '0.82rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            }}>
+              {searchError}
             </div>
           )}
 
