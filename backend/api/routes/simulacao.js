@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { calcularSimulacao, calcularPlacasNaArea, calculateSolarProduction, calculateFinancialReturn } = require('../../services/solarCalculator');
+const { calcularSimulacao, calcularPlacasNaArea, calculateSolarProduction, calculateFinancialReturn, calculateFinancing } = require('../../services/solarCalculator');
 
 // POST /api/simulacao/calcular
 router.post('/calcular', (req, res) => {
@@ -74,6 +74,31 @@ router.post('/retorno-financeiro', (req, res) => {
     geracaoMensalKWh,
     reajusteAnual,
     vidaUtilAnos,
+  });
+
+  if (resultado.error) {
+    return res.status(400).json(resultado);
+  }
+
+  res.json(resultado);
+});
+
+// POST /api/simulacao/financiamento - Simula financiamento e compara com à vista
+router.post('/financiamento', (req, res) => {
+  const {
+    valorSistema, entrada, taxaJurosMensal, prazoMeses,
+    economiaMensal, descontoAVista, vidaUtilAnos,
+  } = req.body;
+
+  if (!valorSistema || !taxaJurosMensal || !prazoMeses) {
+    return res.status(400).json({
+      error: 'Valor do sistema, taxa de juros mensal e prazo são obrigatórios.',
+    });
+  }
+
+  const resultado = calculateFinancing({
+    valorSistema, entrada, taxaJurosMensal, prazoMeses,
+    economiaMensal, descontoAVista, vidaUtilAnos,
   });
 
   if (resultado.error) {

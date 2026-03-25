@@ -331,11 +331,187 @@ function calculateFinancialReturn({
   };
 }
 
+/**
+ * Simula financiamento de um sistema solar e compara com pagamento à vista.
+ *
+ * Usa tabela Price (parcelas fixas):
+ *   PMT = PV × [ i × (1+i)^n ] / [ (1+i)^n - 1 ]
+ *
+ * @param {Object} params
+ * @param {number} params.valorSistema - Custo total do sistema
+ * @param {number} params.entrada - Valor da entrada (pode ser 0)
+ * @param {number} params.taxaJurosMensal - Taxa de juros mensal em % (ex: 1.2)
+ * @param {number} params.prazoMeses - Prazo em meses (ex: 60)
+ * @param {number} [params.economiaMensal] - Economia mensal com energia solar
+ * @param {number} [params.descontoAVista=5] - Desconto para pagamento à vista em %
+ * @param {number} [params.vidaUtilAnos=25] - Vida útil do sistema em anos
+ */
+function calculateFinancing({
+  valorSistema,
+  entrada = 0,
+  taxaJurosMensal,
+  prazoMeses,
+  economiaMensal = 0,
+  descontoAVista = 5,
+  vidaUtilAnos = 25,
+}) {
+  const valor = parseFloat(valorSistema);
+  const entradaVal = parseFloat(entrada) || 0;
+  const taxa = parseFloat(taxaJurosMensal);
+  const prazo = parseInt(prazoMeses);
+
+  if (!valor || valor <= 0) {
+    return { error: 'Valor do sistema deve ser um número positivo.' };
+  }
+  if (taxa == null || taxa < 0) {
+    return { error: 'Taxa de juros mensal deve ser informada (>= 0).' };
+  }
+  if (!prazo || prazo < 1) {
+    return { error: 'Prazo deve ser pelo menos 1 mês.' };
+  }
+  if (entradaVal < 0 || entradaVal >= valor) {
+    return { error: 'Entrada deve ser >= 0 e menor que o valor do sistema.' };
+  }
+
+  const valorFinanciado = valor - entradaVal;
+  const i = taxa / 100; // taxa decimal mensal
+  const n = prazo;
+  const vidaUtil = Math.max(1, Math.min(40, parseInt(vidaUtilAnos) || 25));
+  const desconto = Math.max(0, Math.min(50, parseFloat(descontoAVista) || 5));
+  const economia = parseFloat(economiaMensal) || 0;
+
+  // Cálculo da parcela (Price / PMT)
+  let parcela;
+  if (i === 0) {
+    parcela = valorFinanciado / n;
+  } else {
+    parcela = valorFinanciado * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
+  }
+
+  const custoTotalFinanciado = entradaVal + parcela * n;
+  const jurosTotal = custoTotalFinanciado - valor;
+  const custoEfetivoTotal = custoTotalFinanciado; // o que realmente se paga
+
+  // Taxa efetiva anual (CET simplificado)
+  const taxaEfetivaAnual = (Math.pow(1 + i, 12) - 1) * 100;
+
+  // Fluxo de parcelas mês a mês
+  let saldoDevedor = valorFinanciado;
+  const cronograma = [];
+
+  for (let mes = 1; mes <= n; mes++) {
+    const jurosMes = saldoDevedor * i;
+    const amortizacao = parcela - jurosMes;
+    saldoDevedor = Math.max(0, saldoDevedor - amortizacao);
+
+    cronograma.push({
+      mes,
+      parcela: parseFloat(parcela.toFixed(2)),
+      juros: parseFloat(jurosMes.toFixed(2)),
+      amortizacao: parseFloat(amortizacao.toFixed(2)),
+      saldoDevedor: parseFloat(saldoDevedor.toFixed(2)),
+      economiaMensal: economia > 0 ? parseFloat(economia.toFixed(2)) : undefined,
+      fluxoLiquido: economia > 0 ? parseFloat((economia - parcela).toFixed(2)) : undefined,
+    });
+  }
+
+  // ---- Pagamento à vista ----
+  const valorAVista = valor * (1 - desconto / 100);
+  const economiaVsFinanciamento = custoTotalFinanciado - valorAVista;
+
+  // ---- Impacto no ROI ----
+  let roiAVista = null;
+  let roiFinanciado = null;
+  let paybackAVistaMeses = null;
+  let paybackFinanciadoMeses = null;
+
+  if (economia > 0) {
+    const economiaVidaUtil = economia * 12 * vidaUtil;
+
+    // ROI à vista
+    roiAVista = parseFloat((((economiaVidaUtil - valorAVista) / valorAVista) * 100).toFixed(1));
+    paybackAVistaMeses = Math.ceil(valorAVista / economia);
+
+    // ROI financiado: durante o prazo do financiamento, o "ganho líquido" mensal é (economia - parcela)
+    // Após quitar, ganho líquido é a economia total
+    const mesesPosFinanciamento = vidaUtil * 12 - n;
+    const economiaDuranteFinanciamento = economia * n; // recebe economia mas paga parcela
+    const custoDuranteFinanciamento = parcela * n;
+    const economiaAposFinanciamento = economia * Math.max(0, mesesPosFinanciamento);
+    const ganhoTotalFinanciado = economiaDuranteFinanciamento + economiaAposFinanciamento;
+
+    roiFinanciado = parseFloat((((ganhoTotalFinanciado - custoTotalFinanciado) / custoTotalFinanciado) * 100).toFixed(1));
+
+    // Payback financiado: meses até economia acumulada cobrir custo total
+    let acumuladoFinanc = -entradaVal;
+    let encontrouPayback = false;
+    // Durante financiamento: fluxo líquido = economia - parcela (mas a entrada já saiu)
+    for (let mes = 1; mes <= vidaUtil * 12; mes++) {
+      if (mes <= n) {
+        acumuladoFinanc += (economia - parcela);
+      } else {
+        acumuladoFinanc += economia;
+      }
+      if (acumuladoFinanc >= 0 && !encontrouPayback) {
+        paybackFinanciadoMeses = mes;
+        encontrouPayback = true;
+        break;
+      }
+    }
+    if (!encontrouPayback) {
+      paybackFinanciadoMeses = vidaUtil * 12;
+    }
+  }
+
+  return {
+    entrada: {
+      valorSistema: valor,
+      entrada: entradaVal,
+      valorFinanciado: parseFloat(valorFinanciado.toFixed(2)),
+      taxaJurosMensal: taxa,
+      taxaEfetivaAnual: parseFloat(taxaEfetivaAnual.toFixed(2)),
+      prazoMeses: n,
+    },
+    financiamento: {
+      parcela: parseFloat(parcela.toFixed(2)),
+      custoTotal: parseFloat(custoTotalFinanciado.toFixed(2)),
+      jurosTotal: parseFloat(jurosTotal.toFixed(2)),
+      percentualJuros: parseFloat(((jurosTotal / valor) * 100).toFixed(1)),
+    },
+    aVista: {
+      descontoPercent: desconto,
+      valorComDesconto: parseFloat(valorAVista.toFixed(2)),
+      economiaVsFinanciamento: parseFloat(economiaVsFinanciamento.toFixed(2)),
+    },
+    comparativo: {
+      diferencaTotal: parseFloat(economiaVsFinanciamento.toFixed(2)),
+      percentualMaisCaro: parseFloat(((custoTotalFinanciado / valorAVista - 1) * 100).toFixed(1)),
+      recomendacao: economiaVsFinanciamento > valor * 0.3
+        ? 'a_vista_fortemente_recomendado'
+        : economiaVsFinanciamento > valor * 0.15
+          ? 'a_vista_recomendado'
+          : 'financiamento_viavel',
+    },
+    impactoROI: economia > 0 ? {
+      roiAVista,
+      roiFinanciado,
+      paybackAVistaMeses,
+      paybackAVistaAnos: parseFloat((paybackAVistaMeses / 12).toFixed(1)),
+      paybackFinanciadoMeses,
+      paybackFinanciadoAnos: parseFloat((paybackFinanciadoMeses / 12).toFixed(1)),
+      economiaMensal: parseFloat(economia.toFixed(2)),
+      fluxoLiquidoDuranteFinanciamento: parseFloat((economia - parcela).toFixed(2)),
+    } : null,
+    cronograma,
+  };
+}
+
 module.exports = {
   calcularSimulacao,
   calcularPlacasNaArea,
   calculateSolarProduction,
   calculateFinancialReturn,
+  calculateFinancing,
   getDashboardStats,
   getGeracaoMensal,
   getProjetosAtivos,

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
+import { RegionalProvider } from './context/RegionalContext';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import './styles/variables.css';
@@ -15,7 +16,9 @@ root.render(
     <BrowserRouter>
       <AuthProvider>
         <AppProvider>
-          <App />
+          <RegionalProvider>
+            <App />
+          </RegionalProvider>
         </AppProvider>
       </AuthProvider>
     </BrowserRouter>

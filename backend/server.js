@@ -9,6 +9,7 @@ const simulacaoRoutes = require('./api/routes/simulacao');
 const mapaRoutes = require('./api/routes/mapa');
 const orcamentoRoutes = require('./api/routes/orcamento');
 const kitsRoutes = require('./api/routes/kits');
+const regionalRoutes = require('./api/routes/regional');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,6 +30,7 @@ app.use('/api/simulacao', authenticateToken, simulacaoRoutes);
 app.use('/api/mapa', authenticateToken, mapaRoutes);
 app.use('/api/orcamento', authenticateToken, orcamentoRoutes);
 app.use('/api/kits', authenticateToken, kitsRoutes);
+app.use('/api/regional', authenticateToken, regionalRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

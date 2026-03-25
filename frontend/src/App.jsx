@@ -7,6 +7,7 @@ import Simulacao from './pages/Simulacao';
 import MapaSolar from './pages/MapaSolar';
 import Orcamento from './pages/Orcamento';
 import KitsSolares from './pages/KitsSolares';
+import Financiamento from './pages/Financiamento';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -26,6 +27,7 @@ export default function App() {
                 <Route path="/mapa" element={<MapaSolar />} />
                 <Route path="/orcamento" element={<Orcamento />} />
                 <Route path="/kits" element={<KitsSolares />} />
+                <Route path="/financiamento" element={<Financiamento />} />
               </Routes>
             </Layout>
           </PrivateRoute>
