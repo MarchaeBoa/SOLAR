@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Globe, ChevronDown, MapPin, DollarSign, TrendingUp } from 'lucide-react';
 import { useRegional } from '../context/RegionalContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getCurrencyInfo } from '../utils/currencyConverter';
 
 const FLAG_EMOJIS = {
   BR: '🇧🇷', AR: '🇦🇷', CL: '🇨🇱', CO: '🇨🇴', PE: '🇵🇪', UY: '🇺🇾',
@@ -18,6 +19,7 @@ export default function RegionSelector({ showDetails = false }) {
     loading,
     fetchCountries, fetchRegions, fetchAverageCosts,
     selectCountry,
+    allCountryConfigs,
   } = useRegional();
   const { t } = useLanguage();
 
@@ -94,7 +96,7 @@ export default function RegionSelector({ showDetails = false }) {
             <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
               {t.app.loading}
             </div>
-          ) : (
+          ) : regions.length > 0 ? (
             regions.map((region) => (
               <div key={region.id} style={{ marginBottom: '8px' }}>
                 <div style={{
@@ -142,6 +144,40 @@ export default function RegionSelector({ showDetails = false }) {
                 ))}
               </div>
             ))
+          ) : (
+            /* Fallback: local country configs when API is unavailable */
+            allCountryConfigs.map((cfg) => {
+              const curInfo = getCurrencyInfo(cfg.currency);
+              return (
+                <button
+                  key={cfg.code}
+                  onClick={() => handleSelect(cfg.code)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: cfg.code === country.code ? '#0f172a' : 'transparent',
+                    border: cfg.code === country.code ? '1px solid #f59e0b' : '1px solid transparent',
+                    borderRadius: '8px',
+                    color: '#e2e8f0',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    transition: 'background 0.15s',
+                    marginBottom: '2px',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{cfg.flag}</span>
+                    <span>{cfg.name}</span>
+                  </span>
+                  <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 500 }}>
+                    {curInfo.symbol} {cfg.currency}
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
       )}

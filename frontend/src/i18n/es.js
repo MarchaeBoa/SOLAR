@@ -350,6 +350,19 @@ const es = {
     irrad: 'Irrad:',
   },
 
+  // ── Global Config ──
+  config: {
+    countryAdapted: 'Simulación adaptada para',
+    energyTariff: 'Tarifa de energía',
+    solarRadiation: 'Radiación solar',
+    panelEfficiency: 'Eficiencia del panel',
+    co2Factor: 'Factor CO₂',
+    systemLifespan: 'Vida útil del sistema',
+    costPerKwp: 'Costo por kWp',
+    taxRate: 'Tasa de impuestos',
+    autoAdapted: 'Parámetros adaptados automáticamente al país seleccionado',
+  },
+
   // ── Roles ──
   roles: {
     admin: 'Admin',

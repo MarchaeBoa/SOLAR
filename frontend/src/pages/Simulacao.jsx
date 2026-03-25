@@ -9,8 +9,18 @@ import { TIPOS_TELHADO, EFICIENCIA_PAINEL, CUSTO_KWP, PRECO_KWH, VIDA_UTIL_ANOS,
 
 export default function Simulacao() {
   const { state, dispatch } = useApp();
-  const { formatPrice } = useRegional();
+  const { formatPrice, pricing, simulation, country } = useRegional();
   const { t } = useLanguage();
+
+  // Use regional params (auto-adapt per country)
+  const SIM = {
+    efficiency: simulation?.panel_efficiency || EFICIENCIA_PAINEL,
+    costKwp: pricing?.cost_kwp || CUSTO_KWP,
+    tariff: pricing?.energy_tariff || PRECO_KWH,
+    lifespan: simulation?.lifespan_years || VIDA_UTIL_ANOS,
+    irradiation: pricing?.irradiation_avg || 5.2,
+    co2Factor: simulation?.co2_factor || 0.084,
+  };
   const [form, setForm] = useState({
     localizacao: state.simulacao.localizacao || '',
     areaM2: state.simulacao.areaM2 || '',
@@ -36,18 +46,17 @@ export default function Simulacao() {
   const simular = () => {
     const area = parseFloat(form.areaM2) || 0;
     const consumo = parseFloat(form.consumoMensal) || 0;
-    const telhado = TIPOS_TELHADO.find(t => t.id === form.tipoTelhado);
+    const telhado = TIPOS_TELHADO.find(tipo => tipo.id === form.tipoTelhado);
     const fator = telhado ? telhado.fator : 1;
 
-    // Irradiação média Brasil
-    const irradiacao = 5.2;
-    const potenciaKWp = (area * EFICIENCIA_PAINEL * fator);
-    const geracaoMensal = potenciaKWp * irradiacao * 30 * 0.8;
-    const economiaMensal = geracaoMensal * PRECO_KWH;
-    const investimento = potenciaKWp * CUSTO_KWP;
-    const paybackMeses = investimento / economiaMensal;
-    const economiaVidaUtil = economiaMensal * 12 * VIDA_UTIL_ANOS;
-    const co2Anual = (geracaoMensal * 12 * 0.084) / 1000;
+    // Uses regional params (auto-adapts per selected country)
+    const potenciaKWp = (area * SIM.efficiency * fator);
+    const geracaoMensal = potenciaKWp * SIM.irradiation * 30 * 0.8;
+    const economiaMensal = geracaoMensal * SIM.tariff;
+    const investimento = potenciaKWp * SIM.costKwp;
+    const paybackMeses = economiaMensal > 0 ? investimento / economiaMensal : 0;
+    const economiaVidaUtil = economiaMensal * 12 * SIM.lifespan;
+    const co2Anual = (geracaoMensal * 12 * SIM.co2Factor) / 1000;
     const paineis = Math.ceil(area / 2);
 
     const res = {
@@ -338,6 +347,37 @@ export default function Simulacao() {
       <div className="page-header">
         <h1>{t.simulacao.title}</h1>
         <p>{t.simulacao.subtitle}</p>
+      </div>
+
+      {/* Regional config banner */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        padding: '12px 18px',
+        marginBottom: '20px',
+        background: 'var(--gold-dim)',
+        border: '1px solid var(--gold-border)',
+        borderRadius: 'var(--r-sm)',
+        fontSize: '0.78rem',
+        flexWrap: 'wrap',
+      }}>
+        <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
+          <Globe size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: -2 }} />
+          {t.config.countryAdapted} {country.name_local}
+        </span>
+        <span style={{ color: 'var(--text-2)' }}>
+          {t.config.energyTariff}: <strong>{formatPrice(SIM.tariff)}/kWh</strong>
+        </span>
+        <span style={{ color: 'var(--text-2)' }}>
+          {t.config.solarRadiation}: <strong>{SIM.irradiation} kWh/m²</strong>
+        </span>
+        <span style={{ color: 'var(--text-2)' }}>
+          {t.config.costPerKwp}: <strong>{formatPrice(SIM.costKwp)}</strong>
+        </span>
+        <span style={{ color: 'var(--text-2)' }}>
+          {t.config.panelEfficiency}: <strong>{(SIM.efficiency * 100).toFixed(0)}%</strong>
+        </span>
       </div>
 
       <div className="grid-2">
