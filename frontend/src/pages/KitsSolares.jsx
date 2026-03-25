@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import {
   Sun, Zap, DollarSign, Gauge, ChevronDown, ChevronUp,
   Check, X, ArrowRight, Package, Shield, BarChart3,
-  Scale, Star, Filter, Leaf,
+  Scale, Star, Filter, Leaf, FileText, CreditCard,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 // Mock data (mesma estrutura do backend)
 const KITS_DATA = [
@@ -576,7 +578,7 @@ function ComparisonPanel({ kits, onClose, onRemove }) {
 }
 
 // ─── Selected Kit Detail ────────────────────────────────
-function SelectedKitPanel({ kit, onClose }) {
+function SelectedKitPanel({ kit, onClose, onGoOrcamento, onGoFinanciamento }) {
   return (
     <div style={{
       background: 'var(--bg-surface)',
@@ -629,6 +631,24 @@ function SelectedKitPanel({ kit, onClose }) {
         <SummaryBox icon={DollarSign} label="Economia/mês" value={formatCurrency(kit.economia_mensal_estimada)} color="var(--green)" />
         <SummaryBox icon={Leaf} label="Payback" value={`${kit.payback_anos} anos`} color="var(--green)" />
       </div>
+
+      {/* Flow navigation */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+        <button
+          onClick={onGoOrcamento}
+          className="btn btn-primary"
+          style={{ flex: 1, justifyContent: 'center' }}
+        >
+          <FileText size={16} /> Gerar Orçamento <ArrowRight size={14} />
+        </button>
+        <button
+          onClick={onGoFinanciamento}
+          className="btn btn-secondary"
+          style={{ flex: 1, justifyContent: 'center' }}
+        >
+          <CreditCard size={16} /> Simular Financiamento <ArrowRight size={14} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -656,6 +676,8 @@ function SummaryBox({ icon: Icon, label, value, color }) {
 
 // ─── Main Page ──────────────────────────────────────────
 export default function KitsSolares() {
+  const { dispatch } = useApp();
+  const navigate = useNavigate();
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [compareIds, setCompareIds] = useState([]);
   const [selectedKit, setSelectedKit] = useState(null);
@@ -677,6 +699,7 @@ export default function KitsSolares() {
 
   function handleSelect(kit) {
     setSelectedKit(kit);
+    dispatch({ type: 'SET_KIT_SELECIONADO', payload: kit });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -705,7 +728,15 @@ export default function KitsSolares() {
 
       {/* Selected kit panel */}
       {selectedKit && (
-        <SelectedKitPanel kit={selectedKit} onClose={() => setSelectedKit(null)} />
+        <SelectedKitPanel
+          kit={selectedKit}
+          onClose={() => {
+            setSelectedKit(null);
+            dispatch({ type: 'CLEAR_KIT_SELECIONADO' });
+          }}
+          onGoOrcamento={() => navigate('/orcamento')}
+          onGoFinanciamento={() => navigate('/financiamento')}
+        />
       )}
 
       {/* Comparison panel */}

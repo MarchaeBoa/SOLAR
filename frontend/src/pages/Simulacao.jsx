@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, BarChart3, Globe, DollarSign, TrendingUp, Clock, PiggyBank } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, BarChart3, Globe, DollarSign, TrendingUp, Clock, PiggyBank, FileText, CreditCard, Map as MapIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatNumber } from '../utils/formatters';
@@ -7,6 +8,9 @@ import { TIPOS_TELHADO, EFICIENCIA_PAINEL, CUSTO_KWP, PRECO_KWH, VIDA_UTIL_ANOS,
 
 export default function Simulacao() {
   const { state, dispatch } = useApp();
+  const navigate = useNavigate();
+  const areaMapa = state.areaMapa;
+
   const [form, setForm] = useState({
     localizacao: state.simulacao.localizacao || '',
     areaM2: state.simulacao.areaM2 || '',
@@ -14,6 +18,17 @@ export default function Simulacao() {
     tipoTelhado: state.simulacao.tipoTelhado || 'ceramico',
   });
   const [resultado, setResultado] = useState(state.simulacao.resultado);
+
+  // Pre-fill from map area selection
+  useEffect(() => {
+    if (areaMapa) {
+      setForm(prev => ({
+        ...prev,
+        areaM2: Math.round(areaMapa.areaM2),
+        localizacao: areaMapa.localizacao || prev.localizacao,
+      }));
+    }
+  }, [areaMapa]);
 
   // Estado para calculadora de placas
   const [placasForm, setPlacasForm] = useState({
@@ -336,6 +351,42 @@ export default function Simulacao() {
         <p>Calcule o potencial de geração solar para qualquer localidade</p>
       </div>
 
+      {/* Banner: área vinda do mapa */}
+      {areaMapa && (
+        <div style={{
+          padding: '12px 16px',
+          marginBottom: '20px',
+          background: 'var(--green-dim)',
+          border: '1px solid var(--green-border)',
+          borderRadius: 'var(--r-sm)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <MapIcon size={18} color="var(--green)" />
+            <span style={{ fontSize: '0.85rem', color: 'var(--green)' }}>
+              Área do mapa importada: <strong>{Math.round(areaMapa.areaM2)} m²</strong>
+              {areaMapa.localizacao && ` — ${areaMapa.localizacao}`}
+            </span>
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'CLEAR_AREA_MAPA' })}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-3)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontFamily: 'Outfit, sans-serif',
+            }}
+          >
+            Limpar
+          </button>
+        </div>
+      )}
+
       <div className="grid-2">
         {/* Form */}
         <Card>
@@ -461,6 +512,36 @@ export default function Simulacao() {
                   ))}
                 </div>
               </Card>
+
+              {/* Flow navigation buttons */}
+              <Card>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '14px', color: 'var(--text-2)' }}>
+                  Próximos Passos
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => navigate('/orcamento')}
+                    style={{ justifyContent: 'center', width: '100%' }}
+                  >
+                    <FileText size={16} /> Gerar Orçamento <ArrowRight size={14} />
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => navigate('/financiamento')}
+                    style={{ justifyContent: 'center', width: '100%' }}
+                  >
+                    <CreditCard size={16} /> Simular Financiamento <ArrowRight size={14} />
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => navigate('/kits')}
+                    style={{ justifyContent: 'center', width: '100%' }}
+                  >
+                    <Sun size={16} /> Ver Kits Solares <ArrowRight size={14} />
+                  </button>
+                </div>
+              </Card>
             </>
           ) : (
             <Card style={{
@@ -487,6 +568,13 @@ export default function Simulacao() {
               <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Pronto para simular</h3>
               <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
                 Preencha os dados ao lado e clique em "Simular" para ver o potencial solar do local.
+              </p>
+              <button
+                className="btn btn-secondary"
+                onClick={() => navigate('/mapa')}
+                style={{ marginTop: '16px' }}
+              >
+                <MapIcon size={16} /> Selecionar Área no Mapa
               </p>
             </Card>
           )}

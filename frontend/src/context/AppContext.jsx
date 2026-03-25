@@ -14,6 +14,10 @@ const initialState = {
     tipoTelhado: 'ceramico',
     resultado: null,
   },
+  // Área selecionada no mapa (conecta Mapa → Simulação)
+  areaMapa: null,
+  // Kit selecionado (conecta Kits → Orçamento/Financiamento)
+  kitSelecionado: null,
   dashboard: {
     geracaoHoje: 42.8,
     geracaoMes: 1284,
@@ -41,6 +45,26 @@ function appReducer(state, action) {
       return {
         ...state,
         simulacao: { ...state.simulacao, resultado: action.payload },
+      };
+    case 'SET_AREA_MAPA':
+      return {
+        ...state,
+        areaMapa: action.payload,
+      };
+    case 'CLEAR_AREA_MAPA':
+      return {
+        ...state,
+        areaMapa: null,
+      };
+    case 'SET_KIT_SELECIONADO':
+      return {
+        ...state,
+        kitSelecionado: action.payload,
+      };
+    case 'CLEAR_KIT_SELECIONADO':
+      return {
+        ...state,
+        kitSelecionado: null,
       };
     case 'SET_ORCAMENTO':
       return {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Sun, Zap, DollarSign, Leaf, TrendingUp, FolderOpen } from 'lucide-react';
+import { Sun, Zap, DollarSign, Leaf, TrendingUp, FolderOpen, ArrowRight, Map, FileText, CreditCard, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { StatCard } from '../components/Card';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
@@ -7,7 +8,10 @@ import { formatCurrency, formatNumber, formatEnergy, formatPercent } from '../ut
 
 export default function Dashboard() {
   const { state } = useApp();
+  const navigate = useNavigate();
   const d = state.dashboard;
+  const resultado = state.simulacao.resultado;
+  const kitSelecionado = state.kitSelecionado;
 
   const chartData = [
     { mes: 'Jan', valor: 98 },
@@ -32,6 +36,53 @@ export default function Dashboard() {
         <h1>Dashboard</h1>
         <p>Visão geral da sua plataforma solar</p>
       </div>
+
+      {/* Active simulation/kit summary banner */}
+      {(resultado || kitSelecionado) && (
+        <div style={{
+          padding: '16px 20px',
+          marginBottom: '24px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--gold-border)',
+          borderRadius: 'var(--r)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Zap size={20} color="var(--gold)" />
+            <div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-3)', marginBottom: '2px' }}>
+                {kitSelecionado ? 'Kit Selecionado' : 'Última Simulação'}
+              </div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>
+                {kitSelecionado
+                  ? `${kitSelecionado.nome} — ${formatCurrency(kitSelecionado.preco)}`
+                  : `${resultado.potenciaKWp} kWp — ${formatNumber(resultado.geracaoMensal)} kWh/mês — ${formatCurrency(resultado.economiaMensal)}/mês`
+                }
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/orcamento')}
+              style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+            >
+              <FileText size={14} /> Orçamento
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate('/financiamento')}
+              style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+            >
+              <CreditCard size={14} /> Financiamento
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid-4" style={{ marginBottom: '24px' }}>
@@ -185,12 +236,12 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {[
-              { icon: Zap, label: 'Nova Simulação', desc: 'Calcular potencial solar' },
-              { icon: FolderOpen, label: 'Novo Projeto', desc: 'Iniciar projeto completo' },
-              { icon: TrendingUp, label: 'Relatórios', desc: 'Gerar relatório mensal' },
-              { icon: Leaf, label: 'Certificados', desc: 'Créditos de carbono' },
+              { icon: Zap, label: 'Nova Simulação', desc: 'Calcular potencial solar', path: '/simulacao' },
+              { icon: Map, label: 'Mapa Solar', desc: 'Selecionar área no mapa', path: '/mapa' },
+              { icon: Package, label: 'Kits Solares', desc: 'Ver kits disponíveis', path: '/kits' },
+              { icon: FileText, label: 'Orçamento', desc: 'Montar orçamento', path: '/orcamento' },
             ].map((action, i) => (
-              <button key={i} style={{
+              <button key={i} onClick={() => navigate(action.path)} style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -202,6 +253,7 @@ export default function Dashboard() {
                 cursor: 'pointer',
                 color: 'var(--text-1)',
                 transition: 'all var(--t)',
+                fontFamily: 'Outfit, sans-serif',
               }}>
                 <action.icon size={22} color="var(--gold)" />
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{action.label}</span>

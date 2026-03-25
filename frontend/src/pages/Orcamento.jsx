@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { FileText, Plus, Trash2, Download, Send, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Plus, Trash2, Download, Send, Package, ArrowRight, CreditCard, Sun, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
@@ -17,11 +18,97 @@ const catalogoProdutos = [
   { id: 10, nome: 'Serviço de Instalação', categoria: 'Serviço', preco: 3500, unidade: 'un' },
 ];
 
+// Map kit components to catalog products
+function gerarItensDoKit(kit) {
+  const itens = [];
+  // Painéis - use 550W mono for bifacial/mono, 450W for poli
+  const painelId = kit.modelo_painel.toLowerCase().includes('poli') ? 2 : 1;
+  const painel = catalogoProdutos.find(p => p.id === painelId);
+  itens.push({ ...painel, qtd: kit.paineis });
+
+  // Inversor - match by power
+  const potencia = kit.potencia_kwp;
+  let inversorId;
+  if (potencia <= 3) inversorId = 5;      // Microinversor
+  else if (potencia <= 8) inversorId = 3;  // String 5kW
+  else inversorId = 4;                      // String 10kW
+  const inversor = catalogoProdutos.find(p => p.id === inversorId);
+  const qtdInversores = potencia > 25 ? Math.ceil(potencia / 10) : 1;
+  itens.push({ ...inversor, qtd: qtdInversores });
+
+  // Estrutura
+  const estrutura = catalogoProdutos.find(p => p.id === 6);
+  itens.push({ ...estrutura, qtd: Math.ceil(kit.paineis / 4) });
+
+  // Cabos (estimate ~5m per panel)
+  const cabo = catalogoProdutos.find(p => p.id === 8);
+  itens.push({ ...cabo, qtd: kit.paineis * 5 });
+
+  // String Box
+  const stringBox = catalogoProdutos.find(p => p.id === 9);
+  itens.push({ ...stringBox, qtd: Math.ceil(kit.paineis / 12) });
+
+  // Instalação
+  const instalacao = catalogoProdutos.find(p => p.id === 10);
+  itens.push({ ...instalacao, qtd: 1 });
+
+  return itens;
+}
+
+// Map simulation results to catalog products
+function gerarItensDeSimulacao(resultado) {
+  const itens = [];
+  const paineis = resultado.paineis || 0;
+  if (paineis <= 0) return itens;
+
+  const painel = catalogoProdutos.find(p => p.id === 1);
+  itens.push({ ...painel, qtd: paineis });
+
+  const potencia = parseFloat(resultado.potenciaKWp) || 0;
+  let inversorId;
+  if (potencia <= 3) inversorId = 5;
+  else if (potencia <= 8) inversorId = 3;
+  else inversorId = 4;
+  const inversor = catalogoProdutos.find(p => p.id === inversorId);
+  itens.push({ ...inversor, qtd: potencia > 25 ? Math.ceil(potencia / 10) : 1 });
+
+  const estrutura = catalogoProdutos.find(p => p.id === 6);
+  itens.push({ ...estrutura, qtd: Math.ceil(paineis / 4) });
+
+  const cabo = catalogoProdutos.find(p => p.id === 8);
+  itens.push({ ...cabo, qtd: paineis * 5 });
+
+  const stringBox = catalogoProdutos.find(p => p.id === 9);
+  itens.push({ ...stringBox, qtd: Math.ceil(paineis / 12) });
+
+  const instalacao = catalogoProdutos.find(p => p.id === 10);
+  itens.push({ ...instalacao, qtd: 1 });
+
+  return itens;
+}
+
 export default function Orcamento() {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
+  const navigate = useNavigate();
   const [itens, setItens] = useState([]);
   const [desconto, setDesconto] = useState(0);
   const [cliente, setCliente] = useState('');
+  const [preFilledFrom, setPreFilledFrom] = useState(null);
+
+  // Pre-fill from kit or simulation
+  useEffect(() => {
+    if (state.kitSelecionado && itens.length === 0) {
+      const kitItens = gerarItensDoKit(state.kitSelecionado);
+      setItens(kitItens);
+      setPreFilledFrom({ type: 'kit', name: state.kitSelecionado.nome });
+    } else if (state.simulacao.resultado && !state.kitSelecionado && itens.length === 0) {
+      const simItens = gerarItensDeSimulacao(state.simulacao.resultado);
+      if (simItens.length > 0) {
+        setItens(simItens);
+        setPreFilledFrom({ type: 'simulacao', name: `${state.simulacao.resultado.potenciaKWp} kWp` });
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const adicionarItem = (produto) => {
     const existente = itens.find(i => i.id === produto.id);
@@ -57,6 +144,11 @@ export default function Orcamento() {
     });
   };
 
+  const irParaFinanciamento = () => {
+    salvarOrcamento();
+    navigate('/financiamento');
+  };
+
   const inputStyle = {
     width: '100%',
     padding: '10px 14px',
@@ -75,6 +167,28 @@ export default function Orcamento() {
         <h1>Orçamento</h1>
         <p>Monte orçamentos detalhados para projetos solares</p>
       </div>
+
+      {/* Banner: pre-filled origin */}
+      {preFilledFrom && (
+        <div style={{
+          padding: '12px 16px',
+          marginBottom: '20px',
+          background: preFilledFrom.type === 'kit' ? 'var(--gold-dim)' : 'var(--green-dim)',
+          border: `1px solid ${preFilledFrom.type === 'kit' ? 'var(--gold-border)' : 'var(--green-border)'}`,
+          borderRadius: 'var(--r-sm)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '0.85rem',
+          color: preFilledFrom.type === 'kit' ? 'var(--gold)' : 'var(--green)',
+        }}>
+          {preFilledFrom.type === 'kit' ? <Sun size={16} /> : <AlertCircle size={16} />}
+          <span>
+            Orçamento pré-preenchido a partir {preFilledFrom.type === 'kit' ? 'do kit' : 'da simulação'}:{' '}
+            <strong>{preFilledFrom.name}</strong>
+          </span>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
         {/* Products catalog */}
@@ -252,13 +366,26 @@ export default function Orcamento() {
           </Card>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="btn btn-primary" onClick={salvarOrcamento} style={{ flex: 1 }}>
-              <Download size={16} /> Salvar
-            </button>
-            <button className="btn btn-secondary" style={{ flex: 1 }}>
-              <Send size={16} /> Enviar
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn btn-primary" onClick={salvarOrcamento} style={{ flex: 1 }}>
+                <Download size={16} /> Salvar
+              </button>
+              <button className="btn btn-secondary" style={{ flex: 1 }}>
+                <Send size={16} /> Enviar
+              </button>
+            </div>
+
+            {/* Navigate to financing */}
+            {total > 0 && (
+              <button
+                className="btn btn-primary"
+                onClick={irParaFinanciamento}
+                style={{ width: '100%', justifyContent: 'center', background: 'var(--green-dim)', color: 'var(--green)', border: '1px solid var(--green-border)' }}
+              >
+                <CreditCard size={16} /> Simular Financiamento <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         </div>
       </div>
