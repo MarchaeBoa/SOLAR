@@ -116,11 +116,11 @@ export default function Simulacao() {
 
   // Estado para calculadora de produção solar
   const LOCALIZACOES = [
-    { id: 'norte', nome: 'Norte', radiacao: 5.5, horasSol: 5.0 },
-    { id: 'nordeste', nome: 'Nordeste', radiacao: 5.8, horasSol: 5.8 },
-    { id: 'centro_oeste', nome: 'Centro-Oeste', radiacao: 5.4, horasSol: 5.2 },
-    { id: 'sudeste', nome: 'Sudeste', radiacao: 4.8, horasSol: 4.6 },
-    { id: 'sul', nome: 'Sul', radiacao: 4.3, horasSol: 4.2 },
+    { id: 'norte', nome: t.simulacao.norte, radiacao: 5.5, horasSol: 5.0 },
+    { id: 'nordeste', nome: t.simulacao.nordeste, radiacao: 5.8, horasSol: 5.8 },
+    { id: 'centro_oeste', nome: t.simulacao.centroOeste, radiacao: 5.4, horasSol: 5.2 },
+    { id: 'sudeste', nome: t.simulacao.sudeste, radiacao: 4.8, horasSol: 4.6 },
+    { id: 'sul', nome: t.simulacao.sul, radiacao: 4.3, horasSol: 4.2 },
   ];
 
   const [producaoForm, setProducaoForm] = useState({
@@ -161,7 +161,7 @@ export default function Simulacao() {
       : loc.horasSol;
 
     const diasPorMes = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const nomesMeses = [t.simulacao.jan, t.simulacao.fev, t.simulacao.mar, t.simulacao.abr, t.simulacao.mai, t.simulacao.jun, t.simulacao.jul, t.simulacao.ago, t.simulacao.set, t.simulacao.out, t.simulacao.nov, t.simulacao.dez];
 
     // Radiação mensal simulada com variação sazonal
     const radiacaoMensal = {
@@ -344,7 +344,7 @@ export default function Simulacao() {
         {/* Form */}
         <Card>
           <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px' }}>
-            Dados do Projeto
+            {t.simulacao.dadosProjeto}
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -367,7 +367,7 @@ export default function Simulacao() {
               </label>
               <input
                 type="number"
-                placeholder="Ex: 50"
+                placeholder={t.simulacao.areaPlaceholder}
                 value={form.areaM2}
                 onChange={e => handleChange('areaM2', e.target.value)}
                 style={inputStyle}
@@ -380,7 +380,7 @@ export default function Simulacao() {
               </label>
               <input
                 type="number"
-                placeholder="Ex: 350"
+                placeholder={t.simulacao.consumoPlaceholder}
                 value={form.consumoMensal}
                 onChange={e => handleChange('consumoMensal', e.target.value)}
                 style={inputStyle}
@@ -396,15 +396,15 @@ export default function Simulacao() {
                 onChange={e => handleChange('tipoTelhado', e.target.value)}
                 style={{ ...inputStyle, cursor: 'pointer' }}
               >
-                {TIPOS_TELHADO.map(t => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
+                {TIPOS_TELHADO.map(tipo => (
+                  <option key={tipo.id} value={tipo.id}>{t.telhados[tipo.id]}</option>
                 ))}
               </select>
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button className="btn btn-primary" onClick={simular} style={{ flex: 1 }}>
-                <Zap size={16} /> Simular
+                <Zap size={16} /> {t.simulacao.simular}
               </button>
               <button className="btn btn-secondary" onClick={resetar}>
                 <RotateCcw size={16} />
@@ -425,10 +425,10 @@ export default function Simulacao() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   {[
-                    { label: 'Potência', value: `${resultado.potenciaKWp} kWp`, color: 'var(--gold)' },
-                    { label: 'Geração Mensal', value: `${formatNumber(resultado.geracaoMensal)} kWh`, color: 'var(--green)' },
-                    { label: 'Painéis', value: `${resultado.paineis} unidades`, color: 'var(--blue)' },
-                    { label: 'CO₂/ano evitado', value: `${resultado.co2Anual} ton`, color: 'var(--green)' },
+                    { label: t.simulacao.potenciaEstimada, value: `${resultado.potenciaKWp} kWp`, color: 'var(--gold)' },
+                    { label: t.simulacao.geracaoMensal, value: `${formatNumber(resultado.geracaoMensal)} kWh`, color: 'var(--green)' },
+                    { label: t.simulacao.paineisNecessarios, value: `${resultado.paineis} unidades`, color: 'var(--blue)' },
+                    { label: t.simulacao.co2Anual, value: `${resultado.co2Anual} ton`, color: 'var(--green)' },
                   ].map((item, i) => (
                     <div key={i} style={{
                       padding: '16px',
@@ -449,13 +449,13 @@ export default function Simulacao() {
 
               <Card style={{ borderColor: 'var(--green-border)' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>
-                  Análise Financeira
+                  {t.simulacao.retornoFinanceiro}
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {[
                     { label: t.simulacao.investimentoEstimado, value: formatPrice(resultado.investimento) },
                     { label: t.simulacao.economiaMensal, value: formatPrice(resultado.economiaMensal) },
-                    { label: 'Payback', value: `${resultado.paybackMeses} meses` },
+                    { label: t.simulacao.payback, value: `${resultado.paybackMeses} ${t.app.months}` },
                     { label: t.simulacao.economiaVidaUtil, value: formatPrice(resultado.economiaVidaUtil) },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
@@ -488,9 +488,9 @@ export default function Simulacao() {
               }}>
                 <Zap size={36} color="var(--gold)" />
               </div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Pronto para simular</h3>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{t.simulacao.simular}</h3>
               <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
-                Preencha os dados ao lado e clique em "Simular" para ver o potencial solar do local.
+                {t.simulacao.subtitle}
               </p>
             </Card>
           )}
@@ -507,7 +507,7 @@ export default function Simulacao() {
         <div className="grid-2">
           <Card>
             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Grid3X3 size={18} color="var(--gold)" /> Parâmetros da Área
+              <Grid3X3 size={18} color="var(--gold)" /> {t.simulacao.calcPlacas}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -526,7 +526,7 @@ export default function Simulacao() {
 
               <div>
                 <label style={labelStyle}>
-                  <Sun size={16} color="var(--gold)" /> Tamanho da placa (m²)
+                  <Sun size={16} color="var(--gold)" /> {t.simulacao.tamanhoPlaca}
                 </label>
                 <input
                   type="number"
@@ -540,7 +540,7 @@ export default function Simulacao() {
 
               <div>
                 <label style={labelStyle}>
-                  <Zap size={16} color="var(--gold)" /> Potência por placa (W)
+                  <Zap size={16} color="var(--gold)" /> {t.simulacao.potenciaPlaca}
                 </label>
                 <input
                   type="number"
@@ -554,7 +554,7 @@ export default function Simulacao() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={labelStyle}>
-                    Espaçamento (%)
+                    {t.simulacao.espacamento}
                   </label>
                   <input
                     type="number"
@@ -566,7 +566,7 @@ export default function Simulacao() {
                 </div>
                 <div>
                   <label style={labelStyle}>
-                    Perdas (%)
+                    {t.simulacao.perdas}
                   </label>
                   <input
                     type="number"
@@ -580,7 +580,7 @@ export default function Simulacao() {
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button className="btn btn-primary" onClick={calcularPlacas} style={{ flex: 1 }}>
-                  <Grid3X3 size={16} /> Calcular Placas
+                  <Grid3X3 size={16} /> {t.simulacao.calcularPlacas}
                 </button>
                 <button className="btn btn-secondary" onClick={resetarPlacas}>
                   <RotateCcw size={16} />
@@ -594,15 +594,15 @@ export default function Simulacao() {
               <Card style={{ borderColor: 'var(--gold-border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                   <Grid3X3 size={20} color="var(--gold)" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Resultado do Cálculo</h3>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{t.simulacao.calcPlacas}</h3>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   {[
-                    { label: 'Placas', value: `${placasResultado.quantidadePlacas}`, sub: 'unidades', color: 'var(--gold)' },
-                    { label: 'Potência Total', value: `${placasResultado.potenciaTotalKWp}`, sub: 'kWp', color: 'var(--green)' },
-                    { label: 'Área Útil', value: `${placasResultado.areaUtil}`, sub: 'm²', color: 'var(--blue)' },
-                    { label: 'Aproveitamento', value: `${placasResultado.aproveitamento}`, sub: '%', color: 'var(--green)' },
+                    { label: t.simulacao.paineisNecessarios, value: `${placasResultado.quantidadePlacas}`, sub: 'unidades', color: 'var(--gold)' },
+                    { label: t.simulacao.potenciaEstimada, value: `${placasResultado.potenciaTotalKWp}`, sub: 'kWp', color: 'var(--green)' },
+                    { label: t.simulacao.areaTotal, value: `${placasResultado.areaUtil}`, sub: 'm²', color: 'var(--blue)' },
+                    { label: t.simulacao.espacamento, value: `${placasResultado.aproveitamento}`, sub: '%', color: 'var(--green)' },
                   ].map((item, i) => (
                     <div key={i} style={{
                       padding: '16px',
@@ -632,15 +632,15 @@ export default function Simulacao() {
                   border: '1px solid var(--border)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Área total</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>{t.simulacao.areaTotal}</span>
                     <span className="mono" style={{ fontWeight: 600 }}>{placasResultado.areaTotal} m²</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Área ocupada pelas placas</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>{t.simulacao.areaOcupada || 'Área ocupada'}</span>
                     <span className="mono" style={{ fontWeight: 600 }}>{placasResultado.areaOcupada} m²</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Área não utilizada</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>{t.simulacao.areaNaoUtilizada || 'Área não utilizada'}</span>
                     <span className="mono" style={{ fontWeight: 600 }}>{(placasResultado.areaTotal - placasResultado.areaOcupada).toFixed(2)} m²</span>
                   </div>
                 </div>
@@ -667,9 +667,9 @@ export default function Simulacao() {
                 }}>
                   <Grid3X3 size={36} color="var(--gold)" />
                 </div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Calculadora de Placas</h3>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{t.simulacao.calcPlacas}</h3>
                 <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
-                  Informe a área disponível para descobrir quantas placas solares cabem e a potência total do sistema.
+                  {t.simulacao.subtitle}
                 </p>
               </Card>
             )}
@@ -687,13 +687,13 @@ export default function Simulacao() {
         <div className="grid-2">
           <Card>
             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <BarChart3 size={18} color="var(--gold)" /> Parâmetros de Produção
+              <BarChart3 size={18} color="var(--gold)" /> {t.simulacao.calcProducao}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={labelStyle}>
-                  <Zap size={16} color="var(--gold)" /> Potência instalada (kWp)
+                  <Zap size={16} color="var(--gold)" /> {t.simulacao.potenciaSistema}
                 </label>
                 <input
                   type="number"
@@ -707,7 +707,7 @@ export default function Simulacao() {
 
               <div>
                 <label style={labelStyle}>
-                  <Globe size={16} color="var(--gold)" /> Localização / Região
+                  <Globe size={16} color="var(--gold)" /> {t.simulacao.localizacao}
                 </label>
                 <select
                   value={producaoForm.localizacao}
@@ -725,7 +725,7 @@ export default function Simulacao() {
 
               <div>
                 <label style={labelStyle}>
-                  <Sun size={16} color="var(--gold)" /> Eficiência do sistema (%)
+                  <Sun size={16} color="var(--gold)" /> {t.simulacao.eficiencia}
                 </label>
                 <input
                   type="number"
@@ -750,14 +750,14 @@ export default function Simulacao() {
                     onChange={e => handleProducaoChange('usarCustom', e.target.checked)}
                     style={{ accentColor: 'var(--gold)' }}
                   />
-                  Usar radiação e horas de sol customizadas
+                  {t.simulacao.usarCustom}
                 </label>
 
                 {producaoForm.usarCustom && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <label style={{ ...labelStyle, fontSize: '0.8rem' }}>
-                        Radiação (kWh/m²/dia)
+                        {t.simulacao.radiacaoCustom}
                       </label>
                       <input
                         type="number"
@@ -770,7 +770,7 @@ export default function Simulacao() {
                     </div>
                     <div>
                       <label style={{ ...labelStyle, fontSize: '0.8rem' }}>
-                        Horas de sol/dia
+                        {t.simulacao.horasSolCustom}
                       </label>
                       <input
                         type="number"
@@ -787,7 +787,7 @@ export default function Simulacao() {
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button className="btn btn-primary" onClick={calcularProducao} style={{ flex: 1 }}>
-                  <BarChart3 size={16} /> Calcular Produção
+                  <BarChart3 size={16} /> {t.simulacao.calcularProducao}
                 </button>
                 <button className="btn btn-secondary" onClick={resetarProducao}>
                   <RotateCcw size={16} />
@@ -802,14 +802,14 @@ export default function Simulacao() {
                 <Card style={{ borderColor: 'var(--gold-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                     <BarChart3 size={20} color="var(--gold)" />
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Produção Estimada</h3>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{t.simulacao.producaoMensal}</h3>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     {[
-                      { label: 'Diária', value: `${formatNumber(producaoResultado.producao.diaria, 1)}`, sub: 'kWh', color: 'var(--gold)' },
-                      { label: 'Mensal', value: `${formatNumber(producaoResultado.producao.mensal, 0)}`, sub: 'kWh', color: 'var(--green)' },
-                      { label: 'Anual', value: `${formatNumber(producaoResultado.producao.anual, 0)}`, sub: 'kWh', color: 'var(--blue)' },
+                      { label: t.simulacao.producaoMensal, value: `${formatNumber(producaoResultado.producao.diaria, 1)}`, sub: 'kWh', color: 'var(--gold)' },
+                      { label: t.simulacao.producaoMensal, value: `${formatNumber(producaoResultado.producao.mensal, 0)}`, sub: 'kWh', color: 'var(--green)' },
+                      { label: t.simulacao.producaoAnual, value: `${formatNumber(producaoResultado.producao.anual, 0)}`, sub: 'kWh', color: 'var(--blue)' },
                     ].map((item, i) => (
                       <div key={i} style={{
                         padding: '16px',
@@ -838,12 +838,12 @@ export default function Simulacao() {
                     border: '1px solid var(--border)',
                   }}>
                     {[
-                      { label: 'Potência', value: `${producaoResultado.potenciaKWp} kWp` },
-                      { label: 'Região', value: producaoResultado.localizacao },
-                      { label: 'Radiação', value: `${producaoResultado.radiacao} kWh/m²/dia` },
-                      { label: 'Horas de sol', value: `${producaoResultado.horasSol}h/dia` },
-                      { label: 'Eficiência', value: `${(producaoResultado.eficiencia * 100).toFixed(0)}%` },
-                      { label: 'CO₂ evitado/ano', value: `${producaoResultado.co2EvitadoAnual} ton` },
+                      { label: t.simulacao.potenciaEstimada, value: `${producaoResultado.potenciaKWp} kWp` },
+                      { label: t.simulacao.localizacao, value: producaoResultado.localizacao },
+                      { label: t.simulacao.radiacaoCustom, value: `${producaoResultado.radiacao} kWh/m²/dia` },
+                      { label: t.simulacao.horasSolCustom, value: `${producaoResultado.horasSol}h/dia` },
+                      { label: t.simulacao.eficiencia, value: `${(producaoResultado.eficiencia * 100).toFixed(0)}%` },
+                      { label: t.simulacao.co2Anual, value: `${producaoResultado.co2EvitadoAnual} ton` },
                     ].map((item, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
                         <span style={{ fontSize: '0.83rem', color: 'var(--text-2)' }}>{item.label}</span>
@@ -855,7 +855,7 @@ export default function Simulacao() {
 
                 <Card style={{ borderColor: 'var(--green-border)' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>
-                    Detalhamento Mensal
+                    {t.simulacao.producaoMensal}
                   </h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {producaoResultado.detalhamento.map((m, i) => {
@@ -904,9 +904,9 @@ export default function Simulacao() {
                 }}>
                   <BarChart3 size={36} color="var(--gold)" />
                 </div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Produção de Energia</h3>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{t.simulacao.calcProducao}</h3>
                 <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
-                  Informe a potência do sistema para calcular a geração de energia diária, mensal e anual.
+                  {t.simulacao.subtitle}
                 </p>
               </Card>
             )}
@@ -923,18 +923,18 @@ export default function Simulacao() {
         <div className="grid-2">
           <Card>
             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <DollarSign size={18} color="var(--gold)" /> Dados Financeiros
+              <DollarSign size={18} color="var(--gold)" /> {t.simulacao.calcRetorno}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={labelStyle}>
-                  <DollarSign size={16} color="var(--gold)" /> Custo do sistema (R$)
+                  <DollarSign size={16} color="var(--gold)" /> {t.simulacao.custoSistema}
                 </label>
                 <input
                   type="number"
                   step="100"
-                  placeholder="Ex: 25000"
+                  placeholder={t.simulacao.custoPlaceholder}
                   value={financeiroForm.custoSistema}
                   onChange={e => handleFinanceiroChange('custoSistema', e.target.value)}
                   style={inputStyle}
@@ -943,7 +943,7 @@ export default function Simulacao() {
 
               <div>
                 <label style={labelStyle}>
-                  <Zap size={16} color="var(--gold)" /> Tarifa de energia (R$/kWh)
+                  <Zap size={16} color="var(--gold)" /> {t.simulacao.tarifaEnergia}
                 </label>
                 <input
                   type="number"
@@ -957,7 +957,7 @@ export default function Simulacao() {
 
               <div>
                 <label style={labelStyle}>
-                  <Sun size={16} color="var(--gold)" /> Geração mensal estimada (kWh)
+                  <Sun size={16} color="var(--gold)" /> {t.simulacao.geracaoEstimada}
                 </label>
                 <input
                   type="number"
@@ -972,7 +972,7 @@ export default function Simulacao() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={labelStyle}>
-                    Reajuste anual (%)
+                    {t.simulacao.reajusteAnual}
                   </label>
                   <input
                     type="number"
@@ -985,7 +985,7 @@ export default function Simulacao() {
                 </div>
                 <div>
                   <label style={labelStyle}>
-                    Vida útil (anos)
+                    {t.simulacao.vidaUtil}
                   </label>
                   <input
                     type="number"
@@ -999,7 +999,7 @@ export default function Simulacao() {
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button className="btn btn-primary" onClick={calcularFinanceiro} style={{ flex: 1 }}>
-                  <TrendingUp size={16} /> Calcular Retorno
+                  <TrendingUp size={16} /> {t.simulacao.calcularRetorno}
                 </button>
                 <button className="btn btn-secondary" onClick={resetarFinanceiro}>
                   <RotateCcw size={16} />
@@ -1021,9 +1021,9 @@ export default function Simulacao() {
                     {[
                       { label: t.simulacao.economiaMensal, value: formatPrice(financeiroResultado.economiaMensal), color: 'var(--green)' },
                       { label: t.simulacao.economiaAnual, value: formatPrice(financeiroResultado.economiaAnual), color: 'var(--green)' },
-                      { label: 'Payback Simples', value: `${financeiroResultado.paybackSimplesAnos} anos`, color: 'var(--gold)' },
-                      { label: 'Payback c/ Reajuste', value: `${financeiroResultado.paybackDescontadoAnos} anos`, color: 'var(--gold)' },
-                      { label: 'ROI', value: `${formatNumber(financeiroResultado.roi, 1)}%`, color: 'var(--blue)' },
+                      { label: t.simulacao.paybackSimples, value: `${financeiroResultado.paybackSimplesAnos} ${t.app.years}`, color: 'var(--gold)' },
+                      { label: t.simulacao.paybackReajuste, value: `${financeiroResultado.paybackDescontadoAnos} ${t.app.years}`, color: 'var(--gold)' },
+                      { label: t.simulacao.roi, value: `${formatNumber(financeiroResultado.roi, 1)}%`, color: 'var(--blue)' },
                       { label: t.simulacao.lucroTotal, value: formatPrice(financeiroResultado.lucroTotal), color: 'var(--green)' },
                     ].map((item, i) => (
                       <div key={i} style={{
@@ -1052,8 +1052,8 @@ export default function Simulacao() {
                     {[
                       { label: t.simulacao.investimento, value: formatPrice(financeiroResultado.custoSistema) },
                       { label: t.simulacao.economiaTotalVidaUtil, value: formatPrice(financeiroResultado.economiaTotal) },
-                      { label: 'Payback simples', value: `${financeiroResultado.paybackSimplesMeses} meses (${financeiroResultado.paybackSimplesAnos} anos)` },
-                      { label: 'Payback com reajuste', value: `${financeiroResultado.paybackDescontadoMeses} meses (${financeiroResultado.paybackDescontadoAnos} anos)` },
+                      { label: t.simulacao.paybackSimples, value: `${financeiroResultado.paybackSimplesMeses} ${t.app.months} (${financeiroResultado.paybackSimplesAnos} ${t.app.years})` },
+                      { label: t.simulacao.paybackReajuste, value: `${financeiroResultado.paybackDescontadoMeses} ${t.app.months} (${financeiroResultado.paybackDescontadoAnos} ${t.app.years})` },
                     ].map((item, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
                         <span style={{ fontSize: '0.83rem', color: 'var(--text-2)' }}>{item.label}</span>
@@ -1065,7 +1065,7 @@ export default function Simulacao() {
 
                 <Card style={{ borderColor: 'var(--green-border)' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>
-                    Evolução do Retorno
+                    {t.simulacao.evolucaoRetorno}
                   </h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '300px', overflowY: 'auto' }}>
                     {financeiroResultado.fluxoAnual
@@ -1076,7 +1076,7 @@ export default function Simulacao() {
                         const isPastPayback = item.lucroAcumulado >= 0;
                         return (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-2)', width: '50px', textAlign: 'right' }}>Ano {item.ano}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-2)', width: '50px', textAlign: 'right' }}>{t.simulacao.ano} {item.ano}</span>
                             <div style={{ flex: 1, height: '16px', background: 'var(--bg-elevated)', borderRadius: '4px', overflow: 'hidden' }}>
                               <div style={{
                                 width: `${barWidth}%`,
@@ -1125,9 +1125,9 @@ export default function Simulacao() {
                 }}>
                   <PiggyBank size={36} color="var(--gold)" />
                 </div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>Retorno Financeiro</h3>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{t.simulacao.retornoFinanceiro}</h3>
                 <p style={{ color: 'var(--text-3)', fontSize: '0.88rem', maxWidth: '280px' }}>
-                  Informe o custo do sistema, tarifa e geração para calcular economia, payback e ROI.
+                  {t.simulacao.retornoFinanceiroDesc}
                 </p>
               </Card>
             )}
