@@ -5,9 +5,20 @@ const fs = require('fs');
 
 const kitsPath = path.join(__dirname, '../../data/kits.json');
 
+// Cache kits in memory to avoid synchronous file I/O on every request
+let kitsCache = null;
+let kitsCacheTime = 0;
+const CACHE_TTL = 60000; // 1 minute
+
 function loadKits() {
+  const now = Date.now();
+  if (kitsCache && (now - kitsCacheTime) < CACHE_TTL) {
+    return kitsCache;
+  }
   const raw = fs.readFileSync(kitsPath, 'utf-8');
-  return JSON.parse(raw);
+  kitsCache = JSON.parse(raw);
+  kitsCacheTime = now;
+  return kitsCache;
 }
 
 // GET /api/kits — lista todos os kits
@@ -23,7 +34,8 @@ router.get('/', (req, res) => {
 
     res.json({ kits, total: kits.length });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao carregar kits solares' });
+    console.error('Erro ao carregar kits:', err.message);
+    res.status(500).json({ error: 'Erro ao carregar kits solares.' });
   }
 });
 
@@ -33,11 +45,12 @@ router.get('/:id', (req, res) => {
     const kits = loadKits();
     const kit = kits.find(k => k.id === parseInt(req.params.id));
     if (!kit) {
-      return res.status(404).json({ error: 'Kit não encontrado' });
+      return res.status(404).json({ error: 'Kit não encontrado.' });
     }
     res.json(kit);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao carregar kit solar' });
+    console.error('Erro ao carregar kit:', err.message);
+    res.status(500).json({ error: 'Erro ao carregar kit solar.' });
   }
 });
 
@@ -46,14 +59,14 @@ router.post('/comparar', (req, res) => {
   try {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids) || ids.length < 2) {
-      return res.status(400).json({ error: 'Envie ao menos 2 IDs para comparação' });
+      return res.status(400).json({ error: 'Envie ao menos 2 IDs para comparação.' });
     }
 
     const kits = loadKits();
     const selecionados = kits.filter(k => ids.includes(k.id));
 
     if (selecionados.length < 2) {
-      return res.status(404).json({ error: 'Kits não encontrados' });
+      return res.status(404).json({ error: 'Kits não encontrados.' });
     }
 
     // Calcula métricas comparativas
@@ -67,7 +80,8 @@ router.post('/comparar', (req, res) => {
 
     res.json(comparativo);
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao comparar kits' });
+    console.error('Erro ao comparar kits:', err.message);
+    res.status(500).json({ error: 'Erro ao comparar kits.' });
   }
 });
 

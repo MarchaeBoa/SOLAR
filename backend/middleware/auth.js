@@ -1,10 +1,33 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'solarmap-secret-key-2024';
-const JWT_EXPIRES_IN = '24h';
+// JWT_SECRET must be set via environment variable in production
+// In development, generate a random secret per server instance (safer than hardcoded)
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: JWT_SECRET environment variable is required in production.');
+    process.exit(1);
+  }
+  console.warn('WARNING: JWT_SECRET not set. Using random secret (tokens will invalidate on restart).');
+  return crypto.randomBytes(64).toString('hex');
+})();
 
-// Blacklist for logged-out tokens (in-memory, resets on server restart)
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
+
+// Blacklist for logged-out tokens (in-memory)
+// Note: In production, use Redis or database for persistence across restarts
 const tokenBlacklist = new Set();
+
+// Periodically clean expired tokens from blacklist to prevent memory leak
+setInterval(() => {
+  for (const token of tokenBlacklist) {
+    try {
+      jwt.verify(token, JWT_SECRET);
+    } catch {
+      tokenBlacklist.delete(token);
+    }
+  }
+}, 60 * 60 * 1000); // Every hour
 
 function generateToken(user) {
   return jwt.sign(
@@ -38,7 +61,7 @@ function authenticateToken(req, res, next) {
 
 function authorizeRoles(...roles) {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Acesso negado. Permissão insuficiente.' });
     }
     next();
@@ -46,7 +69,9 @@ function authorizeRoles(...roles) {
 }
 
 function blacklistToken(token) {
-  tokenBlacklist.add(token);
+  if (token) {
+    tokenBlacklist.add(token);
+  }
 }
 
 module.exports = {

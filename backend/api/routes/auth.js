@@ -19,8 +19,8 @@ router.post('/register', (req, res) => {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Senha deve ter pelo menos 8 caracteres' });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,7 +63,7 @@ router.post('/login', (req, res) => {
     }
 
     const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = db.prepare('SELECT id, name, email, password, role, created_at FROM users WHERE email = ?').get(email);
 
     if (!user) {
       return res.status(401).json({ error: 'Credenciais inválidas' });

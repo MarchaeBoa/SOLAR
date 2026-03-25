@@ -66,10 +66,16 @@ function createCoordenada({ lat, lng, endereco = null }) {
 
 // Find the closest region for a given coordinate
 function getRegiaoByCoords(lat, lng) {
+  const latNum = parseFloat(lat);
+  const lngNum = parseFloat(lng);
+  if (isNaN(latNum) || isNaN(lngNum)) {
+    return null;
+  }
+
   let closest = null;
   let minDist = Infinity;
   for (const r of regioes) {
-    const dist = Math.sqrt((r.lat - lat) ** 2 + (r.lng - lng) ** 2);
+    const dist = Math.sqrt((r.lat - latNum) ** 2 + (r.lng - lngNum) ** 2);
     if (dist < minDist) {
       minDist = dist;
       closest = r;
@@ -125,12 +131,21 @@ function salvarArea(db, { userId, coordenadas, area_m2, perimetro_m }) {
 
 // Get areas by user
 function getAreasByUser(db, userId) {
+  if (!userId) return [];
   const rows = db.prepare('SELECT * FROM areas WHERE user_id = ? ORDER BY created_at DESC').all(userId);
-  return rows.map(row => ({
-    ...row,
-    coordenadas: JSON.parse(row.coordenadas),
-    regiao: row.regiao_id ? getIrradiacaoRegiao(row.regiao_id) : null,
-  }));
+  return rows.map(row => {
+    let coordenadas = [];
+    try {
+      coordenadas = JSON.parse(row.coordenadas);
+    } catch {
+      console.error(`Invalid JSON in areas.coordenadas for area id=${row.id}`);
+    }
+    return {
+      ...row,
+      coordenadas,
+      regiao: row.regiao_id ? getIrradiacaoRegiao(row.regiao_id) : null,
+    };
+  });
 }
 
 module.exports = {

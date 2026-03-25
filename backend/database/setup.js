@@ -61,15 +61,26 @@ function initTables() {
     );
   `);
 
-  // Create default admin if not exists
-  const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@solarmap.com');
+  // Create default admin if not exists (only if ADMIN_EMAIL and ADMIN_PASSWORD env vars are set)
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@solarmap.com';
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminExists = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
   if (!adminExists) {
     const bcrypt = require('bcryptjs');
-    const hash = bcrypt.hashSync('admin123', 10);
+    const crypto = require('crypto');
+    // Use env password or generate a random one (never use a hardcoded weak password)
+    const password = adminPassword || crypto.randomBytes(16).toString('hex');
+    const hash = bcrypt.hashSync(password, 12);
     db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-      'Administrador', 'admin@solarmap.com', hash, 'admin'
+      'Administrador', adminEmail, hash, 'admin'
     );
-    console.log('Default admin created: admin@solarmap.com / admin123');
+    if (!adminPassword) {
+      console.log(`Default admin created: ${adminEmail}`);
+      console.log(`Generated admin password: ${password}`);
+      console.log('IMPORTANT: Set ADMIN_PASSWORD env variable in production.');
+    } else {
+      console.log(`Admin account created: ${adminEmail}`);
+    }
   }
 
   // Seed countries if empty

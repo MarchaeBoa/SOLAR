@@ -22,14 +22,22 @@ router.get('/produtos', (req, res) => {
 
 // POST /api/orcamento/calcular
 router.post('/calcular', (req, res) => {
-  const { itens, desconto = 0 } = req.body;
+  try {
+    const { itens, desconto = 0 } = req.body;
 
-  if (!itens || !Array.isArray(itens)) {
-    return res.status(400).json({ error: 'Lista de itens é obrigatória.' });
+    if (!itens || !Array.isArray(itens) || itens.length === 0) {
+      return res.status(400).json({ error: 'Lista de itens é obrigatória e não pode ser vazia.' });
+    }
+
+    const resultado = calcularTotal(itens, desconto);
+    if (resultado.error) {
+      return res.status(400).json(resultado);
+    }
+    res.json(resultado);
+  } catch (err) {
+    console.error('Erro em /orcamento/calcular:', err.message);
+    res.status(500).json({ error: 'Erro ao calcular orçamento.' });
   }
-
-  const resultado = calcularTotal(itens, desconto);
-  res.json(resultado);
 });
 
 module.exports = router;

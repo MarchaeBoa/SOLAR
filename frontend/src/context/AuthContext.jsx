@@ -26,13 +26,26 @@ export function AuthProvider({ children }) {
         const data = await res.json();
         setUser(data.user);
       } else {
-        logout();
+        // Token invalid/expired - clear local state
+        console.warn('Token inválido ou expirado. Fazendo logout.');
+        clearAuth();
       }
-    } catch {
-      logout();
+    } catch (err) {
+      // Network error - don't logout, might be temporary
+      console.error('Erro de rede ao verificar sessão:', err.message);
+      // Only clear if it's not a network error
+      if (err.name !== 'TypeError') {
+        clearAuth();
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  function clearAuth() {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
   }
 
   async function login(email, password) {
@@ -71,12 +84,10 @@ export function AuthProvider({ children }) {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn('Erro ao fazer logout no servidor:', err.message);
     }
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
+    clearAuth();
   }
 
   function isRole(role) {
