@@ -2,27 +2,32 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Search, User, LogOut, Shield, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import RegionSelector from './RegionSelector';
-
-const pageTitles = {
-  '/': 'Dashboard',
-  '/simulacao': 'Simulação Solar',
-  '/mapa': 'Mapa Solar',
-  '/orcamento': 'Orçamento',
-  '/kits': 'Kits Solares',
-  '/financiamento': 'Financiamento',
-};
-
-const roleLabels = {
-  admin: { label: 'Admin', color: 'var(--coral)' },
-  consultor: { label: 'Consultor', color: 'var(--blue)' },
-  usuario: { label: 'Usuário', color: 'var(--green)' },
-};
+import CurrencySelector from './CurrencySelector';
+import LanguageSelector from './LanguageSelector';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const pageTitles = {
+    '/': t.nav.dashboard,
+    '/simulacao': t.nav.simulacao,
+    '/mapa': t.nav.mapaSolar,
+    '/orcamento': t.nav.orcamento,
+    '/kits': t.nav.kitsSolares,
+    '/financiamento': t.nav.financiamento,
+  };
+
+  const roleLabels = {
+    admin: { label: t.roles.admin, color: 'var(--coral)' },
+    consultor: { label: t.roles.consultor, color: 'var(--blue)' },
+    usuario: { label: t.roles.usuario, color: 'var(--green)' },
+  };
+
   const title = pageTitles[location.pathname] || 'SolarMap AI';
   const roleInfo = roleLabels[user?.role] || roleLabels.usuario;
 
@@ -44,7 +49,7 @@ export default function Navbar() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{title}</h2>
-        <span className="tag tag-gold" style={{ fontSize: '0.65rem' }}>BETA</span>
+        <span className="tag tag-gold" style={{ fontSize: '0.65rem' }}>{t.app.beta}</span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -62,7 +67,7 @@ export default function Navbar() {
           <Search size={16} color="var(--text-3)" />
           <input
             type="text"
-            placeholder="Buscar..."
+            placeholder={t.app.search}
             style={{
               background: 'transparent',
               border: 'none',
@@ -74,6 +79,12 @@ export default function Navbar() {
             }}
           />
         </div>
+
+        {/* Language Selector */}
+        <LanguageSelector />
+
+        {/* Currency Selector */}
+        <CurrencySelector />
 
         {/* Region Selector */}
         <RegionSelector />
@@ -121,7 +132,7 @@ export default function Navbar() {
           </div>
           <div style={{ lineHeight: 1.2 }}>
             <span style={{ fontSize: '0.88rem', fontWeight: 500, display: 'block' }}>
-              {user?.name || 'Usuário'}
+              {user?.name || t.app.user}
             </span>
             <span style={{
               fontSize: '0.68rem',
@@ -138,7 +149,7 @@ export default function Navbar() {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          title="Sair"
+          title={t.app.logout}
           style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',

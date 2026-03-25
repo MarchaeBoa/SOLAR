@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
+import GlobalConfigBridge from './components/GlobalConfigBridge';
 import Dashboard from './pages/Dashboard';
 import Simulacao from './pages/Simulacao';
 import MapaSolar from './pages/MapaSolar';
@@ -13,7 +14,9 @@ import Register from './pages/Register';
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <GlobalConfigBridge />
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
@@ -34,5 +37,6 @@ export default function App() {
         }
       />
     </Routes>
+    </>
   );
 }

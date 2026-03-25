@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { Layers, Filter, Search, Satellite, Map as MapIcon, PenTool, Trash2, Save } from 'lucide-react';
 import Card from '../components/Card';
+import { useLanguage } from '../context/LanguageContext';
 
 // Fix default marker icons (Leaflet + webpack issue)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -45,7 +46,7 @@ async function geocodeAddress(query) {
   const res = await fetch(url, {
     headers: { 'Accept-Language': 'pt-BR' },
   });
-  if (!res.ok) throw new Error('Erro na busca de endereço');
+  if (!res.ok) throw new Error('Geocoding error');
   return res.json();
 }
 
@@ -123,6 +124,14 @@ function createRegionIcon(cor, irradiacao, selected) {
 }
 
 export default function MapaSolar() {
+  const { t } = useLanguage();
+  const regionNameMap = {
+    'Norte': t.simulacao.norte,
+    'Nordeste': t.simulacao.nordeste,
+    'Centro-Oeste': t.simulacao.centroOeste,
+    'Sudeste': t.simulacao.sudeste,
+    'Sul': t.simulacao.sul,
+  };
   const [regiaoSelecionada, setRegiaoSelecionada] = useState(null);
   const [tileLayer, setTileLayer] = useState('streets');
   const [searchQuery, setSearchQuery] = useState('');
@@ -234,12 +243,12 @@ export default function MapaSolar() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSaveStatus({ type: 'success', message: 'Área salva com sucesso!' });
+        setSaveStatus({ type: 'success', message: t.mapa.areaSalva });
       } else {
-        setSaveStatus({ type: 'error', message: data.error || 'Erro ao salvar.' });
+        setSaveStatus({ type: 'error', message: data.error || t.mapa.erroSalvar });
       }
     } catch {
-      setSaveStatus({ type: 'error', message: 'Erro de conexão com o servidor.' });
+      setSaveStatus({ type: 'error', message: t.mapa.erroConexao });
     } finally {
       setSaving(false);
     }
@@ -259,8 +268,8 @@ export default function MapaSolar() {
   return (
     <div>
       <div className="page-header">
-        <h1>Mapa Solar</h1>
-        <p>Visualize a irradiação solar e desenhe áreas para análise</p>
+        <h1>{t.mapa.title}</h1>
+        <p>{t.mapa.subtitle}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px' }}>
@@ -280,7 +289,7 @@ export default function MapaSolar() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar endereço..."
+              placeholder={t.mapa.buscarPlaceholder}
               style={{
                 flex: 1,
                 padding: '8px 12px',
@@ -308,7 +317,7 @@ export default function MapaSolar() {
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}>
               <Search size={14} />
-              {searching ? '...' : 'Buscar'}
+              {searching ? '...' : t.mapa.buscar}
             </button>
           </form>
 
@@ -362,7 +371,7 @@ export default function MapaSolar() {
             gap: '4px',
             zIndex: 1000,
           }}>
-            <button onClick={toggleSatellite} title={tileLayer === 'streets' ? 'Modo Satélite' : 'Modo Mapa'} style={{
+            <button onClick={toggleSatellite} title={tileLayer === 'streets' ? t.mapa.modoSatelite : t.mapa.modoMapa} style={{
               width: 36,
               height: 36,
               background: tileLayer === 'satellite' ? 'var(--gold)' : 'var(--bg-card)',
@@ -377,7 +386,7 @@ export default function MapaSolar() {
             }}>
               {tileLayer === 'satellite' ? <MapIcon size={16} /> : <Satellite size={16} />}
             </button>
-            <button onClick={recenterBrasil} title="Recentrar no Brasil" style={{
+            <button onClick={recenterBrasil} title={t.mapa.recentrar} style={{
               width: 36,
               height: 36,
               background: 'var(--bg-card)',
@@ -445,8 +454,8 @@ export default function MapaSolar() {
                 eventHandlers={{ click: () => setRegiaoSelecionada(r) }}
               >
                 <Popup>
-                  <strong>{r.nome}</strong><br />
-                  Irradiação: {r.irradiacao} kWh/m²/dia
+                  <strong>{regionNameMap[r.nome] || r.nome}</strong><br />
+                  {t.mapa.irradiacaoMedia}: {r.irradiacao} {t.mapa.kwhM2Dia}
                 </Popup>
               </Marker>
             ))}
@@ -482,12 +491,12 @@ export default function MapaSolar() {
             <Card>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <PenTool size={18} color="var(--gold)" />
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Área Selecionada</h3>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t.mapa.areaSelecionada}</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Área Total
+                    {t.mapa.areaTotal}
                   </div>
                   <div className="mono" style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--gold)' }}>
                     {formatArea(areaInfo.area)}
@@ -495,14 +504,14 @@ export default function MapaSolar() {
                 </div>
                 <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Perímetro
+                    {t.mapa.perimetro}
                   </div>
                   <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--green)' }}>
                     {formatPerimeter(areaInfo.perimetro)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', fontSize: '0.78rem', color: 'var(--text-3)' }}>
-                  <span className="mono">{areaInfo.pontos} pontos</span>
+                  <span className="mono">{areaInfo.pontos} {t.mapa.pontos}</span>
                   <span>·</span>
                   <span className="mono">{areaInfo.area.toFixed(1)} m²</span>
                 </div>
@@ -541,7 +550,7 @@ export default function MapaSolar() {
                     gap: '6px',
                   }}>
                     <Save size={14} />
-                    {saving ? 'Salvando...' : 'Salvar Área'}
+                    {saving ? t.mapa.salvando : t.mapa.salvarArea}
                   </button>
                   <button onClick={clearPolygon} style={{
                     padding: '10px 14px',
@@ -578,7 +587,7 @@ export default function MapaSolar() {
             <Card>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <Search size={18} color="var(--gold)" />
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Local Encontrado</h3>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t.mapa.localEncontrado}</h3>
               </div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', lineHeight: 1.6 }}>
                 {searchMarker.name}
@@ -593,12 +602,12 @@ export default function MapaSolar() {
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Layers size={18} color="var(--gold)" />
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Modo do Mapa</h3>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t.mapa.modoDoMapa}</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {[
-                { id: 'streets', label: 'Mapa Padrão' },
-                { id: 'satellite', label: 'Satélite' },
+                { id: 'streets', label: t.mapa.mapaPadrao },
+                { id: 'satellite', label: t.mapa.satelite },
               ].map((opt) => (
                 <label key={opt.id} style={{
                   display: 'flex',
@@ -629,7 +638,7 @@ export default function MapaSolar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <Filter size={18} color="var(--gold)" />
               <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>
-                {regiaoSelecionada ? regiaoSelecionada.nome : 'Selecione uma região'}
+                {regiaoSelecionada ? (regionNameMap[regiaoSelecionada.nome] || regiaoSelecionada.nome) : t.mapa.selecioneRegiao}
               </h3>
             </div>
 
@@ -637,15 +646,15 @@ export default function MapaSolar() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-sm)' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Irradiação Média
+                    {t.mapa.irradiacaoMedia}
                   </div>
                   <div className="mono" style={{ fontSize: '1.3rem', fontWeight: 700, color: regiaoSelecionada.cor }}>
-                    {regiaoSelecionada.irradiacao} kWh/m²/dia
+                    {regiaoSelecionada.irradiacao} {t.mapa.kwhM2Dia}
                   </div>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-2)', lineHeight: 1.6 }}>
-                  A região {regiaoSelecionada.nome} possui uma irradiação média de{' '}
-                  <strong style={{ color: 'var(--text-1)' }}>{regiaoSelecionada.irradiacao} kWh/m²/dia</strong>,
+                  A região {regionNameMap[regiaoSelecionada.nome] || regiaoSelecionada.nome} possui uma irradiação média de{' '}
+                  <strong style={{ color: 'var(--text-1)' }}>{regiaoSelecionada.irradiacao} {t.mapa.kwhM2Dia}</strong>,
                   {regiaoSelecionada.irradiacao >= 5.5
                     ? ' uma das melhores do Brasil para geração solar.'
                     : regiaoSelecionada.irradiacao >= 4.5
@@ -662,13 +671,13 @@ export default function MapaSolar() {
 
           {/* Legend */}
           <Card>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '12px' }}>Legenda</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '12px' }}>{t.mapa.legenda}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
-                { cor: '#D4A843', label: 'Alta (>5.5 kWh/m²)' },
-                { cor: '#F0C96B', label: 'Média-Alta (5.0-5.5)' },
-                { cor: '#1FD8A4', label: 'Média (4.5-5.0)' },
-                { cor: '#4A9EFF', label: 'Moderada (<4.5)' },
+                { cor: '#D4A843', label: t.mapa.legendaAlta },
+                { cor: '#F0C96B', label: t.mapa.legendaMediaAlta },
+                { cor: '#1FD8A4', label: t.mapa.legendaMedia },
+                { cor: '#4A9EFF', label: t.mapa.legendaModerada },
               ].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem' }}>
                   <div style={{ width: 14, height: 14, borderRadius: '3px', background: item.cor, flexShrink: 0 }} />
