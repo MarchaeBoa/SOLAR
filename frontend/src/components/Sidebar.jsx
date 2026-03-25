@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Settings, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Settings, HelpCircle, Package } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const iconMap = {
@@ -8,6 +8,7 @@ const iconMap = {
   Zap,
   Map,
   FileText,
+  Package,
 };
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
   { path: '/simulacao', label: 'Simulação', icon: 'Zap' },
   { path: '/mapa', label: 'Mapa Solar', icon: 'Map' },
   { path: '/orcamento', label: 'Orçamento', icon: 'FileText' },
+  { path: '/kits', label: 'Kits Solares', icon: 'Package' },
 ];
 
 export default function Sidebar() {
