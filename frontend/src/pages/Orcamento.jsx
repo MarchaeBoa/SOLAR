@@ -3,6 +3,7 @@ import { FileText, Plus, Trash2, Download, Send, Package } from 'lucide-react';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { useRegional } from '../context/RegionalContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const catalogoProdutos = [
   { id: 1, nome: 'Painel Solar 550W Monocristalino', categoria: 'Painéis', preco: 1150, unidade: 'un' },
@@ -19,7 +20,8 @@ const catalogoProdutos = [
 
 export default function Orcamento() {
   const { dispatch } = useApp();
-  const { formatPrice, displayCurrency } = useRegional();
+  const { formatPrice } = useRegional();
+  const { t } = useLanguage();
   const [itens, setItens] = useState([]);
   const [desconto, setDesconto] = useState(0);
   const [cliente, setCliente] = useState('');
@@ -73,8 +75,8 @@ export default function Orcamento() {
   return (
     <div>
       <div className="page-header">
-        <h1>Orçamento</h1>
-        <p>Monte orçamentos detalhados para projetos solares</p>
+        <h1>{t.orcamento.title}</h1>
+        <p>{t.orcamento.subtitle}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
@@ -83,7 +85,7 @@ export default function Orcamento() {
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
               <Package size={18} color="var(--gold)" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Catálogo de Produtos</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{t.orcamento.catalogo}</h3>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -123,7 +125,7 @@ export default function Orcamento() {
                       fontFamily: 'Outfit, sans-serif',
                     }}
                   >
-                    <Plus size={14} /> Adicionar
+                    <Plus size={14} /> {t.app.add}
                   </button>
                 </div>
               ))}
@@ -136,17 +138,17 @@ export default function Orcamento() {
           <Card style={{ borderColor: 'var(--gold-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
               <FileText size={18} color="var(--gold)" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Resumo do Orçamento</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{t.orcamento.resumo}</h3>
             </div>
 
             {/* Client */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginBottom: '6px', display: 'block' }}>
-                Cliente
+                {t.orcamento.cliente}
               </label>
               <input
                 type="text"
-                placeholder="Nome do cliente"
+                placeholder={t.orcamento.clientePlaceholder}
                 value={cliente}
                 onChange={e => setCliente(e.target.value)}
                 style={inputStyle}
@@ -214,14 +216,14 @@ export default function Orcamento() {
                 fontSize: '0.85rem',
                 marginBottom: '20px',
               }}>
-                Adicione itens do catálogo
+                {t.orcamento.emptyState}
               </div>
             )}
 
             {/* Discount */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginBottom: '6px', display: 'block' }}>
-                Desconto (%)
+                {t.orcamento.desconto}
               </label>
               <input
                 type="number"
@@ -236,17 +238,17 @@ export default function Orcamento() {
             {/* Totals */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                <span style={{ color: 'var(--text-2)' }}>Subtotal</span>
+                <span style={{ color: 'var(--text-2)' }}>{t.orcamento.subtotal}</span>
                 <span className="mono">{formatPrice(subtotal)}</span>
               </div>
               {desconto > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--green)' }}>Desconto ({desconto}%)</span>
+                  <span style={{ color: 'var(--green)' }}>{t.orcamento.descontoLabel} ({desconto}%)</span>
                   <span className="mono" style={{ color: 'var(--green)' }}>-{formatPrice(descontoValor)}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 700, paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
-                <span>Total</span>
+                <span>{t.app.total}</span>
                 <span className="mono" style={{ color: 'var(--gold)' }}>{formatPrice(total)}</span>
               </div>
             </div>
@@ -255,10 +257,10 @@ export default function Orcamento() {
           {/* Actions */}
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn btn-primary" onClick={salvarOrcamento} style={{ flex: 1 }}>
-              <Download size={16} /> Salvar
+              <Download size={16} /> {t.app.save}
             </button>
             <button className="btn btn-secondary" style={{ flex: 1 }}>
-              <Send size={16} /> Enviar
+              <Send size={16} /> {t.app.send}
             </button>
           </div>
         </div>

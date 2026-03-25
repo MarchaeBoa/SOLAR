@@ -3,12 +3,14 @@ import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, Ba
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
 import { useRegional } from '../context/RegionalContext';
+import { useLanguage } from '../context/LanguageContext';
 import { formatNumber } from '../utils/formatters';
 import { TIPOS_TELHADO, EFICIENCIA_PAINEL, CUSTO_KWP, PRECO_KWH, VIDA_UTIL_ANOS, IRRADIACAO_MEDIA } from '../utils/constants';
 
 export default function Simulacao() {
   const { state, dispatch } = useApp();
   const { formatPrice } = useRegional();
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     localizacao: state.simulacao.localizacao || '',
     areaM2: state.simulacao.areaM2 || '',
@@ -334,8 +336,8 @@ export default function Simulacao() {
   return (
     <div>
       <div className="page-header">
-        <h1>Simulação Solar</h1>
-        <p>Calcule o potencial de geração solar para qualquer localidade</p>
+        <h1>{t.simulacao.title}</h1>
+        <p>{t.simulacao.subtitle}</p>
       </div>
 
       <div className="grid-2">
@@ -348,11 +350,11 @@ export default function Simulacao() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
               <label style={labelStyle}>
-                <MapPin size={16} color="var(--gold)" /> Localização
+                <MapPin size={16} color="var(--gold)" /> {t.simulacao.localizacao}
               </label>
               <input
                 type="text"
-                placeholder="Ex: São Paulo, SP"
+                placeholder={t.simulacao.localizacaoPlaceholder}
                 value={form.localizacao}
                 onChange={e => handleChange('localizacao', e.target.value)}
                 style={inputStyle}
@@ -361,7 +363,7 @@ export default function Simulacao() {
 
             <div>
               <label style={labelStyle}>
-                <Ruler size={16} color="var(--gold)" /> Área disponível (m²)
+                <Ruler size={16} color="var(--gold)" /> {t.simulacao.areaM2}
               </label>
               <input
                 type="number"
@@ -374,7 +376,7 @@ export default function Simulacao() {
 
             <div>
               <label style={labelStyle}>
-                <Plug size={16} color="var(--gold)" /> Consumo mensal (kWh)
+                <Plug size={16} color="var(--gold)" /> {t.simulacao.consumoMensal}
               </label>
               <input
                 type="number"
@@ -387,7 +389,7 @@ export default function Simulacao() {
 
             <div>
               <label style={labelStyle}>
-                <Home size={16} color="var(--gold)" /> Tipo de telhado
+                <Home size={16} color="var(--gold)" /> {t.simulacao.tipoTelhado}
               </label>
               <select
                 value={form.tipoTelhado}
@@ -418,7 +420,7 @@ export default function Simulacao() {
               <Card style={{ borderColor: 'var(--gold-border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                   <Zap size={20} color="var(--gold)" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Resultado da Simulação</h3>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{t.simulacao.resultadoFinanceiro}</h3>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -451,10 +453,10 @@ export default function Simulacao() {
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {[
-                    { label: 'Investimento estimado', value: formatPrice(resultado.investimento) },
-                    { label: 'Economia mensal', value: formatPrice(resultado.economiaMensal) },
+                    { label: t.simulacao.investimentoEstimado, value: formatPrice(resultado.investimento) },
+                    { label: t.simulacao.economiaMensal, value: formatPrice(resultado.economiaMensal) },
                     { label: 'Payback', value: `${resultado.paybackMeses} meses` },
-                    { label: 'Economia em 25 anos', value: formatPrice(resultado.economiaVidaUtil) },
+                    { label: t.simulacao.economiaVidaUtil, value: formatPrice(resultado.economiaVidaUtil) },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
                       <span style={{ fontSize: '0.88rem', color: 'var(--text-2)' }}>{item.label}</span>
@@ -498,8 +500,8 @@ export default function Simulacao() {
       {/* Calculadora de Placas */}
       <div style={{ marginTop: '40px' }}>
         <div className="page-header">
-          <h2 style={{ fontSize: '1.3rem' }}>Calculadora de Placas</h2>
-          <p>Descubra quantas placas solares cabem na sua área disponível</p>
+          <h2 style={{ fontSize: '1.3rem' }}>{t.simulacao.calcPlacas}</h2>
+          <p>{t.simulacao.calcPlacas}</p>
         </div>
 
         <div className="grid-2">
@@ -511,7 +513,7 @@ export default function Simulacao() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={labelStyle}>
-                  <Ruler size={16} color="var(--gold)" /> Área disponível (m²)
+                  <Ruler size={16} color="var(--gold)" /> {t.simulacao.areaM2}
                 </label>
                 <input
                   type="number"
@@ -678,8 +680,8 @@ export default function Simulacao() {
       {/* Calculadora de Produção Solar */}
       <div style={{ marginTop: '40px' }}>
         <div className="page-header">
-          <h2 style={{ fontSize: '1.3rem' }}>Produção de Energia Solar</h2>
-          <p>Calcule a geração diária, mensal e anual com base na radiação solar e eficiência</p>
+          <h2 style={{ fontSize: '1.3rem' }}>{t.simulacao.calcProducao}</h2>
+          <p>{t.simulacao.calcProducao}</p>
         </div>
 
         <div className="grid-2">
@@ -914,8 +916,8 @@ export default function Simulacao() {
       {/* Calculadora de Retorno Financeiro */}
       <div style={{ marginTop: '40px' }}>
         <div className="page-header">
-          <h2 style={{ fontSize: '1.3rem' }}>Retorno Financeiro</h2>
-          <p>Calcule economia, payback e ROI do seu sistema solar</p>
+          <h2 style={{ fontSize: '1.3rem' }}>{t.simulacao.calcRetorno}</h2>
+          <p>{t.simulacao.retornoFinanceiroDesc}</p>
         </div>
 
         <div className="grid-2">
@@ -1012,17 +1014,17 @@ export default function Simulacao() {
                 <Card style={{ borderColor: 'var(--gold-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                     <TrendingUp size={20} color="var(--gold)" />
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Resultado Financeiro</h3>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{t.simulacao.resultadoFinanceiro}</h3>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     {[
-                      { label: 'Economia Mensal', value: formatPrice(financeiroResultado.economiaMensal), color: 'var(--green)' },
-                      { label: 'Economia Anual', value: formatPrice(financeiroResultado.economiaAnual), color: 'var(--green)' },
+                      { label: t.simulacao.economiaMensal, value: formatPrice(financeiroResultado.economiaMensal), color: 'var(--green)' },
+                      { label: t.simulacao.economiaAnual, value: formatPrice(financeiroResultado.economiaAnual), color: 'var(--green)' },
                       { label: 'Payback Simples', value: `${financeiroResultado.paybackSimplesAnos} anos`, color: 'var(--gold)' },
                       { label: 'Payback c/ Reajuste', value: `${financeiroResultado.paybackDescontadoAnos} anos`, color: 'var(--gold)' },
                       { label: 'ROI', value: `${formatNumber(financeiroResultado.roi, 1)}%`, color: 'var(--blue)' },
-                      { label: 'Lucro Total', value: formatPrice(financeiroResultado.lucroTotal), color: 'var(--green)' },
+                      { label: t.simulacao.lucroTotal, value: formatPrice(financeiroResultado.lucroTotal), color: 'var(--green)' },
                     ].map((item, i) => (
                       <div key={i} style={{
                         padding: '16px',
@@ -1048,8 +1050,8 @@ export default function Simulacao() {
                     border: '1px solid var(--border)',
                   }}>
                     {[
-                      { label: 'Investimento', value: formatPrice(financeiroResultado.custoSistema) },
-                      { label: 'Economia total (vida útil)', value: formatPrice(financeiroResultado.economiaTotal) },
+                      { label: t.simulacao.investimento, value: formatPrice(financeiroResultado.custoSistema) },
+                      { label: t.simulacao.economiaTotalVidaUtil, value: formatPrice(financeiroResultado.economiaTotal) },
                       { label: 'Payback simples', value: `${financeiroResultado.paybackSimplesMeses} meses (${financeiroResultado.paybackSimplesAnos} anos)` },
                       { label: 'Payback com reajuste', value: `${financeiroResultado.paybackDescontadoMeses} meses (${financeiroResultado.paybackDescontadoAnos} anos)` },
                     ].map((item, i) => (

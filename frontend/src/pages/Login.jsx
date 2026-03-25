@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sun, Mail, Lock, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -57,8 +59,8 @@ export default function Login() {
           }}>
             <Sun size={28} color="var(--gold)" />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '4px' }}>SolarMap AI</h1>
-          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>Faça login na plataforma</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '4px' }}>{t.login.title}</h1>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>{t.login.subtitle}</p>
         </div>
 
         {error && (
@@ -78,7 +80,7 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Email
+              {t.login.email}
             </label>
             <div style={{
               display: 'flex',
@@ -94,7 +96,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                placeholder={t.login.emailPlaceholder}
                 required
                 style={{
                   background: 'transparent',
@@ -111,7 +113,7 @@ export default function Login() {
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Senha
+              {t.login.password}
             </label>
             <div style={{
               display: 'flex',
@@ -127,7 +129,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Sua senha"
+                placeholder={t.login.passwordPlaceholder}
                 required
                 style={{
                   background: 'transparent',
@@ -160,14 +162,14 @@ export default function Login() {
             }}
           >
             <LogIn size={18} />
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? t.login.loading : t.login.submit}
           </button>
         </form>
 
         <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.85rem', color: 'var(--text-3)' }}>
-          Não tem conta?{' '}
+          {t.login.noAccount}{' '}
           <Link to="/register" style={{ color: 'var(--gold)', fontWeight: 600, textDecoration: 'none' }}>
-            Cadastre-se
+            {t.login.register}
           </Link>
         </p>
 
@@ -179,7 +181,7 @@ export default function Login() {
           fontSize: '0.78rem',
           color: 'var(--text-3)',
         }}>
-          <strong style={{ color: 'var(--text-2)' }}>Demo:</strong> admin@solarmap.com / admin123
+          <strong style={{ color: 'var(--text-2)' }}>{t.login.demo}</strong> admin@solarmap.com / admin123
         </div>
       </div>
     </div>

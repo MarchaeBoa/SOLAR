@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Settings, HelpCircle, Package, CreditCard } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const iconMap = {
   LayoutDashboard,
@@ -12,19 +13,20 @@ const iconMap = {
   CreditCard,
 };
 
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { path: '/simulacao', label: 'Simulação', icon: 'Zap' },
-  { path: '/mapa', label: 'Mapa Solar', icon: 'Map' },
-  { path: '/orcamento', label: 'Orçamento', icon: 'FileText' },
-  { path: '/kits', label: 'Kits Solares', icon: 'Package' },
-  { path: '/financiamento', label: 'Financiamento', icon: 'CreditCard' },
-];
-
 export default function Sidebar() {
   const { state, dispatch } = useApp();
+  const { t } = useLanguage();
   const location = useLocation();
   const open = state.sidebarOpen;
+
+  const navItems = [
+    { path: '/', label: t.nav.dashboard, icon: 'LayoutDashboard' },
+    { path: '/simulacao', label: t.nav.simulacao, icon: 'Zap' },
+    { path: '/mapa', label: t.nav.mapaSolar, icon: 'Map' },
+    { path: '/orcamento', label: t.nav.orcamento, icon: 'FileText' },
+    { path: '/kits', label: t.nav.kitsSolares, icon: 'Package' },
+    { path: '/financiamento', label: t.nav.financiamento, icon: 'CreditCard' },
+  ];
 
   return (
     <aside style={{
@@ -64,7 +66,7 @@ export default function Sidebar() {
               SolarMap
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--gold)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              AI Platform
+              {t.app.subtitle}
             </div>
           </div>
         )}
@@ -129,7 +131,7 @@ export default function Sidebar() {
               flexShrink: 0,
             }}
           />
-          {open && <span>Recolher</span>}
+          {open && <span>{t.app.collapse}</span>}
         </button>
       </div>
     </aside>

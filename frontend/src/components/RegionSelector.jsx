@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Globe, ChevronDown, MapPin, DollarSign, TrendingUp } from 'lucide-react';
 import { useRegional } from '../context/RegionalContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const FLAG_EMOJIS = {
   BR: '🇧🇷', AR: '🇦🇷', CL: '🇨🇱', CO: '🇨🇴', PE: '🇵🇪', UY: '🇺🇾',
@@ -18,6 +19,7 @@ export default function RegionSelector({ showDetails = false }) {
     fetchCountries, fetchRegions, fetchAverageCosts,
     selectCountry,
   } = useRegional();
+  const { t } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
   const [showCostPanel, setShowCostPanel] = useState(false);
@@ -90,7 +92,7 @@ export default function RegionSelector({ showDetails = false }) {
         }}>
           {loading ? (
             <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
-              Carregando...
+              {t.app.loading}
             </div>
           ) : (
             regions.map((region) => (
@@ -161,27 +163,27 @@ export default function RegionSelector({ showDetails = false }) {
           }}>
             <div style={{ color: '#94a3b8' }}>
               <DollarSign size={14} style={{ display: 'inline', marginRight: '4px' }} />
-              Custo/kWp
+              {t.region.custoKwp}
               <div style={{ color: '#f1f5f9', fontWeight: 600, marginTop: '2px' }}>
                 {currency.symbol} {pricing.cost_kwp.toLocaleString()}
               </div>
             </div>
             <div style={{ color: '#94a3b8' }}>
               <TrendingUp size={14} style={{ display: 'inline', marginRight: '4px' }} />
-              Tarifa Energia
+              {t.region.tarifaEnergia}
               <div style={{ color: '#f1f5f9', fontWeight: 600, marginTop: '2px' }}>
                 {currency.symbol} {pricing.energy_tariff}/kWh
               </div>
             </div>
             <div style={{ color: '#94a3b8' }}>
               <Globe size={14} style={{ display: 'inline', marginRight: '4px' }} />
-              Irradiação Média
+              {t.region.irradiacaoMedia}
               <div style={{ color: '#f1f5f9', fontWeight: 600, marginTop: '2px' }}>
                 {pricing.irradiation_avg} kWh/m²/dia
               </div>
             </div>
             <div style={{ color: '#94a3b8' }}>
-              Impostos
+              {t.region.impostos}
               <div style={{ color: '#f1f5f9', fontWeight: 600, marginTop: '2px' }}>
                 {pricing.tax_percent}%
               </div>
@@ -204,7 +206,7 @@ export default function RegionSelector({ showDetails = false }) {
               fontWeight: 600,
             }}
           >
-            {showCostPanel ? 'Ocultar' : 'Ver'} Custo Médio por Região
+            {showCostPanel ? t.region.ocultarCustoMedio : t.region.verCustoMedio}
           </button>
 
           {showCostPanel && averageCosts.length > 0 && (
@@ -219,7 +221,7 @@ export default function RegionSelector({ showDetails = false }) {
                 }}>
                   <span style={{ color: '#94a3b8' }}>{region.region_name}</span>
                   <span style={{ color: '#e2e8f0' }}>
-                    {region.country_count} países | Multiplicador: {region.avg_cost_multiplier}x | Irrad: {region.avg_irradiation} kWh/m²
+                    {region.country_count} {t.region.paises} | {t.region.multiplicador} {region.avg_cost_multiplier}x | {t.region.irrad} {region.avg_irradiation} kWh/m²
                   </span>
                 </div>
               ))}

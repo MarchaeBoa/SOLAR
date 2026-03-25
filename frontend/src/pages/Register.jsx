@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sun, Mail, Lock, User, UserPlus, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-const roles = [
-  { value: 'usuario', label: 'Usuário Comum', desc: 'Acesso básico à plataforma' },
-  { value: 'consultor', label: 'Consultor', desc: 'Acesso a ferramentas de consultoria' },
-];
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -17,6 +13,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -24,7 +21,7 @@ export default function Register() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem');
+      setError(t.register.passwordMismatch);
       return;
     }
 
@@ -38,6 +35,11 @@ export default function Register() {
       setLoading(false);
     }
   }
+
+  const roles = [
+    { value: 'usuario', label: t.register.roleUser, desc: t.register.roleUserDesc },
+    { value: 'consultor', label: t.register.roleConsultant, desc: t.register.roleConsultantDesc },
+  ];
 
   const inputStyle = {
     display: 'flex',
@@ -91,8 +93,8 @@ export default function Register() {
           }}>
             <Sun size={28} color="var(--gold)" />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '4px' }}>Criar Conta</h1>
-          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>Cadastre-se no SolarMap AI</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '4px' }}>{t.register.title}</h1>
+          <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>{t.register.subtitle}</p>
         </div>
 
         {error && (
@@ -112,7 +114,7 @@ export default function Register() {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Nome
+              {t.register.name}
             </label>
             <div style={inputStyle}>
               <User size={18} color="var(--text-3)" />
@@ -120,7 +122,7 @@ export default function Register() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Seu nome completo"
+                placeholder={t.register.namePlaceholder}
                 required
                 style={fieldStyle}
               />
@@ -129,7 +131,7 @@ export default function Register() {
 
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Email
+              {t.register.email}
             </label>
             <div style={inputStyle}>
               <Mail size={18} color="var(--text-3)" />
@@ -137,7 +139,7 @@ export default function Register() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                placeholder={t.register.emailPlaceholder}
                 required
                 style={fieldStyle}
               />
@@ -146,7 +148,7 @@ export default function Register() {
 
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Perfil
+              {t.register.profile}
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {roles.map(r => (
@@ -180,7 +182,7 @@ export default function Register() {
 
           <div style={{ marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Senha
+              {t.register.password}
             </label>
             <div style={inputStyle}>
               <Lock size={18} color="var(--text-3)" />
@@ -188,7 +190,7 @@ export default function Register() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t.register.passwordPlaceholder}
                 required
                 minLength={6}
                 style={fieldStyle}
@@ -198,7 +200,7 @@ export default function Register() {
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '6px' }}>
-              Confirmar Senha
+              {t.register.confirmPassword}
             </label>
             <div style={inputStyle}>
               <Lock size={18} color="var(--text-3)" />
@@ -206,7 +208,7 @@ export default function Register() {
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="Repita a senha"
+                placeholder={t.register.confirmPlaceholder}
                 required
                 style={fieldStyle}
               />
@@ -231,14 +233,14 @@ export default function Register() {
             }}
           >
             <UserPlus size={18} />
-            {loading ? 'Cadastrando...' : 'Criar Conta'}
+            {loading ? t.register.loading : t.register.submit}
           </button>
         </form>
 
         <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.85rem', color: 'var(--text-3)' }}>
-          Já tem conta?{' '}
+          {t.register.hasAccount}{' '}
           <Link to="/login" style={{ color: 'var(--gold)', fontWeight: 600, textDecoration: 'none' }}>
-            Faça login
+            {t.register.loginLink}
           </Link>
         </p>
       </div>

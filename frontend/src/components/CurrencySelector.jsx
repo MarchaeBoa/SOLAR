@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useRegional } from '../context/RegionalContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SUPPORTED_CURRENCIES, getExchangeRate } from '../utils/currencyConverter';
 
 export default function CurrencySelector() {
   const { displayCurrency, setDisplayCurrency, currency } = useRegional();
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
@@ -73,7 +75,7 @@ export default function CurrencySelector() {
             color: 'var(--text-3)',
           }}>
             <RefreshCw size={10} style={{ display: 'inline', marginRight: '4px' }} />
-            Moeda de exibição
+            {t.currency.displayLabel}
           </div>
 
           {SUPPORTED_CURRENCIES.map((cur) => {
@@ -130,7 +132,7 @@ export default function CurrencySelector() {
             color: 'var(--text-3)',
             lineHeight: 1.4,
           }}>
-            Taxas simuladas (mock). Base: {baseCurrency}
+            {t.currency.mockNote} {baseCurrency}
           </div>
         </div>
       )}

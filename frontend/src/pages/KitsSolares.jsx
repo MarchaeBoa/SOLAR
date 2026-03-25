@@ -5,6 +5,7 @@ import {
   Scale, Star, Filter, Leaf,
 } from 'lucide-react';
 import { useRegional } from '../context/RegionalContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // Mock data (mesma estrutura do backend)
 const KITS_DATA = [
@@ -183,15 +184,17 @@ const KITS_DATA = [
   },
 ];
 
-const categorias = [
-  { value: 'todos', label: 'Todos' },
-  { value: 'residencial', label: 'Residencial' },
-  { value: 'comercial', label: 'Comercial' },
-  { value: 'industrial', label: 'Industrial' },
-];
+function getCategorias(t) {
+  return [
+    { value: 'todos', label: t.kits.todos },
+    { value: 'residencial', label: t.kits.residencial },
+    { value: 'comercial', label: t.kits.comercial },
+    { value: 'industrial', label: t.kits.industrial },
+  ];
+}
 
 // ─── Kit Card ───────────────────────────────────────────
-function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, formatCurrency }) {
+function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, formatCurrency, t }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -224,7 +227,7 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
           letterSpacing: '0.06em',
           zIndex: 2,
         }}>
-          <Star size={12} /> Mais Vendido
+          <Star size={12} /> {t.kits.maisVendido}
         </div>
       )}
 
@@ -266,7 +269,7 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
             {formatCurrency(kit.preco)}
           </span>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 2 }}>
-            ou 12x de {formatCurrency(kit.preco / 12)}
+            {t.kits.ou12x} {formatCurrency(kit.preco / 12)}
           </div>
         </div>
       </div>
@@ -280,19 +283,19 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
         borderTop: '1px solid var(--border)',
         borderBottom: '1px solid var(--border)',
       }}>
-        <StatItem icon={Zap} label="Potência" value={`${kit.potencia_kwp} kWp`} color="var(--gold)" />
-        <StatItem icon={Gauge} label="Eficiência" value={`${kit.eficiencia}%`} color="var(--green)" />
-        <StatItem icon={BarChart3} label="Geração/mês" value={`${kit.geracao_mensal_kwh} kWh`} color="var(--blue)" />
-        <StatItem icon={DollarSign} label="Economia/mês" value={formatCurrency(kit.economia_mensal_estimada)} color="var(--green)" />
+        <StatItem icon={Zap} label={t.kits.potencia} value={`${kit.potencia_kwp} kWp`} color="var(--gold)" />
+        <StatItem icon={Gauge} label={t.kits.eficiencia} value={`${kit.eficiencia}%`} color="var(--green)" />
+        <StatItem icon={BarChart3} label={t.kits.geracaoMes} value={`${kit.geracao_mensal_kwh} kWh`} color="var(--blue)" />
+        <StatItem icon={DollarSign} label={t.kits.economiaMes} value={formatCurrency(kit.economia_mensal_estimada)} color="var(--green)" />
       </div>
 
       {/* Extra info */}
       <div style={{ padding: '16px 24px' }}>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
-          <MiniStat label="Painéis" value={kit.paineis} />
-          <MiniStat label="Garantia" value={`${kit.garantia_anos} anos`} />
-          <MiniStat label="Payback" value={`${kit.payback_anos} anos`} />
-          <MiniStat label="Área" value={`${kit.area_necessaria_m2} m²`} />
+          <MiniStat label={t.kits.paineis} value={kit.paineis} />
+          <MiniStat label={t.kits.garantia} value={`${kit.garantia_anos} ${t.app.years}`} />
+          <MiniStat label={t.kits.payback} value={`${kit.payback_anos} ${t.app.years}`} />
+          <MiniStat label={t.kits.area} value={`${kit.area_necessaria_m2} m²`} />
         </div>
 
         {/* Expandir detalhes */}
@@ -313,7 +316,7 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
           }}
         >
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          {expanded ? 'Ocultar detalhes' : 'Ver o que inclui'}
+          {expanded ? t.kits.ocultarDetalhes : t.kits.verDetalhes}
         </button>
 
         {expanded && (
@@ -325,7 +328,7 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
           }}>
             <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 10, color: 'var(--text-2)' }}>
               <Package size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
-              Itens inclusos:
+              {t.kits.itensInclusos}
             </div>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {kit.inclui.map((item, i) => (
@@ -341,7 +344,7 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
               fontSize: '0.78rem', color: 'var(--text-3)',
             }}>
               <Shield size={13} color="var(--gold)" />
-              Modelo painel: {kit.modelo_painel} · Inversor: {kit.inversor}
+              {t.kits.modeloPainel} {kit.modelo_painel} · {t.kits.inversor} {kit.inversor}
             </div>
           </div>
         )}
@@ -358,7 +361,7 @@ function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, format
               padding: '10px 16px',
             }}
           >
-            Selecionar <ArrowRight size={15} />
+            {t.kits.selecionar} <ArrowRight size={15} />
           </button>
           <button
             onClick={() => onToggleCompare(kit.id)}
@@ -415,19 +418,19 @@ function MiniStat({ label, value }) {
 }
 
 // ─── Comparison Table ───────────────────────────────────
-function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
+function ComparisonPanel({ kits, onClose, onRemove, formatCurrency, t }) {
   if (kits.length < 2) return null;
 
   const metrics = [
-    { key: 'potencia_kwp', label: 'Potência', suffix: ' kWp', best: 'max', icon: Zap, color: 'var(--gold)' },
-    { key: 'eficiencia', label: 'Eficiência', suffix: '%', best: 'max', icon: Gauge, color: 'var(--green)' },
-    { key: 'preco', label: 'Preço', format: formatCurrency, best: 'min', icon: DollarSign, color: 'var(--gold)' },
-    { key: 'geracao_mensal_kwh', label: 'Geração/mês', suffix: ' kWh', best: 'max', icon: BarChart3, color: 'var(--blue)' },
-    { key: 'economia_mensal_estimada', label: 'Economia/mês', format: formatCurrency, best: 'max', icon: DollarSign, color: 'var(--green)' },
-    { key: 'payback_anos', label: 'Payback', suffix: ' anos', best: 'min', icon: Leaf, color: 'var(--green)' },
-    { key: 'paineis', label: 'Painéis', suffix: '', best: 'max', icon: Sun, color: 'var(--gold)' },
-    { key: 'garantia_anos', label: 'Garantia', suffix: ' anos', best: 'max', icon: Shield, color: 'var(--blue)' },
-    { key: 'area_necessaria_m2', label: 'Área necessária', suffix: ' m²', best: 'min', icon: Package, color: 'var(--text-2)' },
+    { key: 'potencia_kwp', label: t.kits.potencia, suffix: ' kWp', best: 'max', icon: Zap, color: 'var(--gold)' },
+    { key: 'eficiencia', label: t.kits.eficiencia, suffix: '%', best: 'max', icon: Gauge, color: 'var(--green)' },
+    { key: 'preco', label: t.kits.preco, format: formatCurrency, best: 'min', icon: DollarSign, color: 'var(--gold)' },
+    { key: 'geracao_mensal_kwh', label: t.kits.geracaoMes, suffix: ' kWh', best: 'max', icon: BarChart3, color: 'var(--blue)' },
+    { key: 'economia_mensal_estimada', label: t.kits.economiaMes, format: formatCurrency, best: 'max', icon: DollarSign, color: 'var(--green)' },
+    { key: 'payback_anos', label: t.kits.payback, suffix: ` ${t.app.years}`, best: 'min', icon: Leaf, color: 'var(--green)' },
+    { key: 'paineis', label: t.kits.paineis, suffix: '', best: 'max', icon: Sun, color: 'var(--gold)' },
+    { key: 'garantia_anos', label: t.kits.garantia, suffix: ` ${t.app.years}`, best: 'max', icon: Shield, color: 'var(--blue)' },
+    { key: 'area_necessaria_m2', label: t.kits.area, suffix: ' m²', best: 'min', icon: Package, color: 'var(--text-2)' },
   ];
 
   function getBest(key, best) {
@@ -452,7 +455,7 @@ function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Scale size={20} color="var(--gold)" />
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Comparativo de Kits</h2>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{t.kits.comparativo}</h2>
           <span className="tag tag-gold" style={{ fontSize: '0.62rem' }}>
             {kits.length} KITS
           </span>
@@ -473,7 +476,7 @@ function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
             gap: 6,
           }}
         >
-          <X size={14} /> Fechar
+          <X size={14} /> {t.app.close}
         </button>
       </div>
 
@@ -496,7 +499,7 @@ function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
                 borderBottom: '1px solid var(--border)',
                 fontWeight: 500,
               }}>
-                Métrica
+                {t.kits.metrica}
               </th>
               {kits.map(kit => (
                 <th key={kit.id} style={{
@@ -519,7 +522,7 @@ function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
                       marginTop: 4,
                     }}
                   >
-                    Remover
+                    {t.app.remove}
                   </button>
                 </th>
               ))}
@@ -573,7 +576,7 @@ function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
 }
 
 // ─── Selected Kit Detail ────────────────────────────────
-function SelectedKitPanel({ kit, onClose, formatCurrency }) {
+function SelectedKitPanel({ kit, onClose, formatCurrency, t }) {
   return (
     <div style={{
       background: 'var(--bg-surface)',
@@ -591,8 +594,8 @@ function SelectedKitPanel({ kit, onClose, formatCurrency }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <Check size={20} color="var(--green)" />
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Kit Selecionado</h2>
-            <span className="tag tag-green" style={{ fontSize: '0.62rem' }}>SELECIONADO</span>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{t.kits.kitSelecionado}</h2>
+            <span className="tag tag-green" style={{ fontSize: '0.62rem' }}>{t.kits.selecionado}</span>
           </div>
           <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--gold)' }}>{kit.nome}</h3>
           <p style={{ color: 'var(--text-2)', fontSize: '0.88rem', marginTop: 4 }}>{kit.descricao}</p>
@@ -614,17 +617,17 @@ function SelectedKitPanel({ kit, onClose, formatCurrency }) {
             flexShrink: 0,
           }}
         >
-          <X size={14} /> Fechar
+          <X size={14} /> {t.app.close}
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-        <SummaryBox icon={DollarSign} label="Preço Total" value={formatCurrency(kit.preco)} color="var(--gold)" />
-        <SummaryBox icon={Zap} label="Potência" value={`${kit.potencia_kwp} kWp`} color="var(--gold)" />
-        <SummaryBox icon={Gauge} label="Eficiência" value={`${kit.eficiencia}%`} color="var(--green)" />
-        <SummaryBox icon={BarChart3} label="Geração Mensal" value={`${kit.geracao_mensal_kwh} kWh`} color="var(--blue)" />
-        <SummaryBox icon={DollarSign} label="Economia/mês" value={formatCurrency(kit.economia_mensal_estimada)} color="var(--green)" />
-        <SummaryBox icon={Leaf} label="Payback" value={`${kit.payback_anos} anos`} color="var(--green)" />
+        <SummaryBox icon={DollarSign} label={t.kits.precoTotal} value={formatCurrency(kit.preco)} color="var(--gold)" />
+        <SummaryBox icon={Zap} label={t.kits.potencia} value={`${kit.potencia_kwp} kWp`} color="var(--gold)" />
+        <SummaryBox icon={Gauge} label={t.kits.eficiencia} value={`${kit.eficiencia}%`} color="var(--green)" />
+        <SummaryBox icon={BarChart3} label={t.kits.geracaoMensal} value={`${kit.geracao_mensal_kwh} kWh`} color="var(--blue)" />
+        <SummaryBox icon={DollarSign} label={t.kits.economiaMes} value={formatCurrency(kit.economia_mensal_estimada)} color="var(--green)" />
+        <SummaryBox icon={Leaf} label={t.kits.payback} value={`${kit.payback_anos} ${t.app.years}`} color="var(--green)" />
       </div>
     </div>
   );
@@ -654,6 +657,7 @@ function SummaryBox({ icon: Icon, label, value, color }) {
 // ─── Main Page ──────────────────────────────────────────
 export default function KitsSolares() {
   const { formatPrice } = useRegional();
+  const { t } = useLanguage();
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [compareIds, setCompareIds] = useState([]);
   const [selectedKit, setSelectedKit] = useState(null);
@@ -686,16 +690,16 @@ export default function KitsSolares() {
           <div>
             <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Sun size={28} color="var(--gold)" />
-              Kits Solares
+              {t.kits.title}
             </h1>
-            <p>Selecione e compare os melhores kits fotovoltaicos para sua necessidade.</p>
+            <p>{t.kits.subtitle}</p>
           </div>
           {compareIds.length >= 2 && (
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="btn btn-primary"
             >
-              <Scale size={16} /> Comparar ({compareIds.length})
+              <Scale size={16} /> {t.kits.comparar} ({compareIds.length})
             </button>
           )}
         </div>
@@ -703,7 +707,7 @@ export default function KitsSolares() {
 
       {/* Selected kit panel */}
       {selectedKit && (
-        <SelectedKitPanel kit={selectedKit} onClose={() => setSelectedKit(null)} formatCurrency={formatPrice} />
+        <SelectedKitPanel kit={selectedKit} onClose={() => setSelectedKit(null)} formatCurrency={formatPrice} t={t} />
       )}
 
       {/* Comparison panel */}
@@ -713,6 +717,7 @@ export default function KitsSolares() {
           onClose={() => setCompareIds([])}
           onRemove={(id) => toggleCompare(id)}
           formatCurrency={formatPrice}
+          t={t}
         />
       )}
 
@@ -725,7 +730,7 @@ export default function KitsSolares() {
         flexWrap: 'wrap',
       }}>
         <Filter size={16} color="var(--text-3)" />
-        {categorias.map(cat => (
+        {getCategorias(t).map(cat => (
           <button
             key={cat.value}
             onClick={() => setFiltroCategoria(cat.value)}
@@ -747,7 +752,7 @@ export default function KitsSolares() {
           </button>
         ))}
         <span style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginLeft: 8 }}>
-          {kitsFiltrados.length} kit{kitsFiltrados.length !== 1 ? 's' : ''} encontrado{kitsFiltrados.length !== 1 ? 's' : ''}
+          {kitsFiltrados.length} {kitsFiltrados.length !== 1 ? t.kits.kitsEncontrados : t.kits.kitEncontrado}
         </span>
       </div>
 
@@ -766,6 +771,7 @@ export default function KitsSolares() {
             onToggleCompare={toggleCompare}
             isComparing={compareIds.includes(kit.id)}
             formatCurrency={formatPrice}
+            t={t}
           />
         ))}
       </div>
