@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Settings, HelpCircle, Package } from 'lucide-react';
+import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Settings, HelpCircle, Package, CreditCard } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const iconMap = {
@@ -9,6 +9,7 @@ const iconMap = {
   Map,
   FileText,
   Package,
+  CreditCard,
 };
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { path: '/mapa', label: 'Mapa Solar', icon: 'Map' },
   { path: '/orcamento', label: 'Orçamento', icon: 'FileText' },
   { path: '/kits', label: 'Kits Solares', icon: 'Package' },
+  { path: '/financiamento', label: 'Financiamento', icon: 'CreditCard' },
 ];
 
 export default function Sidebar() {
