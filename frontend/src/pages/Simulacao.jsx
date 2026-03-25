@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Zap, MapPin, Ruler, Plug, Home, ArrowRight, RotateCcw, Grid3X3, Sun, BarChart3, Globe, DollarSign, TrendingUp, Clock, PiggyBank } from 'lucide-react';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
-import { formatCurrency, formatNumber } from '../utils/formatters';
+import { useRegional } from '../context/RegionalContext';
+import { formatNumber } from '../utils/formatters';
 import { TIPOS_TELHADO, EFICIENCIA_PAINEL, CUSTO_KWP, PRECO_KWH, VIDA_UTIL_ANOS, IRRADIACAO_MEDIA } from '../utils/constants';
 
 export default function Simulacao() {
   const { state, dispatch } = useApp();
+  const { formatPrice } = useRegional();
   const [form, setForm] = useState({
     localizacao: state.simulacao.localizacao || '',
     areaM2: state.simulacao.areaM2 || '',
@@ -449,10 +451,10 @@ export default function Simulacao() {
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {[
-                    { label: 'Investimento estimado', value: formatCurrency(resultado.investimento) },
-                    { label: 'Economia mensal', value: formatCurrency(resultado.economiaMensal) },
+                    { label: 'Investimento estimado', value: formatPrice(resultado.investimento) },
+                    { label: 'Economia mensal', value: formatPrice(resultado.economiaMensal) },
                     { label: 'Payback', value: `${resultado.paybackMeses} meses` },
-                    { label: 'Economia em 25 anos', value: formatCurrency(resultado.economiaVidaUtil) },
+                    { label: 'Economia em 25 anos', value: formatPrice(resultado.economiaVidaUtil) },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
                       <span style={{ fontSize: '0.88rem', color: 'var(--text-2)' }}>{item.label}</span>
@@ -1015,12 +1017,12 @@ export default function Simulacao() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     {[
-                      { label: 'Economia Mensal', value: formatCurrency(financeiroResultado.economiaMensal), color: 'var(--green)' },
-                      { label: 'Economia Anual', value: formatCurrency(financeiroResultado.economiaAnual), color: 'var(--green)' },
+                      { label: 'Economia Mensal', value: formatPrice(financeiroResultado.economiaMensal), color: 'var(--green)' },
+                      { label: 'Economia Anual', value: formatPrice(financeiroResultado.economiaAnual), color: 'var(--green)' },
                       { label: 'Payback Simples', value: `${financeiroResultado.paybackSimplesAnos} anos`, color: 'var(--gold)' },
                       { label: 'Payback c/ Reajuste', value: `${financeiroResultado.paybackDescontadoAnos} anos`, color: 'var(--gold)' },
                       { label: 'ROI', value: `${formatNumber(financeiroResultado.roi, 1)}%`, color: 'var(--blue)' },
-                      { label: 'Lucro Total', value: formatCurrency(financeiroResultado.lucroTotal), color: 'var(--green)' },
+                      { label: 'Lucro Total', value: formatPrice(financeiroResultado.lucroTotal), color: 'var(--green)' },
                     ].map((item, i) => (
                       <div key={i} style={{
                         padding: '16px',
@@ -1046,8 +1048,8 @@ export default function Simulacao() {
                     border: '1px solid var(--border)',
                   }}>
                     {[
-                      { label: 'Investimento', value: formatCurrency(financeiroResultado.custoSistema) },
-                      { label: 'Economia total (vida útil)', value: formatCurrency(financeiroResultado.economiaTotal) },
+                      { label: 'Investimento', value: formatPrice(financeiroResultado.custoSistema) },
+                      { label: 'Economia total (vida útil)', value: formatPrice(financeiroResultado.economiaTotal) },
                       { label: 'Payback simples', value: `${financeiroResultado.paybackSimplesMeses} meses (${financeiroResultado.paybackSimplesAnos} anos)` },
                       { label: 'Payback com reajuste', value: `${financeiroResultado.paybackDescontadoMeses} meses (${financeiroResultado.paybackDescontadoAnos} anos)` },
                     ].map((item, i) => (
@@ -1091,7 +1093,7 @@ export default function Simulacao() {
                               textAlign: 'right',
                               color: isPastPayback ? 'var(--green)' : 'var(--text-2)',
                             }}>
-                              {formatCurrency(item.lucroAcumulado)}
+                              {formatPrice(item.lucroAcumulado)}
                             </span>
                           </div>
                         );

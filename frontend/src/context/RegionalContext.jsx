@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import { formatCurrency } from '../utils/formatters';
+import { convertCurrency, getCurrencyInfo } from '../utils/currencyConverter';
 
 const RegionalContext = createContext();
 
@@ -25,6 +26,7 @@ const initialState = {
     labor_multiplier: 1.0,
     irradiation_avg: 5.2,
   },
+  displayCurrency: 'BRL',
   countries: [],
   regions: [],
   averageCosts: [],
@@ -47,6 +49,8 @@ function regionalReducer(state, action) {
       return { ...state, regions: action.payload };
     case 'SET_AVERAGE_COSTS':
       return { ...state, averageCosts: action.payload };
+    case 'SET_DISPLAY_CURRENCY':
+      return { ...state, displayCurrency: action.payload };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'SET_ERROR':
@@ -142,9 +146,19 @@ export function RegionalProvider({ children }) {
     }
   }, [API_BASE, getAuthHeaders]);
 
+  const setDisplayCurrency = useCallback((code) => {
+    dispatch({ type: 'SET_DISPLAY_CURRENCY', payload: code });
+  }, []);
+
+  const convertToDisplay = useCallback((valueBRL) => {
+    return convertCurrency(valueBRL, 'BRL', state.displayCurrency);
+  }, [state.displayCurrency]);
+
   const formatPrice = useCallback((value) => {
-    return formatCurrency(value, state.currency.code, state.country.locale);
-  }, [state.currency.code, state.country.locale]);
+    const info = getCurrencyInfo(state.displayCurrency);
+    const converted = convertCurrency(value, state.currency.code, state.displayCurrency);
+    return formatCurrency(converted, info.code, info.locale);
+  }, [state.currency.code, state.displayCurrency]);
 
   const adjustPrice = useCallback((basePriceBRL) => {
     const adjusted = basePriceBRL * state.pricing.cost_multiplier;
@@ -163,6 +177,8 @@ export function RegionalProvider({ children }) {
     fetchRegions,
     fetchAverageCosts,
     selectCountry,
+    setDisplayCurrency,
+    convertToDisplay,
     formatPrice,
     adjustPrice,
   };

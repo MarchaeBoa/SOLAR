@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Plus, Trash2, Download, Send, Package } from 'lucide-react';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
-import { formatCurrency } from '../utils/formatters';
+import { useRegional } from '../context/RegionalContext';
 
 const catalogoProdutos = [
   { id: 1, nome: 'Painel Solar 550W Monocristalino', categoria: 'Painéis', preco: 1150, unidade: 'un' },
@@ -19,6 +19,7 @@ const catalogoProdutos = [
 
 export default function Orcamento() {
   const { dispatch } = useApp();
+  const { formatPrice, displayCurrency } = useRegional();
   const [itens, setItens] = useState([]);
   const [desconto, setDesconto] = useState(0);
   const [cliente, setCliente] = useState('');
@@ -101,7 +102,7 @@ export default function Orcamento() {
                     <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{produto.categoria}</span>
                       <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--gold)' }}>
-                        {formatCurrency(produto.preco)}/{produto.unidade}
+                        {formatPrice(produto.preco)}/{produto.unidade}
                       </span>
                     </div>
                   </div>
@@ -170,7 +171,7 @@ export default function Orcamento() {
                         {item.nome}
                       </div>
                       <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>
-                        {formatCurrency(item.preco * item.qtd)}
+                        {formatPrice(item.preco * item.qtd)}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -236,17 +237,17 @@ export default function Orcamento() {
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-2)' }}>Subtotal</span>
-                <span className="mono">{formatCurrency(subtotal)}</span>
+                <span className="mono">{formatPrice(subtotal)}</span>
               </div>
               {desconto > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                   <span style={{ color: 'var(--green)' }}>Desconto ({desconto}%)</span>
-                  <span className="mono" style={{ color: 'var(--green)' }}>-{formatCurrency(descontoValor)}</span>
+                  <span className="mono" style={{ color: 'var(--green)' }}>-{formatPrice(descontoValor)}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 700, paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
                 <span>Total</span>
-                <span className="mono" style={{ color: 'var(--gold)' }}>{formatCurrency(total)}</span>
+                <span className="mono" style={{ color: 'var(--gold)' }}>{formatPrice(total)}</span>
               </div>
             </div>
           </Card>

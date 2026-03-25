@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Search, User, LogOut, Shield, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import RegionSelector from './RegionSelector';
+import CurrencySelector from './CurrencySelector';
 
 const pageTitles = {
   '/': 'Dashboard',
@@ -74,6 +75,9 @@ export default function Navbar() {
             }}
           />
         </div>
+
+        {/* Currency Selector */}
+        <CurrencySelector />
 
         {/* Region Selector */}
         <RegionSelector />

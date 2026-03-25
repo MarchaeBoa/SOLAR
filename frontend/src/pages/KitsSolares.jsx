@@ -4,6 +4,7 @@ import {
   Check, X, ArrowRight, Package, Shield, BarChart3,
   Scale, Star, Filter, Leaf,
 } from 'lucide-react';
+import { useRegional } from '../context/RegionalContext';
 
 // Mock data (mesma estrutura do backend)
 const KITS_DATA = [
@@ -189,12 +190,8 @@ const categorias = [
   { value: 'industrial', label: 'Industrial' },
 ];
 
-function formatCurrency(value) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 // ─── Kit Card ───────────────────────────────────────────
-function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing }) {
+function KitCard({ kit, selected, onSelect, onToggleCompare, isComparing, formatCurrency }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -418,7 +415,7 @@ function MiniStat({ label, value }) {
 }
 
 // ─── Comparison Table ───────────────────────────────────
-function ComparisonPanel({ kits, onClose, onRemove }) {
+function ComparisonPanel({ kits, onClose, onRemove, formatCurrency }) {
   if (kits.length < 2) return null;
 
   const metrics = [
@@ -576,7 +573,7 @@ function ComparisonPanel({ kits, onClose, onRemove }) {
 }
 
 // ─── Selected Kit Detail ────────────────────────────────
-function SelectedKitPanel({ kit, onClose }) {
+function SelectedKitPanel({ kit, onClose, formatCurrency }) {
   return (
     <div style={{
       background: 'var(--bg-surface)',
@@ -656,6 +653,7 @@ function SummaryBox({ icon: Icon, label, value, color }) {
 
 // ─── Main Page ──────────────────────────────────────────
 export default function KitsSolares() {
+  const { formatPrice } = useRegional();
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [compareIds, setCompareIds] = useState([]);
   const [selectedKit, setSelectedKit] = useState(null);
@@ -705,7 +703,7 @@ export default function KitsSolares() {
 
       {/* Selected kit panel */}
       {selectedKit && (
-        <SelectedKitPanel kit={selectedKit} onClose={() => setSelectedKit(null)} />
+        <SelectedKitPanel kit={selectedKit} onClose={() => setSelectedKit(null)} formatCurrency={formatPrice} />
       )}
 
       {/* Comparison panel */}
@@ -714,6 +712,7 @@ export default function KitsSolares() {
           kits={kitsComparacao}
           onClose={() => setCompareIds([])}
           onRemove={(id) => toggleCompare(id)}
+          formatCurrency={formatPrice}
         />
       )}
 
@@ -766,6 +765,7 @@ export default function KitsSolares() {
             onSelect={handleSelect}
             onToggleCompare={toggleCompare}
             isComparing={compareIds.includes(kit.id)}
+            formatCurrency={formatPrice}
           />
         ))}
       </div>

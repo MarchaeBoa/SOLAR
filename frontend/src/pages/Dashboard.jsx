@@ -3,10 +3,12 @@ import { Sun, Zap, DollarSign, Leaf, TrendingUp, FolderOpen } from 'lucide-react
 import { StatCard } from '../components/Card';
 import Card from '../components/Card';
 import { useApp } from '../context/AppContext';
-import { formatCurrency, formatNumber, formatEnergy, formatPercent } from '../utils/formatters';
+import { useRegional } from '../context/RegionalContext';
+import { formatNumber, formatEnergy, formatPercent } from '../utils/formatters';
 
 export default function Dashboard() {
   const { state } = useApp();
+  const { formatPrice, displayCurrency } = useRegional();
   const d = state.dashboard;
 
   const chartData = [
@@ -53,8 +55,8 @@ export default function Dashboard() {
         />
         <StatCard
           label="Economia Total"
-          value={formatCurrency(d.economiaTotal)}
-          change="R$ 2.340 este mês"
+          value={formatPrice(d.economiaTotal)}
+          change={`${formatPrice(2340)} este mês`}
           positive
           icon={DollarSign}
           color="var(--gold)"
