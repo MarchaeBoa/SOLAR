@@ -656,6 +656,112 @@ section { padding: 110px 0; position: relative; }
 .mockup-cta:hover { box-shadow:0 8px 30px rgba(212,168,67,0.55); }
 
 /* ══════════════════════════════════════════════
+   SIMULAÇÃO POR ENDEREÇO
+══════════════════════════════════════════════ */
+#sim-endereco {
+  background: linear-gradient(180deg, var(--midnight) 0%, var(--deep-navy) 100%);
+  padding: 110px 0;
+}
+.sim-box {
+  max-width: 720px; margin: 0 auto;
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: 20px; padding: 48px 40px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.4), var(--shadow-gold);
+}
+.sim-input-group {
+  display: flex; gap: 12px; margin-top: 32px;
+}
+.sim-input {
+  flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 20px;
+  font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--ice);
+  outline: none; transition: var(--transition);
+}
+.sim-input::placeholder { color: var(--muted); }
+.sim-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+.sim-btn {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-family: 'Syne', sans-serif; font-size: 0.92rem; font-weight: 700;
+  border: none; border-radius: 12px; padding: 16px 36px; cursor: pointer;
+  transition: var(--transition); white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(212,168,67,0.35);
+}
+.sim-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,168,67,0.55); }
+.sim-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* Loading spinner */
+.sim-spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2.5px solid rgba(6,12,20,0.3); border-top-color: var(--midnight);
+  border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Results */
+.sim-results {
+  margin-top: 36px; display: none;
+}
+.sim-results.active { display: block; animation: simFadeIn 0.5s ease-out; }
+@keyframes simFadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.sim-results-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+.sim-results-header .sim-addr {
+  font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--ice);
+}
+.sim-results-header .sim-badge {
+  font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+  background: var(--green-glow); color: var(--green); border: 1px solid rgba(31,216,164,0.3);
+  border-radius: 99px; padding: 4px 12px;
+}
+
+.sim-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+.sim-card {
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px;
+  transition: var(--transition);
+}
+.sim-card:hover { border-color: var(--border-gold); background: rgba(212,168,67,0.04); }
+.sim-card-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; margin-bottom: 12px;
+}
+.sim-card-icon.panels { background: var(--gold-glow); }
+.sim-card-icon.gen { background: var(--green-glow); }
+.sim-card-icon.eco { background: rgba(59,158,255,0.12); }
+.sim-card-icon.pay { background: rgba(240,201,107,0.12); }
+.sim-card-label {
+  font-size: 0.68rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 6px;
+}
+.sim-card-value {
+  font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+  line-height: 1;
+}
+.sim-card-value.gold { color: var(--gold-light); }
+.sim-card-value.green { color: var(--green); }
+.sim-card-value.blue { color: #3B9EFF; }
+.sim-card-sub {
+  font-size: 0.75rem; color: var(--muted); margin-top: 4px;
+}
+
+.sim-disclaimer {
+  margin-top: 20px; font-size: 0.72rem; color: var(--muted); text-align: center;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .sim-box { padding: 32px 20px; }
+  .sim-input-group { flex-direction: column; }
+  .sim-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════
    FAQ
 ══════════════════════════════════════════════ */
 #faq {
@@ -824,7 +930,7 @@ footer {
   <a href="#hero" onclick="closeMobile()">Início</a>
   <a href="#benefits" onclick="closeMobile()">Soluções</a>
   <a href="#how" onclick="closeMobile()">Como funciona</a>
-  <a href="#mockup" onclick="closeMobile()">Simulação</a>
+  <a href="#sim-endereco" onclick="closeMobile()">Simulação</a>
   <a href="#forwho" onclick="closeMobile()">Para empresas</a>
   <a href="#faq" onclick="closeMobile()">Contato</a>
   <a href="#cta-final" class="btn-primary" style="margin-top:16px" onclick="closeMobile()">Iniciar simulação</a>
@@ -844,13 +950,13 @@ footer {
         <a href="#hero">Início</a>
         <a href="#benefits">Soluções</a>
         <a href="#how">Como funciona</a>
-        <a href="#mockup">Simulação</a>
+        <a href="#sim-endereco">Simulação</a>
         <a href="#forwho">Para empresas</a>
         <a href="#faq">Contato</a>
       </nav>
       <div class="header-cta">
         <a href="#cta-final" class="btn-ghost">Solicitar demo</a>
-        <a href="#mockup" class="btn-primary">Iniciar simulação ↗</a>
+        <a href="#sim-endereco" class="btn-primary">Iniciar simulação ↗</a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -886,7 +992,7 @@ footer {
         </p>
         <div class="hero-actions">
           <!-- INTEGRAÇÃO FUTURA: botão conectará ao módulo de mapa interativo -->
-          <a href="#mockup" class="btn-primary">Iniciar simulação gratuita ↗</a>
+          <a href="#sim-endereco" class="btn-primary">Iniciar simulação gratuita ↗</a>
           <a href="#how" class="btn-ghost">Como funciona</a>
         </div>
         <div class="hero-stats">
@@ -1259,6 +1365,66 @@ footer {
 <div class="divider"></div>
 
 <!-- ══════════════════════════════════════════════
+     SIMULAÇÃO POR ENDEREÇO
+══════════════════════════════════════════════ -->
+<section id="sim-endereco">
+  <div class="container">
+    <div class="section-header reveal" style="margin-bottom:12px">
+      <div class="tag">Simulação instantânea</div>
+      <h2>Simule a energia solar<br><span class="grad-gold">do seu endereço</span></h2>
+      <p>Digite o endereço do seu imóvel e descubra o potencial de geração solar, economia e retorno do investimento.</p>
+    </div>
+
+    <div class="sim-box reveal">
+      <div class="sim-input-group">
+        <input type="text" id="simAddress" class="sim-input" placeholder="Ex: Rua Augusta, 1200 — São Paulo, SP" autocomplete="off">
+        <button id="simBtn" class="sim-btn" onclick="runSimulation()">Simular ↗</button>
+      </div>
+
+      <div class="sim-results" id="simResults">
+        <div class="sim-results-header">
+          <span class="sim-badge">Simulação concluída</span>
+          <span class="sim-addr" id="simAddrLabel"></span>
+        </div>
+
+        <div class="sim-grid">
+          <div class="sim-card">
+            <div class="sim-card-icon panels">☀</div>
+            <div class="sim-card-label">Painéis estimados</div>
+            <div class="sim-card-value gold" id="simPanels">—</div>
+            <div class="sim-card-sub" id="simPanelsSub"></div>
+          </div>
+          <div class="sim-card">
+            <div class="sim-card-icon gen">⚡</div>
+            <div class="sim-card-label">Geração mensal</div>
+            <div class="sim-card-value green" id="simGen">—</div>
+            <div class="sim-card-sub" id="simGenSub"></div>
+          </div>
+          <div class="sim-card">
+            <div class="sim-card-icon eco">💰</div>
+            <div class="sim-card-label">Economia anual</div>
+            <div class="sim-card-value blue" id="simEco">—</div>
+            <div class="sim-card-sub" id="simEcoSub"></div>
+          </div>
+          <div class="sim-card">
+            <div class="sim-card-icon pay">📊</div>
+            <div class="sim-card-label">Payback estimado</div>
+            <div class="sim-card-value gold" id="simPayback">—</div>
+            <div class="sim-card-sub" id="simPaybackSub"></div>
+          </div>
+        </div>
+
+        <div class="sim-disclaimer">
+          * Valores simulados com base em médias regionais de irradiação solar (INPE/NASA). Para um orçamento preciso, solicite uma análise técnica detalhada.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
      FAQ
 ══════════════════════════════════════════════ -->
 <section id="faq">
@@ -1338,7 +1504,7 @@ footer {
       <p>Leva menos de 3 minutos. Sem cartão de crédito. Sem compromisso.<br>Só inteligência solar ao seu alcance.</p>
       <div class="cta-final-btns">
         <!-- INTEGRAÇÃO FUTURA: conectar ao módulo de simulação e cadastro de usuários -->
-        <a href="#mockup" class="btn-primary">Iniciar simulação gratuita ↗</a>
+        <a href="#sim-endereco" class="btn-primary">Iniciar simulação gratuita ↗</a>
         <a href="mailto:contato@solarmap.ai" class="btn-ghost">Falar com especialista</a>
       </div>
     </div>
@@ -1505,6 +1671,110 @@ const updateActiveNav = () => {
   });
 };
 window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+/* ── Simulação por endereço ── */
+function runSimulation() {
+  const input = document.getElementById('simAddress');
+  const btn = document.getElementById('simBtn');
+  const results = document.getElementById('simResults');
+  const address = input.value.trim();
+
+  if (!address) {
+    input.focus();
+    input.style.borderColor = '#FF5F57';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+
+  // Disable button and show spinner
+  btn.disabled = true;
+  btn.innerHTML = '<span class="sim-spinner"></span> Simulando…';
+  results.classList.remove('active');
+
+  // Simulate processing delay
+  setTimeout(() => {
+    // Generate deterministic-looking results based on address hash
+    const hash = hashAddress(address);
+    const region = detectRegion(address);
+
+    // Regional irradiation (kWh/m²/day) — based on INPE data
+    const irradiation = region.irradiation;
+    // Estimated roof area (40–90 m²) based on hash
+    const roofArea = 40 + (hash % 51);
+    // Panel area ~2 m² each (550W)
+    const panels = Math.floor(roofArea / 2);
+    const powerKwp = (panels * 0.55).toFixed(1);
+    // Monthly generation: kWp × irradiation × 30 × performance ratio (0.78)
+    const genMonthly = Math.round(powerKwp * irradiation * 30 * 0.78);
+    const genDaily = (genMonthly / 30).toFixed(1);
+    // Economy: kWh × tariff (R$ 0.85 avg)
+    const tariff = 0.75 + (hash % 25) / 100;
+    const ecoMonthly = genMonthly * tariff;
+    const ecoAnnual = ecoMonthly * 12;
+    // Investment: R$ 4.500–5.500 per kWp
+    const costPerKwp = 4500 + (hash % 1001);
+    const investment = powerKwp * costPerKwp;
+    // Payback
+    const paybackYears = (investment / ecoAnnual).toFixed(1);
+
+    // Populate results
+    document.getElementById('simAddrLabel').textContent = address;
+    document.getElementById('simPanels').textContent = panels + ' painéis';
+    document.getElementById('simPanelsSub').textContent = 'Potência: ' + powerKwp + ' kWp · Área: ' + roofArea + ' m²';
+    document.getElementById('simGen').textContent = genMonthly.toLocaleString('pt-BR') + ' kWh';
+    document.getElementById('simGenSub').textContent = 'Média diária: ' + genDaily + ' kWh · Irradiação: ' + irradiation + ' kWh/m²/dia';
+    document.getElementById('simEco').textContent = 'R$ ' + ecoAnnual.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    document.getElementById('simEcoSub').textContent = 'Mensal: R$ ' + ecoMonthly.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' · Tarifa: R$ ' + tariff.toFixed(2) + '/kWh';
+    document.getElementById('simPayback').textContent = paybackYears + ' anos';
+    document.getElementById('simPaybackSub').textContent = 'Investimento: R$ ' + investment.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' · ROI 25 anos: +' + Math.round((ecoAnnual * 25 / investment - 1) * 100) + '%';
+
+    results.classList.add('active');
+    btn.disabled = false;
+    btn.innerHTML = 'Simular ↗';
+
+    // Scroll to results
+    results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 1800);
+}
+
+// Simple hash from address string for deterministic results
+function hashAddress(str) {
+  var h = 0;
+  for (var i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+// Detect Brazilian region from address keywords for irradiation values
+function detectRegion(address) {
+  var a = address.toLowerCase();
+  var regions = [
+    { keys: ['nordeste','bahia','ceará','ceara','pernambuco','fortaleza','recife','salvador','natal','joão pessoa','joao pessoa','maceió','maceio','aracaju','teresina','são luís','sao luis','maranhão','maranhao','piauí','piaui','sergipe','alagoas','paraíba','paraiba','rio grande do norte'], irradiation: 5.5 },
+    { keys: ['norte','manaus','belém','belem','amazonas','pará','para','tocantins','palmas','roraima','amapá','amapa','rondônia','rondonia','acre','rio branco','macapá','macapa','boa vista','porto velho'], irradiation: 4.9 },
+    { keys: ['centro-oeste','centro oeste','goiânia','goiania','brasília','brasilia','cuiabá','cuiaba','campo grande','goiás','goias','mato grosso','distrito federal'], irradiation: 5.3 },
+    { keys: ['sul','curitiba','florianópolis','florianopolis','porto alegre','paraná','parana','santa catarina','rio grande do sul'], irradiation: 4.3 },
+    { keys: ['minas gerais','belo horizonte','uberlândia','uberaba'], irradiation: 5.2 },
+    { keys: ['rio de janeiro','niterói','niteroi'], irradiation: 4.8 },
+    { keys: ['são paulo','sao paulo','campinas','santos','ribeirão','ribeirao','sorocaba','guarulhos','osasco','abc'], irradiation: 4.6 },
+    { keys: ['espírito santo','espirito santo','vitória','vitoria'], irradiation: 4.9 }
+  ];
+  for (var i = 0; i < regions.length; i++) {
+    for (var j = 0; j < regions[i].keys.length; j++) {
+      if (a.indexOf(regions[i].keys[j]) !== -1) return regions[i];
+    }
+  }
+  // Default: Southeast average
+  return { irradiation: 4.7 };
+}
+
+// Allow Enter key to trigger simulation
+document.getElementById('simAddress').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runSimulation();
+});
+
+// Observe new reveal elements
+document.querySelectorAll('#sim-endereco .reveal').forEach(function(el) { revealObserver.observe(el); });
 
 /*
  * ══════════════════════════════════════════════
