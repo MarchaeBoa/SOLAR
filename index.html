@@ -683,7 +683,7 @@ section { padding: 110px 0; position: relative; }
   display:flex; align-items:center; justify-content:center;
   color:var(--gold); font-size:0.8rem; transition:var(--transition);
 }
-.faq-item.open .faq-arrow { transform:rotate(45deg); }
+.faq-item.open .faq-arrow { background:var(--gold); color:var(--midnight); }
 
 .faq-a {
   max-height:0; overflow:hidden; transition: max-height 0.4s ease, padding 0.4s ease;
@@ -1462,11 +1462,18 @@ document.querySelectorAll(
 /* ── FAQ accordion ── */
 function toggleFaq(el) {
   const item = el.parentElement;
+  const arrow = el.querySelector('.faq-arrow');
   const isOpen = item.classList.contains('open');
-  // Close all
-  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  // Close all and reset arrows
+  document.querySelectorAll('.faq-item.open').forEach(i => {
+    i.classList.remove('open');
+    i.querySelector('.faq-arrow').textContent = '+';
+  });
   // Open clicked if was closed
-  if (!isOpen) item.classList.add('open');
+  if (!isOpen) {
+    item.classList.add('open');
+    arrow.textContent = '\u2212';
+  }
 }
 
 /* ── Smooth scroll for anchor links ── */
