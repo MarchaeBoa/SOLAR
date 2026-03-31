@@ -1750,6 +1750,148 @@ footer {
   .visit-time-options { flex-direction:column; }
   .visit-success-card { padding:32px 24px; }
 }
+
+/* ── TESTIMONIALS CAROUSEL ── */
+#testimonials { padding:100px 0; }
+
+.testimonials-carousel { position:relative; overflow:hidden; margin-top:48px; }
+
+.testimonials-track {
+  display:flex;
+  transition:transform 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+
+.testimonial-card {
+  min-width:calc(33.333% - 16px);
+  margin:0 8px;
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:32px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  backdrop-filter:blur(12px);
+  transition:border-color var(--transition), box-shadow var(--transition);
+}
+
+.testimonial-card:hover {
+  border-color:var(--border-gold);
+  box-shadow:var(--shadow-gold);
+}
+
+.testimonial-header {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.testimonial-avatar {
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:1.15rem;
+  color:var(--midnight);
+  flex-shrink:0;
+}
+
+.testimonial-info { display:flex; flex-direction:column; gap:2px; }
+.testimonial-name { font-family:'Syne',sans-serif; font-weight:600; font-size:1rem; color:var(--ice); }
+.testimonial-meta { font-size:0.82rem; color:var(--muted); }
+
+.testimonial-stars {
+  display:flex;
+  gap:3px;
+  font-size:1.1rem;
+  color:var(--gold);
+}
+
+.testimonial-text {
+  font-size:0.92rem;
+  line-height:1.7;
+  color:rgba(238,244,255,0.78);
+  flex:1;
+}
+
+.testimonial-project {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 12px;
+  background:var(--glass-light);
+  border:1px solid var(--border);
+  border-radius:20px;
+  font-size:0.78rem;
+  color:var(--green);
+  width:fit-content;
+}
+
+.carousel-controls {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  margin-top:36px;
+}
+
+.carousel-btn {
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--glass);
+  color:var(--ice);
+  font-size:1.2rem;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all var(--transition);
+  backdrop-filter:blur(8px);
+}
+
+.carousel-btn:hover {
+  border-color:var(--gold);
+  color:var(--gold);
+  box-shadow:0 0 20px rgba(212,168,67,0.15);
+}
+
+.carousel-dots {
+  display:flex;
+  gap:8px;
+}
+
+.carousel-dot {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--border);
+  border:none;
+  cursor:pointer;
+  transition:all var(--transition);
+  padding:0;
+}
+
+.carousel-dot.active {
+  background:var(--gold);
+  width:24px;
+  border-radius:4px;
+}
+
+@media (max-width: 1024px) {
+  .testimonial-card { min-width:calc(50% - 16px); }
+}
+
+@media (max-width: 768px) {
+  #testimonials { padding:64px 0; }
+  .testimonial-card { min-width:calc(100% - 16px); padding:24px; }
+  .testimonials-carousel { margin-top:32px; }
+}
 </style>
 </head>
 <body>
@@ -2733,6 +2875,136 @@ footer {
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     DEPOIMENTOS DE CLIENTES
+══════════════════════════════════════════════ -->
+<section id="testimonials">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Depoimentos</div>
+      <h2>O que nossos clientes<br><span class="grad-gold">dizem sobre nós</span></h2>
+    </div>
+
+    <div class="testimonials-carousel reveal">
+      <div class="testimonials-track" id="testimonialsTrack">
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#D4A843,#F0C96B)">R</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Roberto Almeida</div>
+              <div class="testimonial-meta">São Paulo, SP</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-text">A simulação foi incrivelmente precisa. Instalei os painéis há 6 meses e a economia na conta de luz ficou exatamente como o sistema previu. Recuperei o investimento mais rápido do que imaginava.</div>
+          <div class="testimonial-project">☀ Residencial — 8,5 kWp</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#1FD8A4,#12A07A)">C</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Camila Ferreira</div>
+              <div class="testimonial-meta">Belo Horizonte, MG</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-text">Usamos a plataforma para dimensionar o sistema da nossa fábrica. A análise de telhado por satélite economizou semanas de visitas técnicas. O suporte também é excelente, sempre disponível.</div>
+          <div class="testimonial-project">☀ Comercial — 75 kWp</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#3B9EFF,#1A6FD4)">M</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Marcos Oliveira</div>
+              <div class="testimonial-meta">Curitiba, PR</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★☆</div>
+          <div class="testimonial-text">Ferramenta muito completa para quem trabalha no setor. Consigo gerar orçamentos detalhados para meus clientes em minutos. Mudou a forma como faço propostas comerciais.</div>
+          <div class="testimonial-project">☀ Integrador solar</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#F0C96B,#D4A843)">A</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Ana Beatriz Costa</div>
+              <div class="testimonial-meta">Fortaleza, CE</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-text">Moro no Nordeste e a irradiância é altíssima aqui. A SolarMap me mostrou exatamente o potencial do meu telhado. Em 3 meses, minha conta de luz caiu de R$ 480 para R$ 35. Impressionante!</div>
+          <div class="testimonial-project">☀ Residencial — 5,2 kWp</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#FF6B8A,#D44563)">P</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Pedro Henrique Santos</div>
+              <div class="testimonial-meta">Goiânia, GO</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-text">Tinha muitas dúvidas sobre energia solar para minha fazenda. A plataforma me deu todas as respostas: dimensionamento, payback, financiamento. Hoje produzo mais energia do que consumo.</div>
+          <div class="testimonial-project">☀ Rural — 120 kWp</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#A78BFA,#7C3AED)">L</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Larissa Mendes</div>
+              <div class="testimonial-meta">Florianópolis, SC</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★☆</div>
+          <div class="testimonial-text">Como arquiteta, uso a SolarMap AI para integrar projetos solares nos meus projetos residenciais. A visualização do mapa de irradiância é fantástica e meus clientes adoram ver os dados.</div>
+          <div class="testimonial-project">☀ Projetos de arquitetura</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#1FD8A4,#0EA881)">J</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">João Carlos Lima</div>
+              <div class="testimonial-meta">Ribeirão Preto, SP</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-text">Instalei painéis no meu comércio e a economia mensal é de quase R$ 2.000. O cálculo da plataforma errou por menos de 5%. Recomendo para qualquer empresário que quer reduzir custos.</div>
+          <div class="testimonial-project">☀ Comercial — 30 kWp</div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-header">
+            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#D4A843,#B8922E)">F</div>
+            <div class="testimonial-info">
+              <div class="testimonial-name">Fernanda Rocha</div>
+              <div class="testimonial-meta">Salvador, BA</div>
+            </div>
+          </div>
+          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-text">A interface é linda e muito fácil de usar. Fiz toda a simulação sozinha, sem precisar ligar para ninguém. Em uma semana já tinha três orçamentos de instaladores da minha região.</div>
+          <div class="testimonial-project">☀ Residencial — 6,8 kWp</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="carousel-controls">
+      <button class="carousel-btn" id="carouselPrev" aria-label="Anterior">&#8249;</button>
+      <div class="carousel-dots" id="carouselDots"></div>
+      <button class="carousel-btn" id="carouselNext" aria-label="Próximo">&#8250;</button>
     </div>
   </div>
 </section>
@@ -4129,6 +4401,107 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
 
   // Observe reveals
   document.querySelectorAll('#agendar-visita .reveal').forEach(function(el) { revealObserver.observe(el); });
+})();
+
+/*
+ * ══════════════════════════════════════════════
+ * CARROSSEL DE DEPOIMENTOS
+ * ══════════════════════════════════════════════
+ */
+(function() {
+  var track = document.getElementById('testimonialsTrack');
+  var prevBtn = document.getElementById('carouselPrev');
+  var nextBtn = document.getElementById('carouselNext');
+  var dotsContainer = document.getElementById('carouselDots');
+  if (!track) return;
+
+  var cards = track.querySelectorAll('.testimonial-card');
+  var currentIndex = 0;
+  var autoplayTimer;
+
+  function getVisibleCount() {
+    var w = window.innerWidth;
+    if (w <= 768) return 1;
+    if (w <= 1024) return 2;
+    return 3;
+  }
+
+  function getTotalPages() {
+    return Math.max(1, cards.length - getVisibleCount() + 1);
+  }
+
+  function buildDots() {
+    dotsContainer.innerHTML = '';
+    var pages = getTotalPages();
+    for (var i = 0; i < pages; i++) {
+      var dot = document.createElement('button');
+      dot.className = 'carousel-dot' + (i === currentIndex ? ' active' : '');
+      dot.setAttribute('aria-label', 'Ir para depoimento ' + (i + 1));
+      dot.dataset.index = i;
+      dot.addEventListener('click', function() {
+        goTo(parseInt(this.dataset.index));
+      });
+      dotsContainer.appendChild(dot);
+    }
+  }
+
+  function updatePosition() {
+    var card = cards[0];
+    var style = getComputedStyle(card);
+    var cardWidth = card.offsetWidth + parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+    track.style.transform = 'translateX(' + (-currentIndex * cardWidth) + 'px)';
+
+    var dots = dotsContainer.querySelectorAll('.carousel-dot');
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('active', i === currentIndex);
+    }
+  }
+
+  function goTo(index) {
+    var maxIndex = getTotalPages() - 1;
+    currentIndex = Math.max(0, Math.min(index, maxIndex));
+    updatePosition();
+    resetAutoplay();
+  }
+
+  function next() { goTo(currentIndex + 1 >= getTotalPages() ? 0 : currentIndex + 1); }
+  function prev() { goTo(currentIndex - 1 < 0 ? getTotalPages() - 1 : currentIndex - 1); }
+
+  prevBtn.addEventListener('click', prev);
+  nextBtn.addEventListener('click', next);
+
+  function startAutoplay() {
+    autoplayTimer = setInterval(next, 4000);
+  }
+
+  function resetAutoplay() {
+    clearInterval(autoplayTimer);
+    startAutoplay();
+  }
+
+  // Pause on hover
+  track.addEventListener('mouseenter', function() { clearInterval(autoplayTimer); });
+  track.addEventListener('mouseleave', function() { startAutoplay(); });
+
+  // Handle resize
+  var resizeTimeout;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+      if (currentIndex >= getTotalPages()) currentIndex = getTotalPages() - 1;
+      buildDots();
+      updatePosition();
+    }, 150);
+  });
+
+  // Observe reveals
+  if (typeof revealObserver !== 'undefined') {
+    document.querySelectorAll('#testimonials .reveal').forEach(function(el) { revealObserver.observe(el); });
+  }
+
+  buildDots();
+  updatePosition();
+  startAutoplay();
 })();
 
 /*
