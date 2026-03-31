@@ -11,6 +11,9 @@ const pageTitles = {
   '/orcamento': 'Orçamento',
   '/kits': 'Kits Solares',
   '/financiamento': 'Financiamento',
+  '/calculo-area': 'Cálculo de Área',
+  '/posicao-solar': 'Posição Solar',
+  '/orcamento-regional': 'Orçamento Regional',
 };
 
 const roleLabels = {
