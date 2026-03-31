@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+<!-- Leaflet.js CDN -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
 <style>
 /* ═══════════════════════════════════════════════════════════════
    SOLARMAP AI · TELA DE SIMULAÇÃO
@@ -747,6 +751,95 @@ body::before {
 .progress-fill { height:100%; background:rgba(3,8,16,0.6); border-radius:99px; animation:progressAnim 1.8s ease-out forwards; }
 @keyframes progressAnim { from{width:0} to{width:100%} }
 .btn-simulate.loading .progress-track { display:block; }
+
+/* ════════════════════════════════════════════
+   LEAFLET INTERACTIVE MAP
+════════════════════════════════════════════ */
+#leafletMap {
+  width:100%; height:320px; border-radius:var(--r2);
+  border:1px solid var(--bd); margin-top:14px;
+  z-index:1; position:relative;
+}
+.leaflet-container { background:var(--bg-2) !important; border-radius:var(--r2); }
+
+.map-section-label {
+  display:flex; align-items:center; gap:8px;
+  font-size:0.72rem; font-weight:700; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--t3); margin-top:16px; margin-bottom:4px;
+}
+.map-section-label .map-label-icon { font-size:0.95rem; }
+
+.map-coords-display {
+  display:flex; gap:12px; margin-top:12px;
+}
+.map-coord-box {
+  flex:1; background:var(--bg-input); border:1px solid var(--bd);
+  border-radius:var(--r1); padding:10px 14px;
+  display:flex; flex-direction:column; gap:2px;
+  transition:var(--t-fast);
+}
+.map-coord-box.active { border-color:var(--mint-bd); background:var(--mint-lo); }
+.map-coord-label { font-size:0.6rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--t3); }
+.map-coord-val { font-family:'JetBrains Mono',monospace; font-size:0.85rem; font-weight:600; color:var(--t1); }
+
+.map-solar-result {
+  margin-top:14px; padding:14px 18px;
+  background:var(--bg-2); border:1px solid var(--bd); border-radius:var(--r2);
+  display:none;
+  animation:fadeSlideUp 0.4s var(--ease) forwards;
+}
+.map-solar-result.visible { display:block; }
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.msr-header {
+  display:flex; align-items:center; gap:8px; margin-bottom:12px;
+}
+.msr-badge {
+  font-size:0.6rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--mint); background:var(--mint-lo); border:1px solid var(--mint-bd);
+  border-radius:99px; padding:3px 10px;
+}
+.msr-title { font-size:0.82rem; font-weight:700; color:var(--t1); }
+
+.msr-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.msr-item {
+  background:var(--bg-3); border:1px solid var(--bd); border-radius:var(--r1);
+  padding:10px 12px;
+}
+.msr-item-label { font-size:0.6rem; color:var(--t3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px; }
+.msr-item-val { font-family:'JetBrains Mono',monospace; font-size:1rem; font-weight:600; }
+.msr-item-val.gold { color:var(--gold-hi); }
+.msr-item-val.mint { color:var(--mint-hi); }
+.msr-item-val.sky  { color:var(--sky); }
+
+.map-hint {
+  font-size:0.68rem; color:var(--t3); margin-top:8px;
+  display:flex; align-items:center; gap:6px;
+}
+.map-hint-icon { font-size:0.85rem; }
+
+/* Leaflet custom popup */
+.leaflet-popup-content-wrapper {
+  background:rgba(6,14,28,0.92) !important; backdrop-filter:blur(12px);
+  border:1px solid var(--gold-bd) !important; border-radius:var(--r1) !important;
+  color:var(--t1) !important; font-family:'Cabinet Grotesk',sans-serif !important;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5) !important;
+}
+.leaflet-popup-content { margin:10px 14px !important; font-size:0.78rem !important; line-height:1.5 !important; }
+.leaflet-popup-tip { background:rgba(6,14,28,0.92) !important; border:1px solid var(--gold-bd) !important; }
+.leaflet-popup-close-button { color:var(--t3) !important; }
+.leaflet-popup-close-button:hover { color:var(--t1) !important; }
+
+/* Leaflet controls styling */
+.leaflet-control-zoom a {
+  background:rgba(6,14,28,0.88) !important; backdrop-filter:blur(8px);
+  color:var(--t2) !important; border-color:var(--bd) !important;
+  font-weight:600 !important;
+}
+.leaflet-control-zoom a:hover { background:var(--bg-3) !important; color:var(--t1) !important; }
+.leaflet-control-attribution { display:none !important; }
 </style>
 </head>
 <body>
@@ -821,6 +914,52 @@ body::before {
           <input class="field-input" id="fLocalizacao" type="text"
             placeholder="Ex: Av. Paulista, 1000 — São Paulo, SP">
           <button class="loc-search-btn" onclick="mockGeocode()">🔍 Localizar</button>
+        </div>
+      </div>
+
+      <!-- ── MAPA INTERATIVO LEAFLET ── -->
+      <div class="map-section-label">
+        <span class="map-label-icon">🗺</span> Selecione o local no mapa
+      </div>
+      <div class="map-hint">
+        <span class="map-hint-icon">👆</span> Clique no mapa para marcar o ponto e obter dados solares simulados
+      </div>
+      <div id="leafletMap"></div>
+
+      <div class="map-coords-display">
+        <div class="map-coord-box" id="coordLatBox">
+          <div class="map-coord-label">Latitude</div>
+          <div class="map-coord-val" id="coordLat">—</div>
+        </div>
+        <div class="map-coord-box" id="coordLngBox">
+          <div class="map-coord-label">Longitude</div>
+          <div class="map-coord-val" id="coordLng">—</div>
+        </div>
+      </div>
+
+      <!-- Resultado solar simulado do ponto clicado -->
+      <div class="map-solar-result" id="mapSolarResult">
+        <div class="msr-header">
+          <div class="msr-badge">Dados simulados</div>
+          <div class="msr-title" id="msrRegion">—</div>
+        </div>
+        <div class="msr-grid">
+          <div class="msr-item">
+            <div class="msr-item-label">Irradiância média</div>
+            <div class="msr-item-val gold" id="msrIrrad">—</div>
+          </div>
+          <div class="msr-item">
+            <div class="msr-item-label">Horas de sol/dia</div>
+            <div class="msr-item-val mint" id="msrHoras">—</div>
+          </div>
+          <div class="msr-item">
+            <div class="msr-item-label">Temp. média anual</div>
+            <div class="msr-item-val sky" id="msrTemp">—</div>
+          </div>
+          <div class="msr-item">
+            <div class="msr-item-label">Potencial solar</div>
+            <div class="msr-item-val gold" id="msrPotencial">—</div>
+          </div>
         </div>
       </div>
 
@@ -1601,11 +1740,148 @@ body::before {
      JAVASCRIPT
 ════════════════════════════════════════════ -->
 <script>
+/* ══════════════════════════════════════════════════════════════
+   MAPA INTERATIVO LEAFLET — Seleção de ponto + dados solares
+══════════════════════════════════════════════════════════════ */
+const SOLAR_REGIONS = {
+  norte:        { label:'Norte (Amazônia)',    irrad:5.5, horas:5.0, temp:27, potencial:'Muito Alto' },
+  nordeste:     { label:'Nordeste',            irrad:5.8, horas:5.8, temp:26, potencial:'Excelente' },
+  centro_oeste: { label:'Centro-Oeste',        irrad:5.4, horas:5.2, temp:25, potencial:'Muito Alto' },
+  sudeste:      { label:'Sudeste',             irrad:4.8, horas:4.6, temp:22, potencial:'Alto' },
+  sul:          { label:'Sul',                 irrad:4.3, horas:4.0, temp:19, potencial:'Moderado-Alto' },
+  europa:       { label:'Europa',              irrad:3.8, horas:3.5, temp:14, potencial:'Moderado' },
+  america_n:    { label:'América do Norte',    irrad:4.5, horas:4.3, temp:16, potencial:'Alto' },
+  africa:       { label:'África',              irrad:5.9, horas:6.0, temp:28, potencial:'Excelente' },
+  asia:         { label:'Ásia',                irrad:4.6, horas:4.4, temp:20, potencial:'Alto' },
+  oceania:      { label:'Oceania',             irrad:5.2, horas:5.0, temp:22, potencial:'Muito Alto' },
+  default:      { label:'Região não mapeada',  irrad:4.5, horas:4.2, temp:20, potencial:'Moderado' }
+};
+
+function getSolarRegion(lat, lng) {
+  // Brazil regions
+  if (lat >= -33.8 && lat <= 5.3 && lng >= -73.9 && lng <= -34.8) {
+    if (lat > -5)  return 'norte';
+    if (lat > -10 && lng > -42) return 'nordeste';
+    if (lat > -18 && lng < -42) return 'centro_oeste';
+    if (lat > -24) return 'sudeste';
+    return 'sul';
+  }
+  // Global fallbacks
+  if (lat > 20 && lat < 72 && lng > -10 && lng < 45) return 'europa';
+  if (lat > 24 && lat < 50 && lng > -130 && lng < -60) return 'america_n';
+  if (lat > -35 && lat < 37 && lng > -18 && lng < 52) return 'africa';
+  if (lat > -10 && lat < 55 && lng > 60 && lng < 150) return 'asia';
+  if (lat > -47 && lat < -10 && lng > 110 && lng < 180) return 'oceania';
+  return 'default';
+}
+
+let leafletMap, leafletMarker;
+
+function initLeafletMap() {
+  leafletMap = L.map('leafletMap', {
+    center: [-14.235, -51.925],
+    zoom: 4,
+    zoomControl: true,
+    scrollWheelZoom: true
+  });
+
+  // Camadas de tiles
+  const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  });
+
+  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '© Esri'
+  });
+
+  streets.addTo(leafletMap);
+  L.control.layers({ 'Mapa': streets, 'Satélite': satellite }, null, { position: 'topright' }).addTo(leafletMap);
+
+  // Click handler
+  leafletMap.on('click', onMapClick);
+}
+
+function onMapClick(e) {
+  const { lat, lng } = e.latlng;
+
+  // Update or create marker
+  if (leafletMarker) {
+    leafletMarker.setLatLng(e.latlng);
+  } else {
+    leafletMarker = L.marker(e.latlng, {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:linear-gradient(135deg,#F2C860,#D4A843);box-shadow:0 0 18px rgba(212,168,67,0.6);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:14px">☀</span></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -30]
+      })
+    }).addTo(leafletMap);
+  }
+
+  // Update coordinate display
+  document.getElementById('coordLat').textContent = lat.toFixed(6) + '°';
+  document.getElementById('coordLng').textContent = lng.toFixed(6) + '°';
+  document.getElementById('coordLatBox').classList.add('active');
+  document.getElementById('coordLngBox').classList.add('active');
+  setTimeout(() => {
+    document.getElementById('coordLatBox').classList.remove('active');
+    document.getElementById('coordLngBox').classList.remove('active');
+  }, 1500);
+
+  // Get solar data for region
+  const regionKey = getSolarRegion(lat, lng);
+  const data = SOLAR_REGIONS[regionKey];
+
+  // Show solar result panel
+  const panel = document.getElementById('mapSolarResult');
+  panel.classList.remove('visible');
+  void panel.offsetWidth; // force reflow for animation
+  panel.classList.add('visible');
+
+  document.getElementById('msrRegion').textContent = data.label;
+  document.getElementById('msrIrrad').textContent = data.irrad.toFixed(1) + ' kWh/m²/dia';
+  document.getElementById('msrHoras').textContent = data.horas.toFixed(1) + ' h/dia';
+  document.getElementById('msrTemp').textContent = data.temp + '°C';
+  document.getElementById('msrPotencial').textContent = data.potencial;
+
+  // Auto-fill simulation form fields
+  const fRadiacao = document.getElementById('fRadiacao');
+  const fHorasSol = document.getElementById('fHorasSol');
+  if (fRadiacao) {
+    fRadiacao.value = data.irrad;
+    fRadiacao.dispatchEvent(new Event('input'));
+  }
+  if (fHorasSol) {
+    fHorasSol.value = data.horas;
+    fHorasSol.dispatchEvent(new Event('input'));
+  }
+
+  // Update map coordinates in results panel
+  const mapCoordsEl = document.getElementById('mapCoords');
+  if (mapCoordsEl) {
+    mapCoordsEl.textContent = lat.toFixed(4) + '°, ' + lng.toFixed(4) + '°';
+  }
+
+  // Popup on marker
+  leafletMarker.bindPopup(
+    `<div style="text-align:center">
+      <strong style="color:#F2C860">${data.label}</strong><br>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:rgba(237,242,255,0.6)">${lat.toFixed(4)}°, ${lng.toFixed(4)}°</span><br>
+      <span style="color:#18E8A8;font-weight:600">☀ ${data.irrad} kWh/m²/dia</span>
+    </div>`
+  ).openPopup();
+}
+
 /* ──────────────────────────────────────────
    LOADER
 ────────────────────────────────────────── */
 window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('loader').classList.add('out'), 1100);
+  // Initialize Leaflet map after page load
+  setTimeout(initLeafletMap, 1200);
 });
 
 /* ──────────────────────────────────────────
@@ -1673,6 +1949,22 @@ function mockGeocode() {
   input.value = addr.includes(',') ? addr : addr + ' — São Paulo, SP';
   input.style.borderColor = 'var(--mint-bd)';
   setTimeout(() => input.style.borderColor = '', 2000);
+
+  // Geocode via Nominatim (free) and fly map to location
+  if (leafletMap && addr) {
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
+      .then(r => r.json())
+      .then(results => {
+        if (results.length > 0) {
+          const lat = parseFloat(results[0].lat);
+          const lng = parseFloat(results[0].lon);
+          leafletMap.flyTo([lat, lng], 14, { duration: 1.5 });
+          // Simulate a click at that location
+          onMapClick({ latlng: { lat, lng } });
+        }
+      })
+      .catch(() => {}); // silently fail if offline
+  }
 }
 
 /* ──────────────────────────────────────────
