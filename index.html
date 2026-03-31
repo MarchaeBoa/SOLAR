@@ -1975,18 +1975,21 @@ footer {
           <a href="#how" class="btn-ghost">Como funciona</a>
         </div>
         <div class="hero-stats">
-          <!-- EDITAR: trocar por dados reais quando disponíveis -->
           <div class="hero-stat">
-            <div class="hero-stat-num">+47</div>
+            <div class="hero-stat-num" data-counter="47" data-prefix="+" data-suffix="">0</div>
             <div class="hero-stat-label">Países atendidos</div>
           </div>
           <div class="hero-stat">
-            <div class="hero-stat-num">2.8M</div>
+            <div class="hero-stat-num" data-counter="2.8" data-prefix="" data-suffix="M" data-decimals="1">0</div>
             <div class="hero-stat-label">Telhados analisados</div>
           </div>
           <div class="hero-stat">
-            <div class="hero-stat-num">12 GW</div>
+            <div class="hero-stat-num" data-counter="12" data-prefix="" data-suffix=" GW">0</div>
             <div class="hero-stat-label">Capacidade simulada</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num" data-counter="4.2" data-prefix="R$" data-suffix=" bi" data-decimals="1">0</div>
+            <div class="hero-stat-label">Economia gerada</div>
           </div>
         </div>
       </div>
@@ -3312,6 +3315,46 @@ footer {
      JAVASCRIPT
 ══════════════════════════════════════════════ -->
 <script>
+/* ── Animated Counters (Intersection Observer) ── */
+(function() {
+  function animateCounter(el) {
+    const target = parseFloat(el.dataset.counter);
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    const decimals = parseInt(el.dataset.decimals) || 0;
+    const duration = 2000;
+    const startTime = performance.now();
+
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo for a satisfying deceleration
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const current = eased * target;
+
+      el.textContent = prefix + current.toFixed(decimals).replace('.', ',') + suffix;
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  var counters = document.querySelectorAll('[data-counter]');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        animateCounter(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  counters.forEach(function(el) { observer.observe(el); });
+})();
+
 /* ── Loader ── */
 window.addEventListener('load', () => {
   setTimeout(() => {
