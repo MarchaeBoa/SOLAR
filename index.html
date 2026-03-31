@@ -1113,6 +1113,177 @@ section { padding: 110px 0; position: relative; }
 .faq-item.open .faq-a { max-height:200px; padding:0 28px 22px; }
 
 /* ══════════════════════════════════════════════
+   SIMULAÇÃO VISUAL DE TELHADO
+══════════════════════════════════════════════ */
+#roof-sim {
+  background: linear-gradient(180deg, var(--deep-navy) 0%, var(--midnight) 100%);
+  padding: 110px 0;
+}
+.roof-sim-wrap {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+  align-items: start;
+}
+.roof-sim-form {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: 20px; padding: 40px 36px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.3);
+}
+.roof-sim-form-title {
+  font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+  color: var(--ice); margin-bottom: 28px;
+  display: flex; align-items: center; gap: 10px;
+}
+.roof-sim-form-title::before {
+  content: ''; width: 4px; height: 22px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--gold-light), var(--gold));
+}
+.roof-field { margin-bottom: 22px; }
+.roof-field label {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 8px;
+  font-family: 'Syne', sans-serif;
+}
+.roof-field input[type="number"],
+.roof-field select {
+  width: 100%; padding: 14px 18px; border-radius: var(--radius);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  color: var(--ice); font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+  outline: none; transition: var(--transition);
+  -webkit-appearance: none; appearance: none;
+}
+.roof-field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4A843' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+  cursor: pointer;
+}
+.roof-field select option { background: var(--deep-navy); color: var(--ice); }
+.roof-field input[type="number"]:focus,
+.roof-field select:focus {
+  border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow);
+}
+.roof-field input[type="number"]::-webkit-inner-spin-button,
+.roof-field input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+/* Slider inclinação */
+.roof-slider-wrap {
+  display: flex; align-items: center; gap: 14px;
+}
+.roof-slider {
+  -webkit-appearance: none; appearance: none; flex: 1; height: 6px;
+  border-radius: 99px; outline: none;
+  background: linear-gradient(to right, var(--gold) 0%, var(--border) 0%);
+  transition: background 0.1s;
+}
+.roof-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 14px rgba(212,168,67,0.5);
+  cursor: pointer; border: 3px solid var(--deep-navy);
+}
+.roof-slider::-moz-range-thumb {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 14px rgba(212,168,67,0.5);
+  cursor: pointer; border: 3px solid var(--deep-navy);
+}
+.roof-slider-val {
+  font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+  color: var(--gold-light); min-width: 48px; text-align: right;
+}
+
+/* Tipo instalação radio cards */
+.roof-type-options {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+.roof-type-opt {
+  position: relative; cursor: pointer;
+}
+.roof-type-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.roof-type-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 18px 10px; border-radius: var(--radius);
+  background: var(--glass); border: 1px solid var(--border);
+  transition: var(--transition); text-align: center;
+}
+.roof-type-card:hover { border-color: rgba(238,244,255,0.2); }
+.roof-type-opt input:checked + .roof-type-card {
+  border-color: var(--gold); background: rgba(212,168,67,0.08);
+  box-shadow: 0 0 20px rgba(212,168,67,0.15);
+}
+.roof-type-icon { font-size: 1.6rem; }
+.roof-type-label {
+  font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 600;
+  color: var(--ice); letter-spacing: 0.02em;
+}
+
+/* Resultados */
+.roof-sim-output {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: 20px; padding: 40px 36px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.3);
+}
+.roof-results-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 28px;
+}
+.roof-result-card {
+  padding: 20px 16px; border-radius: var(--radius);
+  background: var(--glass); border: 1px solid var(--border);
+  text-align: center; transition: var(--transition);
+}
+.roof-result-card:hover { border-color: var(--border-gold); background: rgba(212,168,67,0.04); }
+.roof-result-icon { font-size: 1.3rem; margin-bottom: 6px; }
+.roof-result-label {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 4px; font-family: 'Syne', sans-serif; font-weight: 600;
+}
+.roof-result-value {
+  font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+  line-height: 1.2;
+}
+.roof-result-value.gold { color: var(--gold-light); }
+.roof-result-value.green { color: var(--green); }
+.roof-result-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+/* SVG Diagram */
+.roof-diagram-title {
+  font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.roof-diagram-title::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+}
+.roof-diagram-box {
+  background: rgba(6,12,20,0.6); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden;
+}
+.roof-diagram-box svg { width: 100%; height: auto; display: block; }
+.roof-diagram-legend {
+  display: flex; gap: 18px; margin-top: 12px; justify-content: center;
+}
+.roof-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.72rem; color: var(--muted);
+}
+.roof-legend-dot {
+  width: 10px; height: 10px; border-radius: 3px;
+}
+
+@media (max-width: 900px) {
+  .roof-sim-wrap { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .roof-sim-form, .roof-sim-output { padding: 28px 20px; }
+  .roof-type-options { grid-template-columns: 1fr; }
+  .roof-results-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════
    CTA FINAL
 ══════════════════════════════════════════════ */
 #cta-final {
@@ -1964,6 +2135,123 @@ footer {
 </section>
 
 <!-- ══════════════════════════════════════════════
+     SIMULAÇÃO VISUAL DE TELHADO
+══════════════════════════════════════════════ -->
+<section id="roof-sim">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Simulação de telhado</div>
+      <h2>Visualize seus painéis<br><span class="grad-gold">no seu telhado</span></h2>
+      <p style="color:var(--muted); max-width:560px; margin:12px auto 0;">Configure os parâmetros do seu telhado e veja em tempo real o layout estimado de painéis solares.</p>
+    </div>
+
+    <div class="roof-sim-wrap">
+      <!-- Formulário -->
+      <div class="roof-sim-form reveal">
+        <div class="roof-sim-form-title">Parâmetros do telhado</div>
+
+        <div class="roof-field">
+          <label for="roofArea">Área disponível (m²)</label>
+          <input type="number" id="roofArea" min="5" max="10000" step="1" value="40" placeholder="Ex: 40">
+        </div>
+
+        <div class="roof-field">
+          <label for="roofOrientation">Orientação do telhado</label>
+          <select id="roofOrientation">
+            <option value="norte">Norte</option>
+            <option value="sul">Sul</option>
+            <option value="leste">Leste</option>
+            <option value="oeste">Oeste</option>
+          </select>
+        </div>
+
+        <div class="roof-field">
+          <label>Inclinação</label>
+          <div class="roof-slider-wrap">
+            <input type="range" id="roofTilt" class="roof-slider" min="0" max="45" step="1" value="20">
+            <span class="roof-slider-val" id="roofTiltVal">20°</span>
+          </div>
+        </div>
+
+        <div class="roof-field">
+          <label>Tipo de instalação</label>
+          <div class="roof-type-options">
+            <label class="roof-type-opt">
+              <input type="radio" name="roofType" value="telhado" checked>
+              <div class="roof-type-card">
+                <span class="roof-type-icon">🏠</span>
+                <span class="roof-type-label">Telhado</span>
+              </div>
+            </label>
+            <label class="roof-type-opt">
+              <input type="radio" name="roofType" value="solo">
+              <div class="roof-type-card">
+                <span class="roof-type-icon">🌿</span>
+                <span class="roof-type-label">Solo</span>
+              </div>
+            </label>
+            <label class="roof-type-opt">
+              <input type="radio" name="roofType" value="marquise">
+              <div class="roof-type-card">
+                <span class="roof-type-icon">🏗️</span>
+                <span class="roof-type-label">Marquise</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultados + Diagrama -->
+      <div class="roof-sim-output reveal">
+        <div class="roof-results-grid" id="roofResults">
+          <div class="roof-result-card">
+            <div class="roof-result-icon">⬛</div>
+            <div class="roof-result-label">Painéis estimados</div>
+            <div class="roof-result-value gold" id="roofPanelCount">18</div>
+            <div class="roof-result-sub">unidades de 2.1m²</div>
+          </div>
+          <div class="roof-result-card">
+            <div class="roof-result-icon">⚡</div>
+            <div class="roof-result-label">Potência do sistema</div>
+            <div class="roof-result-value green" id="roofPowerKwp">9.9</div>
+            <div class="roof-result-sub">kWp</div>
+          </div>
+          <div class="roof-result-card">
+            <div class="roof-result-icon">☀️</div>
+            <div class="roof-result-label">Geração mensal</div>
+            <div class="roof-result-value gold" id="roofMonthlyKwh">1,287</div>
+            <div class="roof-result-sub">kWh/mês</div>
+          </div>
+          <div class="roof-result-card">
+            <div class="roof-result-icon">💰</div>
+            <div class="roof-result-label">Economia mensal</div>
+            <div class="roof-result-value green" id="roofMonthlySavings">R$ 1.094</div>
+            <div class="roof-result-sub">estimada</div>
+          </div>
+        </div>
+
+        <div class="roof-diagram-title">Layout dos painéis</div>
+        <div class="roof-diagram-box">
+          <svg id="roofDiagram" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="roof-diagram-legend">
+          <div class="roof-legend-item">
+            <div class="roof-legend-dot" style="background:rgba(212,168,67,0.7)"></div>
+            Painel solar
+          </div>
+          <div class="roof-legend-item">
+            <div class="roof-legend-dot" style="background:rgba(238,244,255,0.08)"></div>
+            Área disponível
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
      CTA FINAL
 ══════════════════════════════════════════════ -->
 <section id="cta-final">
@@ -2710,6 +2998,196 @@ function calcReset() {
 
 // Observe calc section reveals
 document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revealObserver.observe(el); });
+
+/* ══════════════════════════════════════════════
+   SIMULAÇÃO VISUAL DE TELHADO
+══════════════════════════════════════════════ */
+(function() {
+  var PANEL_W = 1.7;   // metros
+  var PANEL_H = 1.0;   // metros
+  var PANEL_AREA = PANEL_W * PANEL_H; // 1.7 m²
+  var PANEL_WP = 550;  // Watts por painel (550W moderno)
+  var GAP = 0.15;      // espaçamento entre painéis em metros
+  var TARIFF = 0.85;   // R$/kWh
+
+  // Fatores de eficiência por orientação
+  var ORIENT_FACTOR = { norte: 1.0, sul: 0.75, leste: 0.88, oeste: 0.88 };
+  // Horas de sol pico média (Brasil)
+  var HSP_BASE = 4.8;
+  // Fator de tipo de instalação
+  var TYPE_FACTOR = { telhado: 0.85, solo: 0.90, marquise: 0.82 };
+
+  var areaInput    = document.getElementById('roofArea');
+  var orientSelect = document.getElementById('roofOrientation');
+  var tiltSlider   = document.getElementById('roofTilt');
+  var tiltVal      = document.getElementById('roofTiltVal');
+  var panelCountEl = document.getElementById('roofPanelCount');
+  var powerEl      = document.getElementById('roofPowerKwp');
+  var monthlyEl    = document.getElementById('roofMonthlyKwh');
+  var savingsEl    = document.getElementById('roofMonthlySavings');
+  var svgEl        = document.getElementById('roofDiagram');
+
+  function getType() {
+    var checked = document.querySelector('input[name="roofType"]:checked');
+    return checked ? checked.value : 'telhado';
+  }
+
+  function calcTiltFactor(tilt) {
+    // Optimal ~22° for Brazil; efficiency drops as you deviate
+    var optimal = 22;
+    var deviation = Math.abs(tilt - optimal);
+    return 1 - (deviation * 0.004); // ~0.4% loss per degree
+  }
+
+  function calculate() {
+    var area = parseFloat(areaInput.value) || 0;
+    if (area < 2) area = 2;
+    var orient = orientSelect.value;
+    var tilt = parseInt(tiltSlider.value);
+    var type = getType();
+
+    // Usable area (accounting for spacing and margins)
+    var usableFactor = TYPE_FACTOR[type] || 0.85;
+    var usableArea = area * usableFactor;
+
+    // Number of panels (area per panel + gap allowance)
+    var effectivePanelArea = (PANEL_W + GAP) * (PANEL_H + GAP);
+    var panels = Math.floor(usableArea / effectivePanelArea);
+    if (panels < 1 && area >= 2) panels = 1;
+
+    // Power in kWp
+    var powerKwp = (panels * PANEL_WP) / 1000;
+
+    // Monthly generation (kWh)
+    var orientFactor = ORIENT_FACTOR[orient] || 1.0;
+    var tiltFactor = calcTiltFactor(tilt);
+    var dailyKwh = powerKwp * HSP_BASE * orientFactor * tiltFactor;
+    var monthlyKwh = dailyKwh * 30;
+
+    // Savings
+    var savings = monthlyKwh * TARIFF;
+
+    // Update UI
+    panelCountEl.textContent = panels;
+    powerEl.textContent = powerKwp.toFixed(1);
+    monthlyEl.textContent = Math.round(monthlyKwh).toLocaleString('pt-BR');
+    savingsEl.textContent = 'R$ ' + Math.round(savings).toLocaleString('pt-BR');
+
+    // Draw SVG
+    drawDiagram(panels, area);
+  }
+
+  function drawDiagram(panels, area) {
+    var svgW = 400, svgH = 300;
+    var padding = 20;
+
+    // Determine roof rectangle proportions
+    var ratio = Math.sqrt(area);
+    var roofW = svgW - padding * 2;
+    var roofH = svgH - padding * 2;
+
+    // Panel grid layout
+    var cellW = PANEL_W + GAP;
+    var cellH = PANEL_H + GAP;
+    var cols = Math.floor((ratio * (roofW / ratio)) / (cellW * (roofW / ratio / ratio))) || 1;
+
+    // Simpler: compute how many cols/rows fit
+    // Map meters to SVG pixels
+    var sqrtArea = Math.sqrt(area);
+    var scaleX = roofW / (sqrtArea * 1.3);
+    var scaleY = roofH / (sqrtArea * 1.0);
+    var scale = Math.min(scaleX, scaleY);
+
+    var pxPanelW = PANEL_W * scale;
+    var pxPanelH = PANEL_H * scale;
+    var pxGap = GAP * scale;
+
+    cols = Math.floor(roofW / (pxPanelW + pxGap)) || 1;
+    var rows = Math.ceil(panels / cols);
+
+    // Recenter
+    var gridW = cols * (pxPanelW + pxGap) - pxGap;
+    var gridH = rows * (pxPanelH + pxGap) - pxGap;
+    var offsetX = (svgW - gridW) / 2;
+    var offsetY = (svgH - gridH) / 2;
+
+    var html = '';
+
+    // Background roof area
+    html += '<rect x="' + padding + '" y="' + padding + '" width="' + roofW + '" height="' + roofH + '" rx="8" fill="rgba(238,244,255,0.04)" stroke="rgba(238,244,255,0.1)" stroke-width="1" stroke-dasharray="6 3"/>';
+
+    // Grid lines (subtle)
+    for (var gx = padding; gx <= svgW - padding; gx += 40) {
+      html += '<line x1="' + gx + '" y1="' + padding + '" x2="' + gx + '" y2="' + (svgH - padding) + '" stroke="rgba(238,244,255,0.03)" stroke-width="0.5"/>';
+    }
+    for (var gy = padding; gy <= svgH - padding; gy += 40) {
+      html += '<line x1="' + padding + '" y1="' + gy + '" x2="' + (svgW - padding) + '" y2="' + gy + '" stroke="rgba(238,244,255,0.03)" stroke-width="0.5"/>';
+    }
+
+    // Draw panels
+    var count = 0;
+    for (var r = 0; r < rows && count < panels; r++) {
+      for (var c = 0; c < cols && count < panels; c++) {
+        var px = offsetX + c * (pxPanelW + pxGap);
+        var py = offsetY + r * (pxPanelH + pxGap);
+
+        // Clip to roof bounds
+        if (px + pxPanelW > svgW - padding + 2 || py + pxPanelH > svgH - padding + 2) continue;
+
+        // Panel body
+        html += '<rect x="' + px.toFixed(1) + '" y="' + py.toFixed(1) + '" width="' + pxPanelW.toFixed(1) + '" height="' + pxPanelH.toFixed(1) + '" rx="3" fill="rgba(212,168,67,0.18)" stroke="rgba(212,168,67,0.5)" stroke-width="1"/>';
+
+        // Cell lines (horizontal)
+        var cellLines = 3;
+        for (var cl = 1; cl < cellLines; cl++) {
+          var ly = py + (pxPanelH / cellLines) * cl;
+          html += '<line x1="' + (px + 2).toFixed(1) + '" y1="' + ly.toFixed(1) + '" x2="' + (px + pxPanelW - 2).toFixed(1) + '" y2="' + ly.toFixed(1) + '" stroke="rgba(212,168,67,0.25)" stroke-width="0.5"/>';
+        }
+        // Cell lines (vertical center)
+        var mx = px + pxPanelW / 2;
+        html += '<line x1="' + mx.toFixed(1) + '" y1="' + (py + 2).toFixed(1) + '" x2="' + mx.toFixed(1) + '" y2="' + (py + pxPanelH - 2).toFixed(1) + '" stroke="rgba(212,168,67,0.2)" stroke-width="0.5"/>';
+
+        count++;
+      }
+    }
+
+    // Compass indicator
+    var cx = svgW - 48, cy = 42;
+    html += '<circle cx="' + cx + '" cy="' + cy + '" r="18" fill="rgba(6,12,20,0.7)" stroke="rgba(238,244,255,0.12)" stroke-width="1"/>';
+    html += '<text x="' + cx + '" y="' + (cy - 6) + '" text-anchor="middle" fill="' + (orientSelect.value === 'norte' ? '#D4A843' : 'rgba(238,244,255,0.4)') + '" font-size="8" font-family="Syne,sans-serif" font-weight="700">N</text>';
+    html += '<text x="' + cx + '" y="' + (cy + 13) + '" text-anchor="middle" fill="' + (orientSelect.value === 'sul' ? '#D4A843' : 'rgba(238,244,255,0.25)') + '" font-size="7" font-family="Syne,sans-serif">S</text>';
+    html += '<text x="' + (cx - 11) + '" y="' + (cy + 4) + '" text-anchor="middle" fill="' + (orientSelect.value === 'oeste' ? '#D4A843' : 'rgba(238,244,255,0.25)') + '" font-size="7" font-family="Syne,sans-serif">O</text>';
+    html += '<text x="' + (cx + 11) + '" y="' + (cy + 4) + '" text-anchor="middle" fill="' + (orientSelect.value === 'leste' ? '#D4A843' : 'rgba(238,244,255,0.25)') + '" font-size="7" font-family="Syne,sans-serif">L</text>';
+
+    // Panel count label
+    html += '<text x="' + (svgW / 2) + '" y="' + (svgH - 6) + '" text-anchor="middle" fill="rgba(238,244,255,0.35)" font-size="10" font-family="DM Sans,sans-serif">' + count + ' painéis · ' + (area).toFixed(0) + ' m²</text>';
+
+    svgEl.innerHTML = html;
+  }
+
+  // Update tilt slider fill & label
+  function updateTiltSlider() {
+    var val = tiltSlider.value;
+    var pct = (val / 45) * 100;
+    tiltSlider.style.background = 'linear-gradient(to right, var(--gold) ' + pct + '%, var(--border) ' + pct + '%)';
+    tiltVal.textContent = val + '°';
+    calculate();
+  }
+
+  // Event listeners
+  areaInput.addEventListener('input', calculate);
+  orientSelect.addEventListener('change', calculate);
+  tiltSlider.addEventListener('input', updateTiltSlider);
+  document.querySelectorAll('input[name="roofType"]').forEach(function(r) {
+    r.addEventListener('change', calculate);
+  });
+
+  // Init
+  updateTiltSlider();
+
+  // Observe reveals
+  document.querySelectorAll('#roof-sim .reveal').forEach(function(el) { revealObserver.observe(el); });
+})();
 
 /*
  * ══════════════════════════════════════════════
