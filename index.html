@@ -1077,6 +1077,183 @@ section { padding: 110px 0; position: relative; }
 }
 
 /* ══════════════════════════════════════════════
+   EQUIPAMENTOS
+══════════════════════════════════════════════ */
+#equipamentos {
+  background: linear-gradient(180deg, var(--midnight) 0%, var(--deep-navy) 50%, var(--midnight) 100%);
+}
+
+/* Tabs */
+.equip-tabs {
+  display: flex; justify-content: center; gap: 8px;
+  margin-bottom: 50px;
+}
+.equip-tab {
+  font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 600;
+  color: var(--muted); background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: 99px; padding: 12px 28px; cursor: pointer;
+  transition: var(--transition);
+}
+.equip-tab:hover { color: var(--ice); border-color: rgba(238,244,255,0.2); }
+.equip-tab.active {
+  color: var(--midnight); background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  border-color: transparent; box-shadow: 0 4px 24px rgba(212,168,67,0.3);
+}
+
+/* Grid */
+.equip-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  margin-bottom: 40px;
+}
+.equip-grid--hidden { display: none; }
+#equip-inversores { grid-template-columns: repeat(2, 1fr); max-width: 820px; margin-left: auto; margin-right: auto; }
+
+/* Card */
+.equip-card {
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 36px 28px 28px;
+  position: relative; overflow: hidden; text-align: center;
+  transition: var(--transition);
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.equip-card.visible { opacity: 1; transform: translateY(0); }
+.equip-card:nth-child(2) { transition-delay: 0.08s; }
+.equip-card:nth-child(3) { transition-delay: 0.16s; }
+.equip-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--border-gold), var(--green-glow));
+  opacity: 0; transition: var(--transition);
+}
+.equip-card:hover { border-color: var(--border-gold); box-shadow: var(--shadow-gold); }
+.equip-card:hover::before { opacity: 1; }
+
+/* Featured card */
+.equip-card--featured {
+  border-color: var(--border-gold); background: rgba(212,168,67,0.04);
+}
+.equip-card--featured::before { opacity: 1; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+
+/* Selected state */
+.equip-card.selected {
+  border-color: var(--green); box-shadow: 0 0 40px rgba(31,216,164,0.15);
+}
+.equip-card.selected::after {
+  content: '✓'; position: absolute; top: 14px; right: 16px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--green); color: var(--midnight);
+  font-size: 0.85rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Badge */
+.equip-badge {
+  position: absolute; top: 14px; left: 16px;
+  font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); background: rgba(238,244,255,0.06);
+  border: 1px solid var(--border); border-radius: 99px; padding: 4px 12px;
+}
+.equip-badge--gold {
+  color: var(--gold); background: var(--gold-glow); border-color: var(--border-gold);
+}
+
+/* Icon */
+.equip-icon-wrap {
+  width: 64px; height: 64px; border-radius: 16px; margin: 16px auto 20px;
+  background: var(--gold-glow); border: 1px solid var(--border-gold);
+  display: flex; align-items: center; justify-content: center;
+}
+.equip-icon-wrap--green { background: var(--green-glow); border-color: rgba(31,216,164,0.25); }
+.equip-icon { font-size: 1.6rem; }
+
+/* Name & desc */
+.equip-name { font-size: 1.1rem; color: var(--ice); margin-bottom: 8px; }
+.equip-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 22px; min-height: 42px; }
+
+/* Specs */
+.equip-specs {
+  display: flex; flex-direction: column; gap: 0;
+  border-top: 1px solid var(--border); margin-bottom: 24px;
+}
+.equip-spec {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.equip-spec-label { font-size: 0.82rem; color: var(--muted); }
+.equip-spec-value { font-size: 0.88rem; font-weight: 500; color: var(--ice); }
+.equip-spec-value.gold { color: var(--gold); font-weight: 600; }
+
+/* Button */
+.equip-btn {
+  width: 100%; font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 600;
+  color: var(--ice); background: transparent;
+  border: 1px solid var(--border); border-radius: 99px;
+  padding: 13px 24px; cursor: pointer; transition: var(--transition);
+}
+.equip-btn:hover { border-color: var(--green); color: var(--green); background: rgba(31,216,164,0.06); }
+.equip-btn--gold {
+  color: var(--midnight); background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  border-color: transparent; box-shadow: 0 4px 20px rgba(212,168,67,0.3);
+}
+.equip-btn--gold:hover { transform: translateY(-1px); box-shadow: 0 6px 30px rgba(212,168,67,0.45); color: var(--midnight); background: linear-gradient(135deg, var(--gold-light), var(--gold)); }
+
+/* Selected button override */
+.equip-card.selected .equip-btn {
+  color: var(--midnight); background: var(--green); border-color: transparent;
+  box-shadow: 0 4px 20px rgba(31,216,164,0.3);
+}
+.equip-card.selected .equip-btn::after { content: ' ✓'; }
+
+/* Summary box */
+.equip-summary {
+  background: var(--glass-light); border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg); padding: 36px; margin-top: 20px;
+  box-shadow: var(--shadow-gold);
+  animation: equipFadeIn 0.4s ease;
+}
+@keyframes equipFadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.equip-summary-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;
+}
+.equip-summary-header h3 { font-size: 1.2rem; color: var(--ice); }
+.equip-summary-reset {
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+  color: var(--muted); background: none; border: 1px solid var(--border);
+  border-radius: 99px; padding: 8px 18px; cursor: pointer; transition: var(--transition);
+}
+.equip-summary-reset:hover { color: var(--ice); border-color: rgba(238,244,255,0.3); }
+
+.equip-summary-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.equip-summary-item { text-align: center; }
+.equip-summary-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+.equip-summary-value { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--ice); }
+.equip-summary-value.gold { color: var(--gold); }
+.equip-summary-value.green { color: var(--green); }
+
+.equip-summary-note {
+  margin-top: 24px; font-size: 0.75rem; color: var(--muted); text-align: center;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .equip-grid { grid-template-columns: repeat(2, 1fr); }
+  #equip-inversores { grid-template-columns: 1fr; max-width: 420px; }
+  .equip-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .equip-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .equip-tabs { flex-direction: column; align-items: center; }
+  .equip-tab { width: 100%; max-width: 280px; text-align: center; }
+  .equip-summary-grid { grid-template-columns: 1fr; }
+  .equip-summary-header { flex-direction: column; gap: 12px; text-align: center; }
+}
+
+/* ══════════════════════════════════════════════
    FAQ
 ══════════════════════════════════════════════ */
 #faq {
@@ -2066,6 +2243,143 @@ footer {
 <div class="divider"></div>
 
 <!-- ══════════════════════════════════════════════
+     EQUIPAMENTOS — PAINÉIS SOLARES & INVERSORES
+══════════════════════════════════════════════ -->
+<section id="equipamentos">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Equipamentos</div>
+      <h2>Compare e<br><span class="grad-gold">selecione</span></h2>
+      <p>Escolha os equipamentos ideais para o seu projeto. Ao selecionar, o orçamento e a geração estimada são recalculados automaticamente.</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="equip-tabs reveal">
+      <button class="equip-tab active" data-tab="paineis" onclick="switchEquipTab('paineis')">Painéis Solares</button>
+      <button class="equip-tab" data-tab="inversores" onclick="switchEquipTab('inversores')">Inversores</button>
+    </div>
+
+    <!-- Painéis -->
+    <div class="equip-grid" id="equip-paineis">
+      <!-- Monocristalino 400W -->
+      <div class="equip-card reveal" data-type="painel" data-id="mono400">
+        <div class="equip-badge">Popular</div>
+        <div class="equip-icon-wrap"><span class="equip-icon">☀️</span></div>
+        <h3 class="equip-name">Monocristalino 400W</h3>
+        <p class="equip-desc">Alta eficiência para espaços otimizados. Ideal para telhados residenciais.</p>
+        <div class="equip-specs">
+          <div class="equip-spec"><span class="equip-spec-label">Potência</span><span class="equip-spec-value">400 W</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Eficiência</span><span class="equip-spec-value">21,3%</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Garantia</span><span class="equip-spec-value">25 anos</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Preço unit.</span><span class="equip-spec-value gold">R$ 1.150</span></div>
+        </div>
+        <button class="equip-btn" onclick="selectEquip('painel','mono400')">Selecionar</button>
+      </div>
+
+      <!-- Bifacial 450W -->
+      <div class="equip-card equip-card--featured reveal" data-type="painel" data-id="bif450">
+        <div class="equip-badge equip-badge--gold">Recomendado</div>
+        <div class="equip-icon-wrap"><span class="equip-icon">🔆</span></div>
+        <h3 class="equip-name">Bifacial 450W</h3>
+        <p class="equip-desc">Captação frente e verso com até 30% mais geração. Tecnologia de ponta.</p>
+        <div class="equip-specs">
+          <div class="equip-spec"><span class="equip-spec-label">Potência</span><span class="equip-spec-value">450 W</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Eficiência</span><span class="equip-spec-value">22,5%</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Garantia</span><span class="equip-spec-value">30 anos</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Preço unit.</span><span class="equip-spec-value gold">R$ 1.480</span></div>
+        </div>
+        <button class="equip-btn equip-btn--gold" onclick="selectEquip('painel','bif450')">Selecionar</button>
+      </div>
+
+      <!-- Policristalino 350W -->
+      <div class="equip-card reveal" data-type="painel" data-id="poli350">
+        <div class="equip-badge">Econômico</div>
+        <div class="equip-icon-wrap"><span class="equip-icon">🌤️</span></div>
+        <h3 class="equip-name">Policristalino 350W</h3>
+        <p class="equip-desc">Excelente custo-benefício para projetos com mais área disponível.</p>
+        <div class="equip-specs">
+          <div class="equip-spec"><span class="equip-spec-label">Potência</span><span class="equip-spec-value">350 W</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Eficiência</span><span class="equip-spec-value">18,7%</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Garantia</span><span class="equip-spec-value">25 anos</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Preço unit.</span><span class="equip-spec-value gold">R$ 890</span></div>
+        </div>
+        <button class="equip-btn" onclick="selectEquip('painel','poli350')">Selecionar</button>
+      </div>
+    </div>
+
+    <!-- Inversores -->
+    <div class="equip-grid equip-grid--hidden" id="equip-inversores">
+      <!-- String 5kW -->
+      <div class="equip-card reveal" data-type="inversor" data-id="string5">
+        <div class="equip-badge">Residencial</div>
+        <div class="equip-icon-wrap equip-icon-wrap--green"><span class="equip-icon">⚡</span></div>
+        <h3 class="equip-name">Inversor String 5 kW</h3>
+        <p class="equip-desc">Monofásico, ideal para sistemas residenciais de pequeno porte.</p>
+        <div class="equip-specs">
+          <div class="equip-spec"><span class="equip-spec-label">Potência</span><span class="equip-spec-value">5 kW</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Eficiência</span><span class="equip-spec-value">97,5%</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Garantia</span><span class="equip-spec-value">10 anos</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Preço</span><span class="equip-spec-value gold">R$ 3.200</span></div>
+        </div>
+        <button class="equip-btn" onclick="selectEquip('inversor','string5')">Selecionar</button>
+      </div>
+
+      <!-- Híbrido 8kW -->
+      <div class="equip-card equip-card--featured reveal" data-type="inversor" data-id="hibrido8">
+        <div class="equip-badge equip-badge--gold">Recomendado</div>
+        <div class="equip-icon-wrap equip-icon-wrap--green"><span class="equip-icon">🔋</span></div>
+        <h3 class="equip-name">Inversor Híbrido 8 kW</h3>
+        <p class="equip-desc">Compatível com baterias. Bifásico, monitoramento Wi-Fi integrado.</p>
+        <div class="equip-specs">
+          <div class="equip-spec"><span class="equip-spec-label">Potência</span><span class="equip-spec-value">8 kW</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Eficiência</span><span class="equip-spec-value">98,2%</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Garantia</span><span class="equip-spec-value">12 anos</span></div>
+          <div class="equip-spec"><span class="equip-spec-label">Preço</span><span class="equip-spec-value gold">R$ 6.800</span></div>
+        </div>
+        <button class="equip-btn equip-btn--gold" onclick="selectEquip('inversor','hibrido8')">Selecionar</button>
+      </div>
+    </div>
+
+    <!-- Resumo da seleção -->
+    <div class="equip-summary reveal" id="equipSummary" style="display:none">
+      <div class="equip-summary-header">
+        <h3>Resumo da seleção</h3>
+        <button class="equip-summary-reset" onclick="resetEquipSelection()">Limpar seleção</button>
+      </div>
+      <div class="equip-summary-grid">
+        <div class="equip-summary-item">
+          <div class="equip-summary-label">Painel selecionado</div>
+          <div class="equip-summary-value" id="eqSumPainel">—</div>
+        </div>
+        <div class="equip-summary-item">
+          <div class="equip-summary-label">Inversor selecionado</div>
+          <div class="equip-summary-value" id="eqSumInversor">—</div>
+        </div>
+        <div class="equip-summary-item">
+          <div class="equip-summary-label">Qtd. painéis estimada</div>
+          <div class="equip-summary-value gold" id="eqSumQtd">—</div>
+        </div>
+        <div class="equip-summary-item">
+          <div class="equip-summary-label">Geração mensal est.</div>
+          <div class="equip-summary-value green" id="eqSumGen">—</div>
+        </div>
+        <div class="equip-summary-item">
+          <div class="equip-summary-label">Investimento estimado</div>
+          <div class="equip-summary-value gold" id="eqSumInvest">—</div>
+        </div>
+        <div class="equip-summary-item">
+          <div class="equip-summary-label">Payback estimado</div>
+          <div class="equip-summary-value green" id="eqSumPayback">—</div>
+        </div>
+      </div>
+      <div class="equip-summary-note">* Estimativa baseada nos valores da calculadora acima. Ajuste a calculadora para atualizar.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
      FAQ
 ══════════════════════════════════════════════ -->
 <section id="faq">
@@ -2998,6 +3312,214 @@ function calcReset() {
 
 // Observe calc section reveals
 document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revealObserver.observe(el); });
+
+/* ══════════════════════════════════════════════
+   EQUIPAMENTOS — Seleção e recálculo
+══════════════════════════════════════════════ */
+(function() {
+  // Equipment database
+  var paineis = {
+    mono400:  { nome: 'Monocristalino 400W', potencia: 400, eficiencia: 0.213, preco: 1150, garantia: 25 },
+    bif450:   { nome: 'Bifacial 450W',       potencia: 450, eficiencia: 0.225, preco: 1480, garantia: 30 },
+    poli350:  { nome: 'Policristalino 350W',  potencia: 350, eficiencia: 0.187, preco: 890,  garantia: 25 }
+  };
+  var inversores = {
+    string5:  { nome: 'String 5 kW',   potencia: 5000, eficiencia: 0.975, preco: 3200, garantia: 10 },
+    hibrido8: { nome: 'Híbrido 8 kW',  potencia: 8000, eficiencia: 0.982, preco: 6800, garantia: 12 }
+  };
+
+  var selection = { painel: null, inversor: null };
+
+  // Expose functions globally
+  window.switchEquipTab = function(tab) {
+    document.querySelectorAll('.equip-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tab); });
+    document.getElementById('equip-paineis').classList.toggle('equip-grid--hidden', tab !== 'paineis');
+    document.getElementById('equip-inversores').classList.toggle('equip-grid--hidden', tab !== 'inversores');
+  };
+
+  window.selectEquip = function(type, id) {
+    // Toggle selection
+    if (selection[type] === id) {
+      selection[type] = null;
+    } else {
+      selection[type] = id;
+    }
+
+    // Update card visual states
+    var gridId = type === 'painel' ? 'equip-paineis' : 'equip-inversores';
+    document.querySelectorAll('#' + gridId + ' .equip-card').forEach(function(card) {
+      card.classList.toggle('selected', card.dataset.id === selection[type]);
+    });
+
+    recalcEquip();
+  };
+
+  window.resetEquipSelection = function() {
+    selection.painel = null;
+    selection.inversor = null;
+    document.querySelectorAll('.equip-card').forEach(function(c) { c.classList.remove('selected'); });
+    document.getElementById('equipSummary').style.display = 'none';
+  };
+
+  function recalcEquip() {
+    var summary = document.getElementById('equipSummary');
+
+    // Show summary only if at least one item selected
+    if (!selection.painel && !selection.inversor) {
+      summary.style.display = 'none';
+      updateCalcEconomiaWithEquip();
+      return;
+    }
+    summary.style.display = '';
+
+    var pn = selection.painel ? paineis[selection.painel] : null;
+    var inv = selection.inversor ? inversores[selection.inversor] : null;
+
+    document.getElementById('eqSumPainel').textContent = pn ? pn.nome : '—';
+    document.getElementById('eqSumInversor').textContent = inv ? inv.nome : '—';
+
+    if (!pn) {
+      document.getElementById('eqSumQtd').textContent = '—';
+      document.getElementById('eqSumGen').textContent = '—';
+      document.getElementById('eqSumInvest').textContent = '—';
+      document.getElementById('eqSumPayback').textContent = '—';
+      return;
+    }
+
+    // Get values from the calculator if results are showing
+    var calcResult = document.getElementById('calcStepResult');
+    var contaMensal = parseInt(document.getElementById('calcSlider').value) || 500;
+    var estado = document.getElementById('calcEstado').value || 'SP';
+
+    var irradMap = {
+      AC:4.8, AL:5.5, AP:4.9, AM:4.7, BA:5.6, CE:5.7, DF:5.3, ES:4.9,
+      GO:5.3, MA:5.4, MT:5.2, MS:5.1, MG:5.2, PA:4.9, PB:5.6, PR:4.4,
+      PE:5.5, PI:5.7, RJ:4.8, RN:5.7, RS:4.2, RO:4.8, RR:4.9, SC:4.2,
+      SP:4.6, SE:5.5, TO:5.2
+    };
+    var tarifaMap = {
+      AC:0.82, AL:0.80, AP:0.72, AM:0.84, BA:0.78, CE:0.76, DF:0.73, ES:0.77,
+      GO:0.75, MA:0.79, MT:0.80, MS:0.76, MG:0.85, PA:0.81, PB:0.77, PR:0.72,
+      PE:0.79, PI:0.76, RJ:0.88, RN:0.78, RS:0.78, RO:0.80, RR:0.74, SC:0.70,
+      SP:0.80, SE:0.77, TO:0.74
+    };
+
+    var irrad = irradMap[estado] || 4.9;
+    var tarifa = tarifaMap[estado] || 0.80;
+    var consumoMensal = contaMensal / tarifa;
+    var PR = 0.78;
+    var potenciaW = pn.potencia;
+    var potenciaKwp = potenciaW / 1000;
+
+    // Panels needed
+    var kwpNecessario = consumoMensal / (irrad * 30 * PR);
+    var qtdPaineis = Math.ceil(kwpNecessario / potenciaKwp);
+    var kwpReal = qtdPaineis * potenciaKwp;
+
+    // Monthly generation using panel efficiency factor
+    var effFactor = pn.eficiencia / 0.20; // relative to 20% baseline
+    var invEff = inv ? inv.eficiencia : 0.975;
+    var geracaoMensal = Math.round(kwpReal * irrad * 30 * PR * (effFactor > 1 ? 1 + (effFactor - 1) * 0.3 : effFactor) * invEff);
+
+    // Investment
+    var custoPaineis = qtdPaineis * pn.preco;
+    var custoInversor = inv ? inv.preco : 0;
+    var custoInstalacao = kwpReal * 800; // R$800/kWp for BOS + installation
+    var investimentoTotal = custoPaineis + custoInversor + custoInstalacao;
+
+    // Savings & payback
+    var economiaMensal = geracaoMensal * tarifa;
+    var economiaAnual = economiaMensal * 12;
+    var paybackAnos = economiaAnual > 0 ? (investimentoTotal / economiaAnual).toFixed(1) : '—';
+
+    document.getElementById('eqSumQtd').textContent = qtdPaineis + ' un (' + kwpReal.toFixed(1) + ' kWp)';
+    document.getElementById('eqSumGen').textContent = geracaoMensal.toLocaleString('pt-BR') + ' kWh/mês';
+    document.getElementById('eqSumInvest').textContent = 'R$ ' + Math.round(investimentoTotal).toLocaleString('pt-BR');
+    document.getElementById('eqSumPayback').textContent = paybackAnos + ' anos';
+
+    // Update the calc-economia results if they are visible
+    updateCalcEconomiaWithEquip();
+  }
+
+  function updateCalcEconomiaWithEquip() {
+    var calcResult = document.getElementById('calcStepResult');
+    if (!calcResult.classList.contains('active')) return;
+    if (!selection.painel) return;
+
+    var pn = paineis[selection.painel];
+    var inv = selection.inversor ? inversores[selection.inversor] : null;
+
+    var contaMensal = parseInt(document.getElementById('calcSlider').value) || 500;
+    var estado = document.getElementById('calcEstado').value || 'SP';
+    var tipo = document.querySelector('input[name="calcTipo"]:checked').value;
+
+    var irradMap = {
+      AC:4.8, AL:5.5, AP:4.9, AM:4.7, BA:5.6, CE:5.7, DF:5.3, ES:4.9,
+      GO:5.3, MA:5.4, MT:5.2, MS:5.1, MG:5.2, PA:4.9, PB:5.6, PR:4.4,
+      PE:5.5, PI:5.7, RJ:4.8, RN:5.7, RS:4.2, RO:4.8, RR:4.9, SC:4.2,
+      SP:4.6, SE:5.5, TO:5.2
+    };
+    var tarifaMap = {
+      AC:0.82, AL:0.80, AP:0.72, AM:0.84, BA:0.78, CE:0.76, DF:0.73, ES:0.77,
+      GO:0.75, MA:0.79, MT:0.80, MS:0.76, MG:0.85, PA:0.81, PB:0.77, PR:0.72,
+      PE:0.79, PI:0.76, RJ:0.88, RN:0.78, RS:0.78, RO:0.80, RR:0.74, SC:0.70,
+      SP:0.80, SE:0.77, TO:0.74
+    };
+
+    var irrad = irradMap[estado] || 4.9;
+    var tarifa = tarifaMap[estado] || 0.80;
+    var consumoMensal = contaMensal / tarifa;
+    var offset = tipo === 'rural' ? 1.0 : (tipo === 'comercial' ? 0.95 : 0.90);
+    var geracaoNecessaria = consumoMensal * offset;
+    var PR = 0.78;
+    var potenciaKwp = pn.potencia / 1000;
+
+    var kwpNecessario = geracaoNecessaria / (irrad * 30 * PR);
+    var qtdPaineis = Math.ceil(kwpNecessario / potenciaKwp);
+    var kwpReal = qtdPaineis * potenciaKwp;
+
+    var invEff = inv ? inv.eficiencia : 0.975;
+    var effFactor = pn.eficiencia / 0.20;
+    var geracaoMensal = Math.round(kwpReal * irrad * 30 * PR * (effFactor > 1 ? 1 + (effFactor - 1) * 0.3 : effFactor) * invEff);
+
+    var ecoMensal = geracaoMensal * tarifa;
+    var ecoAnual = ecoMensal * 12;
+
+    var custoPaineis = qtdPaineis * pn.preco;
+    var custoInversor = inv ? inv.preco : 0;
+    var custoInstalacao = kwpReal * 800;
+    var investimento = custoPaineis + custoInversor + custoInstalacao;
+
+    var paybackAnos = investimento / ecoAnual;
+    var co2Anual = (geracaoMensal * 12 / 1000) * 0.075;
+
+    // Update the calculator result cards
+    document.getElementById('calcResEco').textContent = 'R$ ' + Math.round(ecoAnual).toLocaleString('pt-BR');
+    document.getElementById('calcResEcoSub').textContent = 'R$ ' + Math.round(ecoMensal).toLocaleString('pt-BR') + '/mês · ' + pn.nome;
+
+    document.getElementById('calcResPanels').textContent = qtdPaineis + ' painéis';
+    document.getElementById('calcResPanelsSub').textContent = kwpReal.toFixed(1) + ' kWp · ' + pn.potencia + 'W cada' + (inv ? ' · ' + inv.nome : '');
+
+    document.getElementById('calcResPayback').textContent = paybackAnos.toFixed(1) + ' anos';
+    document.getElementById('calcResPaybackSub').textContent = 'Investimento: ~R$ ' + Math.round(investimento).toLocaleString('pt-BR');
+
+    document.getElementById('calcResCO2').textContent = co2Anual.toFixed(1) + ' ton';
+    document.getElementById('calcResCO2Sub').textContent = 'Equivale a ' + Math.round(co2Anual * 7.4) + ' árvores plantadas';
+  }
+
+  // Re-run equipment calc when the main calculator submits
+  var origCalcSubmit = window.calcSubmit;
+  window.calcSubmit = function() {
+    origCalcSubmit();
+    // After calc finishes, if equipment is selected, override with equipment-specific values
+    if (selection.painel) {
+      setTimeout(function() { updateCalcEconomiaWithEquip(); }, 50);
+    }
+  };
+
+  // Observe reveals in equipment section
+  document.querySelectorAll('#equipamentos .reveal').forEach(function(el) { revealObserver.observe(el); });
+})();
 
 /* ══════════════════════════════════════════════
    SIMULAÇÃO VISUAL DE TELHADO
