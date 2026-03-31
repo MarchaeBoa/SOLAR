@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarMap AI — Qualificação de Lead</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --midnight:    #060C14;
+  --deep-navy:   #0A1628;
+  --navy:        #0D1F3C;
+  --navy-mid:    #112240;
+  --gold:        #D4A843;
+  --gold-light:  #F0C96B;
+  --gold-glow:   rgba(212,168,67,0.18);
+  --green:       #1FD8A4;
+  --green-dim:   #12A07A;
+  --green-glow:  rgba(31,216,164,0.15);
+  --ice:         #EEF4FF;
+  --white:       #FFFFFF;
+  --muted:       rgba(238,244,255,0.55);
+  --border:      rgba(238,244,255,0.08);
+  --border-gold: rgba(212,168,67,0.25);
+  --glass:       rgba(13,31,60,0.55);
+  --glass-light: rgba(238,244,255,0.04);
+  --shadow-gold: 0 0 60px rgba(212,168,67,0.12);
+  --radius:      14px;
+  --radius-lg:   22px;
+  --transition:  0.35s cubic-bezier(0.22,1,0.36,1);
+  --error:       #FF5F57;
+  --error-glow:  rgba(255,95,87,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--midnight);
+  color: var(--ice);
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--midnight); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 99px; }
+
+h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; font-weight: 700; line-height: 1.18; }
+
+.grad-gold {
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #B8882E 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.grad-green {
+  background: linear-gradient(135deg, #5AFAC8 0%, var(--green) 60%, var(--green-dim) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+/* ── Background decoration ── */
+body::before {
+  content: '';
+  position: fixed; top: -40%; left: -20%;
+  width: 80vw; height: 80vw;
+  background: radial-gradient(circle, rgba(212,168,67,0.06) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed; bottom: -30%; right: -15%;
+  width: 60vw; height: 60vw;
+  background: radial-gradient(circle, rgba(31,216,164,0.04) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Form Container ── */
+.form-container {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 620px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-gold), 0 30px 80px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.form-header {
+  padding: 32px 36px 0;
+  text-align: center;
+}
+
+.form-header .logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.form-header h2 {
+  font-size: clamp(1.3rem, 2.5vw, 1.65rem);
+  margin-bottom: 4px;
+}
+
+.form-header p {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+/* ── Progress Bar ── */
+.progress-section {
+  padding: 24px 36px 0;
+}
+
+.progress-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 8px;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.step-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 2px solid var(--border);
+  color: var(--muted);
+  background: transparent;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.step-dot.active {
+  border-color: var(--gold);
+  color: var(--midnight);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 20px rgba(212,168,67,0.3);
+}
+
+.step-dot.completed {
+  border-color: var(--green);
+  color: var(--white);
+  background: var(--green);
+  box-shadow: 0 0 15px rgba(31,216,164,0.25);
+}
+
+.step-line {
+  width: 40px; height: 2px;
+  background: var(--border);
+  transition: var(--transition);
+}
+
+.step-line.completed {
+  background: var(--green);
+}
+
+.progress-label {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.progress-label span {
+  color: var(--gold);
+  font-weight: 500;
+}
+
+/* ── Form Body ── */
+.form-body {
+  padding: 28px 36px 32px;
+  position: relative;
+  min-height: 320px;
+}
+
+.form-step {
+  display: none;
+  animation: fadeSlideIn 0.4s cubic-bezier(0.22,1,0.36,1);
+}
+
+.form-step.active {
+  display: block;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.step-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-title .icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  background: var(--gold-glow);
+  border: 1px solid var(--border-gold);
+}
+
+/* ── Form Fields ── */
+.field-group {
+  margin-bottom: 18px;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.field-label .required {
+  color: var(--gold);
+}
+
+.field-input,
+.field-select {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  color: var(--ice);
+  background: rgba(6,12,20,0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field-input::placeholder {
+  color: rgba(238,244,255,0.25);
+}
+
+.field-input:focus,
+.field-select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,168,67,0.08);
+  background: rgba(6,12,20,0.8);
+}
+
+.field-input.invalid,
+.field-select.invalid {
+  border-color: var(--error);
+  box-shadow: 0 0 0 3px var(--error-glow);
+}
+
+.field-error {
+  font-size: 0.76rem;
+  color: var(--error);
+  margin-top: 4px;
+  display: none;
+}
+
+.field-error.visible {
+  display: block;
+}
+
+.field-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23D4A843' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+.field-select option {
+  background: var(--deep-navy);
+  color: var(--ice);
+}
+
+/* ── Pill Selector (radio group styled as pills) ── */
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-option {
+  position: relative;
+}
+
+.pill-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pill-option label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: rgba(6,12,20,0.4);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.pill-option label:hover {
+  border-color: rgba(238,244,255,0.2);
+  color: var(--ice);
+}
+
+.pill-option input:checked + label {
+  background: var(--gold-glow);
+  border-color: var(--border-gold);
+  color: var(--gold-light);
+}
+
+/* ── Row (2 fields side by side) ── */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Buttons ── */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.btn-next {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--midnight);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  border: none;
+  border-radius: 99px;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 30px rgba(212,168,67,0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-next::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent);
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.btn-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(212,168,67,0.5);
+}
+.btn-next:hover::after { opacity: 1; }
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ice);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 14px 24px;
+  cursor: pointer;
+  transition: var(--transition);
+  backdrop-filter: blur(8px);
+}
+
+.btn-back:hover {
+  border-color: rgba(238,244,255,0.3);
+  background: rgba(238,244,255,0.06);
+}
+
+/* ── Confirmation Screen ── */
+.confirmation {
+  text-align: center;
+  animation: fadeSlideIn 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+
+.confirmation-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--green-glow);
+  border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 2rem;
+  animation: pulseGreen 2s ease-in-out infinite;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31,216,164,0.3); }
+  50%      { box-shadow: 0 0 0 14px rgba(31,216,164,0); }
+}
+
+.confirmation h3 {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.confirmation p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-bottom: 28px;
+}
+
+/* ── Summary Card ── */
+.summary-card {
+  background: rgba(6,12,20,0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.summary-card h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-row:last-child {
+  border-bottom: none;
+}
+
+.summary-row .label {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.summary-row .value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ice);
+  text-align: right;
+  max-width: 55%;
+  word-break: break-word;
+}
+
+.btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ice);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-new:hover {
+  border-color: rgba(238,244,255,0.3);
+  background: rgba(238,244,255,0.06);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  body { padding: 16px 10px; }
+  .form-header { padding: 24px 20px 0; }
+  .progress-section { padding: 20px 20px 0; }
+  .form-body { padding: 22px 20px 28px; }
+  .step-line { width: 24px; }
+  .field-row { grid-template-columns: 1fr; gap: 0; }
+  .form-actions { flex-direction: column-reverse; }
+  .btn-back { justify-content: center; }
+  .summary-row { flex-direction: column; gap: 2px; }
+  .summary-row .value { text-align: left; max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="form-container">
+
+  <!-- Header -->
+  <div class="form-header">
+    <div class="logo"><span class="grad-gold">SolarMap</span> AI</div>
+    <h2>Qualificação de <span class="grad-gold">Lead</span></h2>
+    <p>Preencha o formulário para receber uma proposta personalizada</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-steps">
+      <div class="step-indicator">
+        <div class="step-dot active" data-step="1">1</div>
+        <div class="step-line" data-line="1"></div>
+        <div class="step-dot" data-step="2">2</div>
+        <div class="step-line" data-line="2"></div>
+        <div class="step-dot" data-step="3">3</div>
+        <div class="step-line" data-line="3"></div>
+        <div class="step-dot" data-step="4">4</div>
+      </div>
+    </div>
+    <div class="progress-label">Etapa <span id="currentStepLabel">1</span> de <span>4</span></div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-body">
+
+    <!-- Step 1: Dados pessoais -->
+    <div class="form-step active" data-step="1">
+      <div class="step-title">
+        <div class="icon">👤</div>
+        Seus dados
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Nome completo <span class="required">*</span></label>
+        <input type="text" class="field-input" id="nome" placeholder="Ex: João Silva" autocomplete="name">
+        <div class="field-error" id="nome-error">Informe seu nome completo</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">E-mail <span class="required">*</span></label>
+          <input type="email" class="field-input" id="email" placeholder="seu@email.com" autocomplete="email">
+          <div class="field-error" id="email-error">Informe um e-mail válido</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Telefone <span class="required">*</span></label>
+          <input type="tel" class="field-input" id="telefone" placeholder="(11) 99999-9999" autocomplete="tel">
+          <div class="field-error" id="telefone-error">Informe um telefone válido</div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-next" onclick="nextStep()">
+          Continuar <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Sobre o projeto -->
+    <div class="form-step" data-step="2">
+      <div class="step-title">
+        <div class="icon">⚡</div>
+        Sobre o projeto
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Tipo de projeto <span class="required">*</span></label>
+        <div class="pill-group">
+          <div class="pill-option">
+            <input type="radio" name="tipoProjeto" id="tipo-residencial" value="Residencial">
+            <label for="tipo-residencial">🏠 Residencial</label>
+          </div>
+          <div class="pill-option">
+            <input type="radio" name="tipoProjeto" id="tipo-comercial" value="Comercial">
+            <label for="tipo-comercial">🏢 Comercial</label>
+          </div>
+          <div class="pill-option">
+            <input type="radio" name="tipoProjeto" id="tipo-industrial" value="Industrial">
+            <label for="tipo-industrial">🏭 Industrial</label>
+          </div>
+          <div class="pill-option">
+            <input type="radio" name="tipoProjeto" id="tipo-rural" value="Rural / Agronegócio">
+            <label for="tipo-rural">🌾 Rural</label>
+          </div>
+          <div class="pill-option">
+            <input type="radio" name="tipoProjeto" id="tipo-condominio" value="Condomínio">
+            <label for="tipo-condominio">🏘️ Condomínio</label>
+          </div>
+        </div>
+        <div class="field-error" id="tipoProjeto-error">Selecione o tipo de projeto</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Valor médio da conta de luz (R$) <span class="required">*</span></label>
+        <input type="text" class="field-input" id="valorConta" placeholder="Ex: R$ 450,00" inputmode="numeric">
+        <div class="field-error" id="valorConta-error">Informe o valor da conta de luz</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-back" onclick="prevStep()">
+          <span>←</span> Voltar
+        </button>
+        <button type="button" class="btn-next" onclick="nextStep()">
+          Continuar <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Perfil e urgência -->
+    <div class="form-step" data-step="3">
+      <div class="step-title">
+        <div class="icon">🏡</div>
+        Perfil e urgência
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Você é proprietário ou locatário? <span class="required">*</span></label>
+        <div class="pill-group">
+          <div class="pill-option">
+            <input type="radio" name="propriedade" id="prop-proprietario" value="Proprietário">
+            <label for="prop-proprietario">🔑 Proprietário</label>
+          </div>
+          <div class="pill-option">
+            <input type="radio" name="propriedade" id="prop-locatario" value="Locatário">
+            <label for="prop-locatario">📋 Locatário</label>
+          </div>
+        </div>
+        <div class="field-error" id="propriedade-error">Selecione uma opção</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Urgência da instalação <span class="required">*</span></label>
+        <select class="field-select" id="urgencia">
+          <option value="" disabled selected>Selecione a urgência</option>
+          <option value="Imediato">Imediato</option>
+          <option value="3 meses">Em até 3 meses</option>
+          <option value="6 meses">Em até 6 meses</option>
+          <option value="Só pesquisando">Só pesquisando</option>
+        </select>
+        <div class="field-error" id="urgencia-error">Selecione a urgência</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-back" onclick="prevStep()">
+          <span>←</span> Voltar
+        </button>
+        <button type="button" class="btn-next" onclick="nextStep()">
+          Continuar <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Origem -->
+    <div class="form-step" data-step="4">
+      <div class="step-title">
+        <div class="icon">📣</div>
+        Últimos detalhes
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Como conheceu a SolarMap AI? <span class="required">*</span></label>
+        <select class="field-select" id="origem">
+          <option value="" disabled selected>Selecione uma opção</option>
+          <option value="Google">Google / Busca online</option>
+          <option value="Instagram">Instagram</option>
+          <option value="Facebook">Facebook</option>
+          <option value="YouTube">YouTube</option>
+          <option value="LinkedIn">LinkedIn</option>
+          <option value="Indicação">Indicação de amigo / conhecido</option>
+          <option value="Evento">Evento / Feira</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <div class="field-error" id="origem-error">Selecione como nos conheceu</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-back" onclick="prevStep()">
+          <span>←</span> Voltar
+        </button>
+        <button type="button" class="btn-next" onclick="submitForm()">
+          Enviar <span>✓</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Confirmation -->
+    <div class="form-step" data-step="confirm" id="confirmationStep">
+      <div class="confirmation">
+        <div class="confirmation-icon">✓</div>
+        <h3>Obrigado, <span class="grad-green" id="confirmName"></span>!</h3>
+        <p>Recebemos seus dados com sucesso. Nossa equipe entrará em contato em breve pelo e-mail ou telefone informado.</p>
+
+        <div class="summary-card">
+          <h4>📋 Resumo do cadastro</h4>
+          <div id="summaryContent"></div>
+        </div>
+
+        <button type="button" class="btn-new" onclick="resetForm()">
+          ← Novo cadastro
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var currentStep = 1;
+  var totalSteps = 4;
+
+  // ── Phone mask ──
+  var telefoneInput = document.getElementById('telefone');
+  telefoneInput.addEventListener('input', function() {
+    var v = this.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 6) {
+      this.value = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+    } else if (v.length > 2) {
+      this.value = '(' + v.slice(0,2) + ') ' + v.slice(2);
+    } else if (v.length > 0) {
+      this.value = '(' + v;
+    }
+  });
+
+  // ── Currency mask ──
+  var valorInput = document.getElementById('valorConta');
+  valorInput.addEventListener('input', function() {
+    var v = this.value.replace(/\D/g, '');
+    if (!v) { this.value = ''; return; }
+    var num = parseInt(v, 10);
+    this.value = 'R$ ' + (num / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  });
+
+  // ── Clear error on input ──
+  document.querySelectorAll('.field-input, .field-select').forEach(function(el) {
+    el.addEventListener('input', function() {
+      this.classList.remove('invalid');
+      var errEl = document.getElementById(this.id + '-error');
+      if (errEl) errEl.classList.remove('visible');
+    });
+    el.addEventListener('change', function() {
+      this.classList.remove('invalid');
+      var errEl = document.getElementById(this.id + '-error');
+      if (errEl) errEl.classList.remove('visible');
+    });
+  });
+
+  document.querySelectorAll('input[type="radio"]').forEach(function(el) {
+    el.addEventListener('change', function() {
+      var errEl = document.getElementById(this.name + '-error');
+      if (errEl) errEl.classList.remove('visible');
+    });
+  });
+
+  // ── Validation ──
+  function showError(id) {
+    var input = document.getElementById(id);
+    var errEl = document.getElementById(id + '-error');
+    if (input) input.classList.add('invalid');
+    if (errEl) errEl.classList.add('visible');
+  }
+
+  function showRadioError(name) {
+    var errEl = document.getElementById(name + '-error');
+    if (errEl) errEl.classList.add('visible');
+  }
+
+  function validateStep(step) {
+    var valid = true;
+
+    if (step === 1) {
+      var nome = document.getElementById('nome').value.trim();
+      var email = document.getElementById('email').value.trim();
+      var telefone = document.getElementById('telefone').value.trim();
+
+      if (nome.length < 3) { showError('nome'); valid = false; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('email'); valid = false; }
+      if (telefone.replace(/\D/g, '').length < 10) { showError('telefone'); valid = false; }
+    }
+
+    if (step === 2) {
+      var tipo = document.querySelector('input[name="tipoProjeto"]:checked');
+      var valor = document.getElementById('valorConta').value.trim();
+
+      if (!tipo) { showRadioError('tipoProjeto'); valid = false; }
+      if (!valor || valor === 'R$ 0,00') { showError('valorConta'); valid = false; }
+    }
+
+    if (step === 3) {
+      var prop = document.querySelector('input[name="propriedade"]:checked');
+      var urgencia = document.getElementById('urgencia').value;
+
+      if (!prop) { showRadioError('propriedade'); valid = false; }
+      if (!urgencia) { showError('urgencia'); valid = false; }
+    }
+
+    if (step === 4) {
+      var origem = document.getElementById('origem').value;
+      if (!origem) { showError('origem'); valid = false; }
+    }
+
+    return valid;
+  }
+
+  // ── Navigation ──
+  function updateProgress() {
+    document.querySelectorAll('.step-dot').forEach(function(dot) {
+      var s = parseInt(dot.getAttribute('data-step'));
+      dot.classList.remove('active', 'completed');
+      if (s === currentStep) dot.classList.add('active');
+      else if (s < currentStep) dot.classList.add('completed');
+    });
+
+    document.querySelectorAll('.step-line').forEach(function(line) {
+      var l = parseInt(line.getAttribute('data-line'));
+      line.classList.toggle('completed', l < currentStep);
+    });
+
+    document.getElementById('currentStepLabel').textContent = currentStep;
+  }
+
+  function showStep(step) {
+    document.querySelectorAll('.form-step').forEach(function(el) {
+      el.classList.remove('active');
+    });
+    var target = document.querySelector('.form-step[data-step="' + step + '"]');
+    if (target) target.classList.add('active');
+  }
+
+  window.nextStep = function() {
+    if (!validateStep(currentStep)) return;
+    currentStep++;
+    showStep(currentStep);
+    updateProgress();
+  };
+
+  window.prevStep = function() {
+    currentStep--;
+    showStep(currentStep);
+    updateProgress();
+  };
+
+  // ── Submit ──
+  window.submitForm = function() {
+    if (!validateStep(currentStep)) return;
+
+    var data = {
+      nome: document.getElementById('nome').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      telefone: document.getElementById('telefone').value.trim(),
+      tipoProjeto: document.querySelector('input[name="tipoProjeto"]:checked').value,
+      valorConta: document.getElementById('valorConta').value.trim(),
+      propriedade: document.querySelector('input[name="propriedade"]:checked').value,
+      urgencia: document.getElementById('urgencia').value,
+      origem: document.getElementById('origem').value
+    };
+
+    // Set personalized confirmation name
+    var firstName = data.nome.split(' ')[0];
+    document.getElementById('confirmName').textContent = firstName;
+
+    // Build summary
+    var summaryItems = [
+      { label: 'Nome',           value: data.nome },
+      { label: 'E-mail',         value: data.email },
+      { label: 'Telefone',       value: data.telefone },
+      { label: 'Tipo de projeto',value: data.tipoProjeto },
+      { label: 'Conta de luz',   value: data.valorConta },
+      { label: 'Perfil',         value: data.propriedade },
+      { label: 'Urgência',       value: data.urgencia },
+      { label: 'Origem',         value: data.origem }
+    ];
+
+    var html = '';
+    summaryItems.forEach(function(item) {
+      html += '<div class="summary-row">' +
+        '<span class="label">' + item.label + '</span>' +
+        '<span class="value">' + item.value + '</span>' +
+        '</div>';
+    });
+    document.getElementById('summaryContent').innerHTML = html;
+
+    // Log lead data to console
+    console.log('Lead capturado:', data);
+
+    // Show confirmation
+    document.querySelector('.progress-section').style.display = 'none';
+    showStep('confirm');
+  };
+
+  // ── Reset ──
+  window.resetForm = function() {
+    currentStep = 1;
+
+    // Clear inputs
+    document.querySelectorAll('.field-input, .field-select').forEach(function(el) {
+      if (el.tagName === 'SELECT') el.selectedIndex = 0;
+      else el.value = '';
+      el.classList.remove('invalid');
+    });
+
+    document.querySelectorAll('input[type="radio"]').forEach(function(el) {
+      el.checked = false;
+    });
+
+    document.querySelectorAll('.field-error').forEach(function(el) {
+      el.classList.remove('visible');
+    });
+
+    document.querySelector('.progress-section').style.display = '';
+    showStep(1);
+    updateProgress();
+  };
+
+})();
+</script>
+
+</body>
+</html>
