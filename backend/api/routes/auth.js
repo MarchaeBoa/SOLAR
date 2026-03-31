@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const { getDb } = require('../../database/setup');
 const {
   generateToken,
+  createSession,
+  hashToken,
   authenticateToken,
   authorizeRoles,
   blacklistToken,
@@ -46,6 +48,11 @@ router.post('/register', (req, res) => {
 
     const token = generateToken(user);
 
+    // Create session
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    createSession(db, { userId: user.id, token, ip, userAgent });
+
     res.status(201).json({ user, token });
   } catch (err) {
     console.error('Register error:', err);
@@ -77,6 +84,11 @@ router.post('/login', (req, res) => {
     const { password: _, ...userWithoutPassword } = user;
     const token = generateToken(userWithoutPassword);
 
+    // Create session
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    createSession(db, { userId: user.id, token, ip, userAgent });
+
     res.json({ user: userWithoutPassword, token });
   } catch (err) {
     console.error('Login error:', err);
@@ -103,6 +115,106 @@ router.get('/me', authenticateToken, (req, res) => {
     res.json({ user });
   } catch (err) {
     console.error('Me error:', err);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/auth/sessions - List user's sessions
+router.get('/sessions', authenticateToken, (req, res) => {
+  try {
+    const db = getDb();
+    const sessions = db.prepare(`
+      SELECT id, ip_address, user_agent, is_active, created_at, expires_at, last_activity
+      FROM sessions
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all(req.user.id);
+
+    const currentHash = req.tokenHash;
+    const enriched = sessions.map(s => {
+      const tokenHash = db.prepare('SELECT token_hash FROM sessions WHERE id = ?').get(s.id);
+      return {
+        ...s,
+        is_current: tokenHash?.token_hash === currentHash,
+        is_expired: new Date(s.expires_at) < new Date(),
+      };
+    });
+
+    res.json({ sessions: enriched });
+  } catch (err) {
+    console.error('Sessions error:', err);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/auth/session-info - Current session info
+router.get('/session-info', authenticateToken, (req, res) => {
+  try {
+    const db = getDb();
+    const session = db.prepare(`
+      SELECT id, ip_address, user_agent, is_active, created_at, expires_at, last_activity
+      FROM sessions
+      WHERE token_hash = ?
+    `).get(req.tokenHash);
+
+    if (!session) {
+      return res.json({
+        session: null,
+        token_exp: req.user.exp ? new Date(req.user.exp * 1000).toISOString() : null,
+      });
+    }
+
+    res.json({
+      session: {
+        ...session,
+        is_current: true,
+      },
+      token_exp: req.user.exp ? new Date(req.user.exp * 1000).toISOString() : null,
+    });
+  } catch (err) {
+    console.error('Session info error:', err);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// DELETE /api/auth/sessions/:id - Revoke a specific session
+router.delete('/sessions/:id', authenticateToken, (req, res) => {
+  try {
+    const db = getDb();
+    const session = db.prepare('SELECT * FROM sessions WHERE id = ? AND user_id = ?').get(
+      req.params.id,
+      req.user.id
+    );
+
+    if (!session) {
+      return res.status(404).json({ error: 'Sessão não encontrada' });
+    }
+
+    db.prepare('UPDATE sessions SET is_active = 0 WHERE id = ?').run(session.id);
+
+    res.json({ message: 'Sessão encerrada com sucesso' });
+  } catch (err) {
+    console.error('Revoke session error:', err);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/auth/sessions/revoke-all - Revoke all sessions except current
+router.post('/sessions/revoke-all', authenticateToken, (req, res) => {
+  try {
+    const db = getDb();
+    const result = db.prepare(`
+      UPDATE sessions SET is_active = 0
+      WHERE user_id = ? AND token_hash != ? AND is_active = 1
+    `).run(req.user.id, req.tokenHash);
+
+    res.json({
+      message: 'Todas as outras sessões foram encerradas',
+      revoked: result.changes,
+    });
+  } catch (err) {
+    console.error('Revoke all sessions error:', err);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });

@@ -15,6 +15,7 @@ const pageTitles = {
   '/calculo-area': 'Cálculo de Área',
   '/posicao-solar': 'Posição Solar',
   '/orcamento-regional': 'Orçamento Regional',
+  '/sessoes': 'Gerenciamento de Sessões',
 };
 
 const roleLabels = {
