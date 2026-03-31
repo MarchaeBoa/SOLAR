@@ -8,6 +8,9 @@ import MapaSolar from './pages/MapaSolar';
 import Orcamento from './pages/Orcamento';
 import KitsSolares from './pages/KitsSolares';
 import Financiamento from './pages/Financiamento';
+import CalculoArea from './pages/CalculoArea';
+import PosicaoSolar from './pages/PosicaoSolar';
+import OrcamentoRegional from './pages/OrcamentoRegional';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -28,6 +31,9 @@ export default function App() {
                 <Route path="/orcamento" element={<Orcamento />} />
                 <Route path="/kits" element={<KitsSolares />} />
                 <Route path="/financiamento" element={<Financiamento />} />
+                <Route path="/calculo-area" element={<CalculoArea />} />
+                <Route path="/posicao-solar" element={<PosicaoSolar />} />
+                <Route path="/orcamento-regional" element={<OrcamentoRegional />} />
               </Routes>
             </Layout>
           </PrivateRoute>
