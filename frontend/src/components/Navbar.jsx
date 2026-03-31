@@ -1,7 +1,8 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Search, User, LogOut, Shield, Briefcase } from 'lucide-react';
+import { Bell, Search, User, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 import RegionSelector from './RegionSelector';
 
 const pageTitles = {
@@ -24,6 +25,7 @@ const roleLabels = {
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { dispatch } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const title = pageTitles[location.pathname] || 'SolarMap AI';
@@ -35,7 +37,7 @@ export default function Navbar() {
   }
 
   return (
-    <header style={{
+    <header className="navbar-header" style={{
       height: '64px',
       background: 'var(--bg-surface)',
       borderBottom: '1px solid var(--border)',
@@ -46,6 +48,14 @@ export default function Navbar() {
       flexShrink: 0,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Hamburger button - visible only on mobile */}
+        <button
+          className="hamburger-btn"
+          onClick={() => dispatch({ type: 'TOGGLE_MOBILE_MENU' })}
+          aria-label="Abrir menu"
+        >
+          <Menu size={24} color="var(--text-1)" />
+        </button>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{title}</h2>
         <span className="tag tag-gold" style={{ fontSize: '0.65rem' }}>BETA</span>
       </div>

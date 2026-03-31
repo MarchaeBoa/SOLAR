@@ -28,6 +28,7 @@ const initialState = {
     desconto: 0,
   },
   sidebarOpen: true,
+  mobileMenuOpen: false,
 };
 
 function appReducer(state, action) {
@@ -51,6 +52,16 @@ function appReducer(state, action) {
       return {
         ...state,
         sidebarOpen: !state.sidebarOpen,
+      };
+    case 'SET_MOBILE_MENU':
+      return {
+        ...state,
+        mobileMenuOpen: action.payload,
+      };
+    case 'TOGGLE_MOBILE_MENU':
+      return {
+        ...state,
+        mobileMenuOpen: !state.mobileMenuOpen,
       };
     case 'RESET_SIMULACAO':
       return {

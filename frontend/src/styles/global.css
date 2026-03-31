@@ -129,7 +129,58 @@ a {
   .grid-3,
   .grid-2 { grid-template-columns: 1fr; }
 
-  .page-content { padding: 20px; }
+  .page-content { padding: 16px; }
+
+  /* Hide sidebar on mobile by default */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 280px !important;
+    min-width: 280px !important;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Overlay behind sidebar */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+  }
+
+  /* Show hamburger button */
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  /* Show close button in sidebar */
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+
+  /* Hide collapse toggle on mobile */
+  .sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  /* Navbar adjustments */
+  .navbar-header {
+    padding: 0 16px !important;
+  }
+
+  /* Hide search bar and region selector on mobile navbar */
+  .navbar-header .navbar-search,
+  .navbar-header .navbar-region {
+    display: none;
+  }
 }
 
 /* Page header */
@@ -210,4 +261,37 @@ a {
 /* Mono font for data */
 .mono {
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* Mobile menu buttons - hidden by default on desktop */
+.hamburger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  transition: background var(--t);
+}
+
+.hamburger-btn:hover {
+  background: var(--bg-elevated);
+}
+
+.sidebar-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  transition: background var(--t);
+}
+
+.sidebar-close-btn:hover {
+  background: var(--bg-elevated);
 }
