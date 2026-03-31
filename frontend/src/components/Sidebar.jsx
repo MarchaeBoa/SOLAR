@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Package, CreditCard, Ruler, Compass, MapPin, X } from 'lucide-react';
+import { LayoutDashboard, Zap, Map, FileText, Sun, ChevronLeft, Package, CreditCard, Ruler, Compass, MapPin, Shield, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const iconMap = {
@@ -13,6 +13,7 @@ const iconMap = {
   Ruler,
   Compass,
   MapPin,
+  Shield,
 };
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/calculo-area', label: 'Cálculo de Área', icon: 'Ruler' },
   { path: '/posicao-solar', label: 'Posição Solar', icon: 'Compass' },
   { path: '/orcamento-regional', label: 'Orçamento Regional', icon: 'MapPin' },
+  { path: '/sessoes', label: 'Sessões', icon: 'Shield' },
 ];
 
 export default function Sidebar() {

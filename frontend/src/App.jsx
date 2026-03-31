@@ -11,6 +11,7 @@ import Financiamento from './pages/Financiamento';
 import CalculoArea from './pages/CalculoArea';
 import PosicaoSolar from './pages/PosicaoSolar';
 import OrcamentoRegional from './pages/OrcamentoRegional';
+import Sessoes from './pages/Sessoes';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -34,6 +35,7 @@ export default function App() {
                 <Route path="/calculo-area" element={<CalculoArea />} />
                 <Route path="/posicao-solar" element={<PosicaoSolar />} />
                 <Route path="/orcamento-regional" element={<OrcamentoRegional />} />
+                <Route path="/sessoes" element={<Sessoes />} />
               </Routes>
             </Layout>
           </PrivateRoute>
