@@ -1578,6 +1578,178 @@ footer {
   animation: fillBar 1.2s ease-out forwards;
 }
 @keyframes fillBar { to { width:100%; } }
+
+/* ═══════════════════════════════════════
+   AGENDAR VISITA TÉCNICA
+   ═══════════════════════════════════════ */
+.visit-wrap {
+  display:grid; grid-template-columns:1fr 1fr; gap:40px;
+  margin-top:48px; align-items:start;
+}
+.visit-calendar-card, .visit-form-card {
+  background:var(--glass); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:32px;
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+}
+.visit-calendar-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px;
+}
+.visit-calendar-header h4 {
+  font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--ice);
+}
+.visit-nav-btn {
+  background:var(--glass-light); border:1px solid var(--border);
+  color:var(--ice); width:34px; height:34px; border-radius:50%;
+  cursor:pointer; font-size:1rem; display:flex; align-items:center;
+  justify-content:center; transition:var(--transition);
+}
+.visit-nav-btn:hover { background:var(--gold-glow); border-color:var(--border-gold); color:var(--gold); }
+.visit-weekdays {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+  margin-bottom:6px; text-align:center;
+}
+.visit-weekdays span {
+  font-size:0.7rem; font-weight:600; color:var(--muted);
+  text-transform:uppercase; letter-spacing:0.08em; padding:6px 0;
+}
+.visit-days {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+}
+.visit-day {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  font-size:0.88rem; font-weight:500; border-radius:10px; cursor:pointer;
+  border:1px solid transparent; transition:var(--transition); color:var(--ice);
+  background:transparent;
+}
+.visit-day:hover:not(.disabled):not(.empty) {
+  background:var(--gold-glow); border-color:var(--border-gold); color:var(--gold);
+}
+.visit-day.selected {
+  background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  color:var(--midnight); font-weight:700;
+  box-shadow:0 4px 20px rgba(212,168,67,0.35);
+}
+.visit-day.disabled { color:rgba(238,244,255,0.18); cursor:not-allowed; }
+.visit-day.empty { cursor:default; }
+.visit-day.today { border-color:var(--green); color:var(--green); }
+
+.visit-time-label {
+  font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:600;
+  color:var(--ice); margin:24px 0 12px;
+}
+.visit-time-options { display:flex; gap:10px; flex-wrap:wrap; }
+.visit-time-btn {
+  flex:1; min-width:90px; padding:12px 16px; text-align:center;
+  font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500;
+  color:var(--muted); background:var(--glass-light);
+  border:1px solid var(--border); border-radius:10px;
+  cursor:pointer; transition:var(--transition);
+}
+.visit-time-btn:hover { border-color:var(--border-gold); color:var(--gold); }
+.visit-time-btn.selected {
+  background:var(--gold-glow); border-color:var(--gold);
+  color:var(--gold); font-weight:600;
+}
+.visit-time-btn small { display:block; font-size:0.72rem; margin-top:2px; opacity:0.65; }
+
+.visit-form-card h4 {
+  font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700;
+  color:var(--ice); margin-bottom:20px;
+}
+.visit-field { margin-bottom:16px; }
+.visit-field label {
+  display:block; font-size:0.8rem; font-weight:500; color:var(--muted);
+  margin-bottom:6px;
+}
+.visit-field input, .visit-field select, .visit-field textarea {
+  width:100%; padding:12px 16px; font-family:'DM Sans',sans-serif;
+  font-size:0.92rem; color:var(--ice);
+  background:var(--glass-light); border:1px solid var(--border);
+  border-radius:10px; outline:none; transition:var(--transition);
+}
+.visit-field input:focus, .visit-field select:focus, .visit-field textarea:focus {
+  border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-glow);
+}
+.visit-field input::placeholder, .visit-field textarea::placeholder {
+  color:rgba(238,244,255,0.3);
+}
+.visit-field select option { background:var(--deep-navy); color:var(--ice); }
+.visit-field textarea { resize:vertical; min-height:80px; }
+.visit-selected-info {
+  background:var(--gold-glow); border:1px solid var(--border-gold);
+  border-radius:10px; padding:14px 18px; margin-bottom:20px;
+  display:none; gap:10px; align-items:center; font-size:0.88rem; color:var(--gold);
+}
+.visit-selected-info.visible { display:flex; }
+.visit-selected-info svg { flex-shrink:0; }
+.visit-confirm-btn {
+  width:100%; padding:16px; font-family:'Syne',sans-serif;
+  font-size:0.95rem; font-weight:600; color:var(--midnight);
+  background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  border:none; border-radius:99px; cursor:pointer;
+  transition:var(--transition); box-shadow:0 4px 30px rgba(212,168,67,0.35);
+}
+.visit-confirm-btn:hover { transform:translateY(-2px); box-shadow:0 8px 40px rgba(212,168,67,0.5); }
+.visit-confirm-btn:disabled {
+  opacity:0.4; cursor:not-allowed; transform:none;
+  box-shadow:0 4px 30px rgba(212,168,67,0.15);
+}
+
+/* Success overlay */
+.visit-success-overlay {
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(4,9,15,0.88); backdrop-filter:blur(12px);
+  align-items:center; justify-content:center;
+}
+.visit-success-overlay.active { display:flex; }
+.visit-success-card {
+  background:var(--deep-navy); border:1px solid var(--border-gold);
+  border-radius:var(--radius-lg); padding:48px 40px; max-width:480px;
+  width:90%; text-align:center; position:relative;
+  animation:visitSuccessIn 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes visitSuccessIn {
+  from { opacity:0; transform:scale(0.92) translateY(20px); }
+  to { opacity:1; transform:scale(1) translateY(0); }
+}
+.visit-success-icon {
+  width:72px; height:72px; border-radius:50%; margin:0 auto 20px;
+  background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  display:flex; align-items:center; justify-content:center;
+  font-size:2rem; color:var(--midnight);
+  box-shadow:0 0 60px rgba(212,168,67,0.3);
+}
+.visit-success-card h3 {
+  font-family:'Syne',sans-serif; font-size:1.5rem; color:var(--ice); margin-bottom:8px;
+}
+.visit-success-card p { color:var(--muted); font-size:0.92rem; margin-bottom:24px; }
+.visit-summary {
+  background:var(--glass-light); border:1px solid var(--border);
+  border-radius:14px; padding:20px; text-align:left; margin-bottom:28px;
+}
+.visit-summary-row {
+  display:flex; justify-content:space-between; padding:8px 0;
+  border-bottom:1px solid var(--border); font-size:0.88rem;
+}
+.visit-summary-row:last-child { border-bottom:none; }
+.visit-summary-row .label { color:var(--muted); }
+.visit-summary-row .value { color:var(--ice); font-weight:600; }
+.visit-success-close {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:600;
+  color:var(--midnight); background:linear-gradient(135deg, var(--gold-light), var(--gold));
+  border:none; border-radius:99px; padding:14px 32px; cursor:pointer;
+  transition:var(--transition); box-shadow:0 4px 30px rgba(212,168,67,0.35);
+}
+.visit-success-close:hover { transform:translateY(-2px); box-shadow:0 8px 40px rgba(212,168,67,0.5); }
+
+@media (max-width: 768px) {
+  .visit-wrap { grid-template-columns:1fr; gap:24px; }
+  .visit-calendar-card, .visit-form-card { padding:24px; }
+  .visit-time-options { flex-direction:column; }
+  .visit-success-card { padding:32px 24px; }
+}
 </style>
 </head>
 <body>
@@ -1595,6 +1767,7 @@ footer {
   <a href="#how" onclick="closeMobile()">Como funciona</a>
   <a href="#sim-endereco" onclick="closeMobile(); openSimModal(); return false;">Simulação</a>
   <a href="#forwho" onclick="closeMobile()">Para empresas</a>
+  <a href="#agendar-visita" onclick="closeMobile()">Agendar visita</a>
   <a href="#faq" onclick="closeMobile()">Contato</a>
   <a href="#cta-final" class="btn-primary" style="margin-top:16px" onclick="closeMobile()">Iniciar simulação</a>
 </div>
@@ -1615,6 +1788,7 @@ footer {
         <a href="#how">Como funciona</a>
         <a href="#sim-endereco" onclick="openSimModal(); return false;">Simulação</a>
         <a href="#forwho">Para empresas</a>
+        <a href="#agendar-visita">Agendar visita</a>
         <a href="#faq">Contato</a>
       </nav>
       <div class="header-cta">
@@ -2562,6 +2736,95 @@ footer {
     </div>
   </div>
 </section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     AGENDAR VISITA TÉCNICA
+══════════════════════════════════════════════ -->
+<section id="agendar-visita">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Visita técnica</div>
+      <h2>Agende sua<br><span class="grad-gold">visita técnica</span></h2>
+      <p style="color:var(--muted); max-width:560px; margin:12px auto 0;">Escolha o melhor dia e horário para que nossa equipe visite seu imóvel e faça a avaliação presencial.</p>
+    </div>
+
+    <div class="visit-wrap reveal">
+      <!-- Calendário -->
+      <div class="visit-calendar-card">
+        <div class="visit-calendar-header">
+          <button type="button" class="visit-nav-btn" onclick="visitCalNav(-1)" aria-label="Mês anterior">‹</button>
+          <h4 id="visitMonthLabel"></h4>
+          <button type="button" class="visit-nav-btn" onclick="visitCalNav(1)" aria-label="Próximo mês">›</button>
+        </div>
+        <div class="visit-weekdays">
+          <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+        <div class="visit-days" id="visitDays"></div>
+
+        <div class="visit-time-label">Horário preferido</div>
+        <div class="visit-time-options" id="visitTimeOptions">
+          <button type="button" class="visit-time-btn" data-time="manha" onclick="selectVisitTime(this)">
+            ☀ Manhã<small>08h – 12h</small>
+          </button>
+          <button type="button" class="visit-time-btn" data-time="tarde" onclick="selectVisitTime(this)">
+            🌤 Tarde<small>13h – 17h</small>
+          </button>
+          <button type="button" class="visit-time-btn" data-time="noite" onclick="selectVisitTime(this)">
+            🌙 Noite<small>18h – 20h</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulário -->
+      <div class="visit-form-card">
+        <h4>Seus dados</h4>
+
+        <div class="visit-selected-info" id="visitSelectedInfo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span id="visitSelectedText">Selecione uma data e horário</span>
+        </div>
+
+        <div class="visit-field">
+          <label for="visitName">Nome completo *</label>
+          <input type="text" id="visitName" placeholder="Seu nome completo" required>
+        </div>
+        <div class="visit-field">
+          <label for="visitEmail">E-mail *</label>
+          <input type="email" id="visitEmail" placeholder="seu@email.com" required>
+        </div>
+        <div class="visit-field">
+          <label for="visitPhone">Telefone</label>
+          <input type="tel" id="visitPhone" placeholder="(00) 00000-0000">
+        </div>
+        <div class="visit-field">
+          <label for="visitAddress">Endereço do imóvel</label>
+          <input type="text" id="visitAddress" placeholder="Rua, número — Cidade, Estado">
+        </div>
+        <div class="visit-field">
+          <label for="visitNotes">Observações</label>
+          <textarea id="visitNotes" placeholder="Informações adicionais sobre o imóvel ou preferências..."></textarea>
+        </div>
+
+        <button type="button" class="visit-confirm-btn" id="visitConfirmBtn" onclick="confirmVisit()" disabled>
+          Confirmar agendamento ↗
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Visit Success Overlay -->
+<div class="visit-success-overlay" id="visitSuccessOverlay">
+  <div class="visit-success-card">
+    <div class="visit-success-icon">✓</div>
+    <h3>Visita agendada com <span class="grad-gold">sucesso!</span></h3>
+    <p>Você receberá um e-mail de confirmação em breve.</p>
+    <div class="visit-summary" id="visitSummary"></div>
+    <button type="button" class="visit-success-close" onclick="closeVisitSuccess()">Fechar ↗</button>
+  </div>
+</div>
 
 <div class="divider"></div>
 
@@ -3709,6 +3972,163 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
 
   // Observe reveals
   document.querySelectorAll('#roof-sim .reveal').forEach(function(el) { revealObserver.observe(el); });
+})();
+
+/* ═══════════════════════════════════════
+   AGENDAR VISITA TÉCNICA
+   ═══════════════════════════════════════ */
+(function() {
+  var visitState = { year: 0, month: 0, selectedDate: null, selectedTime: null };
+  var today = new Date();
+  visitState.year = today.getFullYear();
+  visitState.month = today.getMonth();
+
+  var monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var timeLabels = { manha: 'Manhã (08h–12h)', tarde: 'Tarde (13h–17h)', noite: 'Noite (18h–20h)' };
+
+  function renderCalendar() {
+    var y = visitState.year, m = visitState.month;
+    document.getElementById('visitMonthLabel').textContent = monthNames[m] + ' ' + y;
+    var firstDay = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var container = document.getElementById('visitDays');
+    container.innerHTML = '';
+
+    // Empty slots
+    for (var i = 0; i < firstDay; i++) {
+      var empty = document.createElement('div');
+      empty.className = 'visit-day empty';
+      container.appendChild(empty);
+    }
+
+    var todayStr = today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'visit-day';
+      btn.textContent = d;
+
+      var dateObj = new Date(y, m, d);
+      var dayOfWeek = dateObj.getDay();
+      var dateStr = y + '-' + (m+1) + '-' + d;
+      var isPast = dateObj < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      var isSunday = dayOfWeek === 0;
+
+      if (isPast || isSunday) {
+        btn.className += ' disabled';
+      } else {
+        if (dateStr === todayStr) btn.className += ' today';
+        if (visitState.selectedDate === dateStr) btn.className += ' selected';
+        btn.setAttribute('data-date', dateStr);
+        btn.onclick = (function(ds, day) {
+          return function() { selectVisitDay(ds, day); };
+        })(dateStr, d);
+      }
+      container.appendChild(btn);
+    }
+  }
+
+  function selectVisitDay(dateStr, day) {
+    visitState.selectedDate = dateStr;
+    renderCalendar();
+    updateVisitInfo();
+  }
+
+  window.selectVisitTime = function(el) {
+    document.querySelectorAll('.visit-time-btn').forEach(function(b) { b.classList.remove('selected'); });
+    el.classList.add('selected');
+    visitState.selectedTime = el.getAttribute('data-time');
+    updateVisitInfo();
+  };
+
+  function updateVisitInfo() {
+    var info = document.getElementById('visitSelectedInfo');
+    var text = document.getElementById('visitSelectedText');
+    var btn = document.getElementById('visitConfirmBtn');
+
+    if (visitState.selectedDate && visitState.selectedTime) {
+      var parts = visitState.selectedDate.split('-');
+      var dateFormatted = parts[2].padStart(2,'0') + '/' + parts[1].padStart(2,'0') + '/' + parts[0];
+      text.textContent = dateFormatted + ' — ' + timeLabels[visitState.selectedTime];
+      info.classList.add('visible');
+    } else if (visitState.selectedDate) {
+      var parts2 = visitState.selectedDate.split('-');
+      text.textContent = parts2[2].padStart(2,'0') + '/' + parts2[1].padStart(2,'0') + '/' + parts2[0] + ' — Selecione o horário';
+      info.classList.add('visible');
+    } else {
+      info.classList.remove('visible');
+    }
+
+    // Enable button only if date + time + name + email are filled
+    var name = document.getElementById('visitName').value.trim();
+    var email = document.getElementById('visitEmail').value.trim();
+    btn.disabled = !(visitState.selectedDate && visitState.selectedTime && name && email);
+  }
+
+  // Listen for input changes on form fields
+  ['visitName','visitEmail','visitPhone','visitAddress'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', updateVisitInfo);
+  });
+
+  window.visitCalNav = function(dir) {
+    visitState.month += dir;
+    if (visitState.month > 11) { visitState.month = 0; visitState.year++; }
+    if (visitState.month < 0) { visitState.month = 11; visitState.year--; }
+    renderCalendar();
+  };
+
+  window.confirmVisit = function() {
+    var name = document.getElementById('visitName').value.trim();
+    var email = document.getElementById('visitEmail').value.trim();
+    if (!visitState.selectedDate || !visitState.selectedTime || !name || !email) return;
+
+    // Simple email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('visitEmail').focus();
+      return;
+    }
+
+    var parts = visitState.selectedDate.split('-');
+    var dateFormatted = parts[2].padStart(2,'0') + '/' + parts[1].padStart(2,'0') + '/' + parts[0];
+
+    var summary = document.getElementById('visitSummary');
+    summary.innerHTML =
+      '<div class="visit-summary-row"><span class="label">Data</span><span class="value">' + dateFormatted + '</span></div>' +
+      '<div class="visit-summary-row"><span class="label">Horário</span><span class="value">' + timeLabels[visitState.selectedTime] + '</span></div>' +
+      '<div class="visit-summary-row"><span class="label">Nome</span><span class="value">' + escapeHtml(name) + '</span></div>' +
+      '<div class="visit-summary-row"><span class="label">E-mail</span><span class="value">' + escapeHtml(email) + '</span></div>';
+
+    var phone = document.getElementById('visitPhone').value.trim();
+    if (phone) {
+      summary.innerHTML += '<div class="visit-summary-row"><span class="label">Telefone</span><span class="value">' + escapeHtml(phone) + '</span></div>';
+    }
+    var address = document.getElementById('visitAddress').value.trim();
+    if (address) {
+      summary.innerHTML += '<div class="visit-summary-row"><span class="label">Endereço</span><span class="value">' + escapeHtml(address) + '</span></div>';
+    }
+
+    document.getElementById('visitSuccessOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  };
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  window.closeVisitSuccess = function() {
+    document.getElementById('visitSuccessOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+  };
+
+  // Init calendar
+  renderCalendar();
+
+  // Observe reveals
+  document.querySelectorAll('#agendar-visita .reveal').forEach(function(el) { revealObserver.observe(el); });
 })();
 
 /*
