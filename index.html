@@ -796,6 +796,181 @@ section { padding: 110px 0; position: relative; }
 .sim-highlight { animation:simHighlight 1.2s ease-out; }
 
 /* ══════════════════════════════════════════════
+   CALCULADORA DE ECONOMIA (WIZARD)
+══════════════════════════════════════════════ */
+#calc-economia {
+  background: linear-gradient(180deg, var(--deep-navy) 0%, var(--midnight) 100%);
+  padding: 110px 0;
+}
+.calc-box {
+  max-width: 680px; margin: 0 auto;
+  background: var(--glass-light); border: 1px solid var(--border);
+  border-radius: 20px; padding: 48px 40px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.4), var(--shadow-gold);
+}
+.calc-progress {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 40px;
+}
+.calc-progress-step {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--glass); border: 2px solid var(--border);
+  font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700;
+  color: var(--muted); transition: var(--transition); flex-shrink: 0;
+}
+.calc-progress-step.active {
+  border-color: var(--gold); color: var(--midnight);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 20px rgba(212,168,67,0.35);
+}
+.calc-progress-step.done {
+  border-color: var(--green); color: var(--midnight);
+  background: linear-gradient(135deg, #5AFAC8, var(--green));
+}
+.calc-progress-line {
+  width: 48px; height: 2px;
+  background: var(--border); transition: var(--transition);
+}
+.calc-progress-line.active { background: var(--gold); }
+.calc-progress-line.done { background: var(--green); }
+
+.calc-step { display: none; animation: calcFadeIn 0.4s ease-out; }
+.calc-step.active { display: block; }
+@keyframes calcFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+.calc-step-title {
+  font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+  color: var(--ice); margin-bottom: 8px; text-align: center;
+}
+.calc-step-desc {
+  font-size: 0.9rem; color: var(--muted); margin-bottom: 28px; text-align: center;
+}
+
+/* Radio card group */
+.calc-options {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;
+  margin-bottom: 32px;
+}
+.calc-option {
+  position: relative; cursor: pointer;
+}
+.calc-option input { position: absolute; opacity: 0; pointer-events: none; }
+.calc-option-card {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 24px 14px; border-radius: var(--radius);
+  background: var(--glass); border: 1px solid var(--border);
+  transition: var(--transition); text-align: center;
+}
+.calc-option-card:hover { border-color: rgba(238,244,255,0.2); }
+.calc-option input:checked + .calc-option-card {
+  border-color: var(--gold); background: rgba(212,168,67,0.08);
+  box-shadow: 0 0 24px rgba(212,168,67,0.15);
+}
+.calc-option-icon { font-size: 1.8rem; }
+.calc-option-label {
+  font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 600;
+  color: var(--ice); letter-spacing: 0.02em;
+}
+
+/* Slider */
+.calc-slider-wrap { margin-bottom: 32px; }
+.calc-slider-value {
+  font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+  text-align: center; margin-bottom: 16px;
+}
+.calc-slider-value .grad-gold { font-size: inherit; }
+.calc-slider {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+  border-radius: 99px; outline: none;
+  background: linear-gradient(to right, var(--gold) 0%, var(--border) 0%);
+  transition: background 0.1s;
+}
+.calc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 16px rgba(212,168,67,0.5);
+  cursor: pointer; border: 3px solid var(--deep-navy);
+}
+.calc-slider::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 16px rgba(212,168,67,0.5);
+  cursor: pointer; border: 3px solid var(--deep-navy);
+}
+.calc-slider-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: var(--muted); margin-top: 8px;
+}
+
+/* Select state */
+.calc-select {
+  width: 100%; padding: 14px 18px; border-radius: var(--radius);
+  background: var(--glass); border: 1px solid var(--border);
+  color: var(--ice); font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+  outline: none; cursor: pointer; transition: var(--transition);
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4A843' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+  margin-bottom: 32px;
+}
+.calc-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+.calc-select option { background: var(--deep-navy); color: var(--ice); }
+
+/* Nav buttons */
+.calc-nav { display: flex; gap: 14px; justify-content: center; }
+.calc-nav .btn-primary,
+.calc-nav .btn-ghost { min-width: 150px; justify-content: center; }
+
+/* Results */
+.calc-results { animation: calcFadeIn 0.5s ease-out; }
+.calc-results-title {
+  font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700;
+  color: var(--ice); text-align: center; margin-bottom: 6px;
+}
+.calc-results-subtitle {
+  font-size: 0.9rem; color: var(--muted); text-align: center; margin-bottom: 28px;
+}
+.calc-results-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: 28px;
+}
+.calc-result-card {
+  padding: 22px 18px; border-radius: var(--radius);
+  background: var(--glass); border: 1px solid var(--border);
+  text-align: center; transition: var(--transition);
+}
+.calc-result-card:hover { border-color: var(--border-gold); background: rgba(212,168,67,0.04); }
+.calc-result-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.calc-result-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 6px; font-family: 'Syne', sans-serif; font-weight: 600;
+}
+.calc-result-value {
+  font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+  line-height: 1.2; margin-bottom: 4px;
+}
+.calc-result-value.gold { color: var(--gold-light); }
+.calc-result-value.green { color: var(--green); }
+.calc-result-value.blue { color: #3B9EFF; }
+.calc-result-sub { font-size: 0.78rem; color: var(--muted); }
+.calc-results-cta {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.calc-results-disclaimer {
+  font-size: 0.75rem; color: var(--muted); text-align: center;
+  font-style: italic; margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .calc-box { padding: 32px 20px; }
+  .calc-options { grid-template-columns: 1fr; }
+  .calc-results-grid { grid-template-columns: 1fr; }
+  .calc-progress-line { width: 32px; }
+}
+
+/* ══════════════════════════════════════════════
    SIMULAÇÃO POR ENDEREÇO
 ══════════════════════════════════════════════ */
 #sim-endereco {
@@ -1565,6 +1740,161 @@ footer {
 <div class="divider"></div>
 
 <!-- ══════════════════════════════════════════════
+     CALCULADORA DE ECONOMIA (WIZARD)
+══════════════════════════════════════════════ -->
+<section id="calc-economia">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="tag">Calculadora inteligente</div>
+      <h2>Calcule sua<br><span class="grad-gold">economia</span></h2>
+      <p>Descubra em 3 passos quanto você pode economizar com energia solar.</p>
+    </div>
+
+    <div class="calc-box reveal">
+      <!-- Progress bar -->
+      <div class="calc-progress">
+        <div class="calc-progress-step active" id="calcProg1">1</div>
+        <div class="calc-progress-line" id="calcLine1"></div>
+        <div class="calc-progress-step" id="calcProg2">2</div>
+        <div class="calc-progress-line" id="calcLine2"></div>
+        <div class="calc-progress-step" id="calcProg3">3</div>
+      </div>
+
+      <!-- Step 1: Property type -->
+      <div class="calc-step active" id="calcStep1">
+        <div class="calc-step-title">Tipo de imóvel</div>
+        <div class="calc-step-desc">Selecione o tipo do seu imóvel para personalizarmos a simulação.</div>
+        <div class="calc-options">
+          <label class="calc-option">
+            <input type="radio" name="calcTipo" value="residencial" checked>
+            <div class="calc-option-card">
+              <div class="calc-option-icon">🏠</div>
+              <div class="calc-option-label">Residencial</div>
+            </div>
+          </label>
+          <label class="calc-option">
+            <input type="radio" name="calcTipo" value="comercial">
+            <div class="calc-option-card">
+              <div class="calc-option-icon">🏢</div>
+              <div class="calc-option-label">Comercial</div>
+            </div>
+          </label>
+          <label class="calc-option">
+            <input type="radio" name="calcTipo" value="rural">
+            <div class="calc-option-card">
+              <div class="calc-option-icon">🌾</div>
+              <div class="calc-option-label">Rural</div>
+            </div>
+          </label>
+        </div>
+        <div class="calc-nav">
+          <button type="button" class="btn-primary" onclick="calcNext(1)">Próximo ↗</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Monthly bill (slider) -->
+      <div class="calc-step" id="calcStep2">
+        <div class="calc-step-title">Valor médio da conta de luz</div>
+        <div class="calc-step-desc">Arraste o controle para indicar quanto você paga por mês.</div>
+        <div class="calc-slider-wrap">
+          <div class="calc-slider-value"><span class="grad-gold" id="calcSliderLabel">R$ 500</span></div>
+          <input type="range" class="calc-slider" id="calcSlider" min="100" max="5000" step="50" value="500" oninput="updateCalcSlider(this)">
+          <div class="calc-slider-labels">
+            <span>R$ 100</span>
+            <span>R$ 5.000</span>
+          </div>
+        </div>
+        <div class="calc-nav">
+          <button type="button" class="btn-ghost" onclick="calcPrev(2)">← Voltar</button>
+          <button type="button" class="btn-primary" onclick="calcNext(2)">Próximo ↗</button>
+        </div>
+      </div>
+
+      <!-- Step 3: State -->
+      <div class="calc-step" id="calcStep3">
+        <div class="calc-step-title">Localização</div>
+        <div class="calc-step-desc">Selecione seu estado para usarmos os dados de irradiação solar local.</div>
+        <select class="calc-select" id="calcEstado">
+          <option value="">Selecione seu estado...</option>
+          <option value="AC">Acre</option>
+          <option value="AL">Alagoas</option>
+          <option value="AP">Amapá</option>
+          <option value="AM">Amazonas</option>
+          <option value="BA">Bahia</option>
+          <option value="CE">Ceará</option>
+          <option value="DF">Distrito Federal</option>
+          <option value="ES">Espírito Santo</option>
+          <option value="GO">Goiás</option>
+          <option value="MA">Maranhão</option>
+          <option value="MT">Mato Grosso</option>
+          <option value="MS">Mato Grosso do Sul</option>
+          <option value="MG">Minas Gerais</option>
+          <option value="PA">Pará</option>
+          <option value="PB">Paraíba</option>
+          <option value="PR">Paraná</option>
+          <option value="PE">Pernambuco</option>
+          <option value="PI">Piauí</option>
+          <option value="RJ">Rio de Janeiro</option>
+          <option value="RN">Rio Grande do Norte</option>
+          <option value="RS">Rio Grande do Sul</option>
+          <option value="RO">Rondônia</option>
+          <option value="RR">Roraima</option>
+          <option value="SC">Santa Catarina</option>
+          <option value="SP">São Paulo</option>
+          <option value="SE">Sergipe</option>
+          <option value="TO">Tocantins</option>
+        </select>
+        <div class="calc-nav">
+          <button type="button" class="btn-ghost" onclick="calcPrev(3)">← Voltar</button>
+          <button type="button" class="btn-primary" id="calcSubmitBtn" onclick="calcSubmit()">Calcular economia ↗</button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="calc-step" id="calcStepResult">
+        <div class="calc-results">
+          <div class="calc-results-title">Sua economia estimada</div>
+          <div class="calc-results-subtitle" id="calcResultSubtitle"></div>
+          <div class="calc-results-grid">
+            <div class="calc-result-card">
+              <div class="calc-result-icon">💰</div>
+              <div class="calc-result-label">Economia anual</div>
+              <div class="calc-result-value gold" id="calcResEco">—</div>
+              <div class="calc-result-sub" id="calcResEcoSub"></div>
+            </div>
+            <div class="calc-result-card">
+              <div class="calc-result-icon">⚡</div>
+              <div class="calc-result-label">Painéis recomendados</div>
+              <div class="calc-result-value green" id="calcResPanels">—</div>
+              <div class="calc-result-sub" id="calcResPanelsSub"></div>
+            </div>
+            <div class="calc-result-card">
+              <div class="calc-result-icon">📅</div>
+              <div class="calc-result-label">Payback estimado</div>
+              <div class="calc-result-value blue" id="calcResPayback">—</div>
+              <div class="calc-result-sub" id="calcResPaybackSub"></div>
+            </div>
+            <div class="calc-result-card">
+              <div class="calc-result-icon">🌱</div>
+              <div class="calc-result-label">CO₂ evitado/ano</div>
+              <div class="calc-result-value green" id="calcResCO2">—</div>
+              <div class="calc-result-sub" id="calcResCO2Sub"></div>
+            </div>
+          </div>
+          <div class="calc-results-cta">
+            <button type="button" class="btn-primary" onclick="openContactModal()">Falar com especialista ↗</button>
+            <button type="button" class="btn-ghost" onclick="calcReset()">Refazer cálculo</button>
+          </div>
+          <div class="calc-results-disclaimer">* Valores estimados com base em médias regionais de irradiação solar (INPE/NASA). Consulte um especialista para um orçamento preciso.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
      FAQ
 ══════════════════════════════════════════════ -->
 <section id="faq">
@@ -2243,6 +2573,143 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
     btn.innerHTML = 'Enviar mensagem ↗';
   }, 1200);
 });
+
+/* ── Calculadora de Economia (Wizard) ── */
+function updateCalcSlider(el) {
+  var val = parseInt(el.value);
+  document.getElementById('calcSliderLabel').textContent = 'R$ ' + val.toLocaleString('pt-BR');
+  var pct = ((val - 100) / (5000 - 100)) * 100;
+  el.style.background = 'linear-gradient(to right, var(--gold) ' + pct + '%, var(--border) ' + pct + '%)';
+}
+// Init slider background
+(function() {
+  var s = document.getElementById('calcSlider');
+  if (s) { var p = ((500 - 100) / (5000 - 100)) * 100; s.style.background = 'linear-gradient(to right, var(--gold) ' + p + '%, var(--border) ' + p + '%)'; }
+})();
+
+function calcSetStep(step) {
+  // Hide all steps
+  for (var i = 1; i <= 3; i++) {
+    document.getElementById('calcStep' + i).classList.remove('active');
+  }
+  document.getElementById('calcStepResult').classList.remove('active');
+  // Show target step
+  if (step <= 3) {
+    document.getElementById('calcStep' + step).classList.add('active');
+  } else {
+    document.getElementById('calcStepResult').classList.add('active');
+  }
+  // Update progress
+  for (var i = 1; i <= 3; i++) {
+    var prog = document.getElementById('calcProg' + i);
+    prog.classList.remove('active', 'done');
+    if (i < step) { prog.classList.add('done'); prog.textContent = '✓'; }
+    else if (i === step) { prog.classList.add('active'); prog.textContent = i; }
+    else { prog.textContent = i; }
+  }
+  var line1 = document.getElementById('calcLine1');
+  var line2 = document.getElementById('calcLine2');
+  line1.classList.remove('active', 'done');
+  line2.classList.remove('active', 'done');
+  if (step >= 2) line1.classList.add('done');
+  if (step >= 3) line2.classList.add('done');
+  if (step > 3) { line1.classList.add('done'); line2.classList.add('done'); }
+}
+
+function calcNext(from) { calcSetStep(from + 1); }
+function calcPrev(from) { calcSetStep(from - 1); }
+
+function calcSubmit() {
+  var estado = document.getElementById('calcEstado').value;
+  if (!estado) {
+    document.getElementById('calcEstado').style.borderColor = '#FF5F57';
+    setTimeout(function() { document.getElementById('calcEstado').style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  var tipo = document.querySelector('input[name="calcTipo"]:checked').value;
+  var contaMensal = parseInt(document.getElementById('calcSlider').value);
+
+  // Irradiation by state (kWh/m²/day)
+  var irradMap = {
+    AC:4.8, AL:5.5, AP:4.9, AM:4.7, BA:5.6, CE:5.7, DF:5.3, ES:4.9,
+    GO:5.3, MA:5.4, MT:5.2, MS:5.1, MG:5.2, PA:4.9, PB:5.6, PR:4.4,
+    PE:5.5, PI:5.7, RJ:4.8, RN:5.7, RS:4.2, RO:4.8, RR:4.9, SC:4.2,
+    SP:4.6, SE:5.5, TO:5.2
+  };
+  // Tariff by state (R$/kWh average)
+  var tarifaMap = {
+    AC:0.82, AL:0.80, AP:0.72, AM:0.84, BA:0.78, CE:0.76, DF:0.73, ES:0.77,
+    GO:0.75, MA:0.79, MT:0.80, MS:0.76, MG:0.85, PA:0.81, PB:0.77, PR:0.72,
+    PE:0.79, PI:0.76, RJ:0.88, RN:0.78, RS:0.78, RO:0.80, RR:0.74, SC:0.70,
+    SP:0.80, SE:0.77, TO:0.74
+  };
+
+  var irrad = irradMap[estado] || 4.9;
+  var tarifa = tarifaMap[estado] || 0.80;
+
+  // Consumption: bill / tariff = kWh/month
+  var consumoMensal = contaMensal / tarifa;
+
+  // Solar offset: residencial 90%, comercial 95%, rural 100%
+  var offset = tipo === 'rural' ? 1.0 : (tipo === 'comercial' ? 0.95 : 0.90);
+  var geracaoNecessaria = consumoMensal * offset; // kWh/month
+
+  // kWp needed: gen / (irrad * 30 * PR)  PR=0.78
+  var PR = 0.78;
+  var kwpNecessario = geracaoNecessaria / (irrad * 30 * PR);
+
+  // Panels: 550W each
+  var paineis = Math.ceil(kwpNecessario / 0.55);
+  var kwpReal = (paineis * 0.55);
+
+  // Economy
+  var ecoMensal = geracaoNecessaria * tarifa;
+  var ecoAnual = ecoMensal * 12;
+
+  // Investment cost: R$/kWp varies by type
+  var custoKwp = tipo === 'rural' ? 4200 : (tipo === 'comercial' ? 4000 : 4800);
+  var investimento = kwpReal * custoKwp;
+
+  // Payback
+  var paybackAnos = investimento / ecoAnual;
+
+  // CO2: 0.075 tCO2/MWh (grid brasileiro)
+  var co2Anual = (geracaoNecessaria * 12 / 1000) * 0.075;
+
+  // Populate results
+  document.getElementById('calcResEco').textContent = 'R$ ' + Math.round(ecoAnual).toLocaleString('pt-BR');
+  document.getElementById('calcResEcoSub').textContent = 'R$ ' + Math.round(ecoMensal).toLocaleString('pt-BR') + '/mês';
+
+  document.getElementById('calcResPanels').textContent = paineis + ' painéis';
+  document.getElementById('calcResPanelsSub').textContent = kwpReal.toFixed(1) + ' kWp · 550W cada';
+
+  document.getElementById('calcResPayback').textContent = paybackAnos.toFixed(1) + ' anos';
+  document.getElementById('calcResPaybackSub').textContent = 'Investimento: ~R$ ' + Math.round(investimento).toLocaleString('pt-BR');
+
+  document.getElementById('calcResCO2').textContent = co2Anual.toFixed(1) + ' ton';
+  document.getElementById('calcResCO2Sub').textContent = 'Equivale a ' + Math.round(co2Anual * 7.4) + ' árvores plantadas';
+
+  var tipoLabel = tipo === 'residencial' ? 'Residencial' : (tipo === 'comercial' ? 'Comercial' : 'Rural');
+  document.getElementById('calcResultSubtitle').textContent = tipoLabel + ' · ' + document.getElementById('calcEstado').selectedOptions[0].text + ' · Conta: R$ ' + contaMensal.toLocaleString('pt-BR') + '/mês';
+
+  calcSetStep(4);
+
+  // Scroll to results
+  document.getElementById('calc-economia').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function calcReset() {
+  calcSetStep(1);
+  document.getElementById('calcSlider').value = 500;
+  updateCalcSlider(document.getElementById('calcSlider'));
+  document.getElementById('calcSliderLabel').textContent = 'R$ 500';
+  document.getElementById('calcEstado').value = '';
+  document.querySelector('input[name="calcTipo"][value="residencial"]').checked = true;
+}
+
+// Observe calc section reveals
+document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revealObserver.observe(el); });
 
 /*
  * ══════════════════════════════════════════════
