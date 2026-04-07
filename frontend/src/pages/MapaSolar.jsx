@@ -3,8 +3,10 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, FeatureGroup, Polygon }
 import { EditControl } from 'react-leaflet-draw';
 import L from 'leaflet';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { Layers, Filter, Search, Satellite, Map as MapIcon, PenTool, Trash2, Save } from 'lucide-react';
+import { Layers, Filter, Search, Satellite, Map as MapIcon, PenTool, Trash2, Save, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
+import { useApp } from '../context/AppContext';
 
 // Fix default marker icons (Leaflet + webpack issue)
 delete L.Icon.Default.prototype._getIconUrl;
@@ -123,6 +125,8 @@ function createRegionIcon(cor, irradiacao, selected) {
 }
 
 export default function MapaSolar() {
+  const { dispatch } = useApp();
+  const navigate = useNavigate();
   const [regiaoSelecionada, setRegiaoSelecionada] = useState(null);
   const [tileLayer, setTileLayer] = useState('streets');
   const [searchQuery, setSearchQuery] = useState('');
@@ -556,6 +560,50 @@ export default function MapaSolar() {
                     <Trash2 size={14} />
                   </button>
                 </div>
+
+                {/* Usar na Simulação */}
+                <button
+                  onClick={() => {
+                    // Detectar região baseado na localização do polígono
+                    const centroLat = drawnPolygon.reduce((s, p) => s + p.lat, 0) / drawnPolygon.length;
+                    let regiao = 'sudeste';
+                    if (centroLat > -5) regiao = 'norte';
+                    else if (centroLat > -13) regiao = 'nordeste';
+                    else if (centroLat > -20) regiao = 'centro_oeste';
+                    else if (centroLat > -24) regiao = 'sudeste';
+                    else regiao = 'sul';
+
+                    dispatch({
+                      type: 'SET_AREA_MAPA',
+                      payload: {
+                        areaM2: areaInfo.area,
+                        perimetro: areaInfo.perimetro,
+                        coordenadas: drawnPolygon,
+                        regiao,
+                        localizacao: searchMarker?.name || '',
+                      },
+                    });
+                    navigate('/simulacao');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: 'var(--r-sm)',
+                    border: '1px solid var(--green-border)',
+                    background: 'var(--green-dim)',
+                    color: 'var(--green)',
+                    cursor: 'pointer',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <ArrowRight size={14} />
+                  Usar na Simulação
+                </button>
 
                 {/* Save status */}
                 {saveStatus && (

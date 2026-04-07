@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign, Calculator, TrendingUp, TrendingDown,
   CreditCard, Banknote, BarChart3, ArrowRight,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Card from '../components/Card';
 import { useRegional } from '../context/RegionalContext';
+import { useApp } from '../context/AppContext';
 
 const inputStyle = {
   width: '100%',
@@ -39,13 +40,36 @@ const kpiValueStyle = { fontSize: '1.3rem', fontWeight: 700 };
 
 export default function Financiamento() {
   const { formatPrice, currency } = useRegional();
+  const { state } = useApp();
+
+  // Determine pre-fill values from context
+  const preFillValor = () => {
+    // Priority: kit > orçamento > simulação
+    if (state.kitSelecionado) return String(state.kitSelecionado.preco);
+    if (state.orcamento.total > 0) return String(state.orcamento.total);
+    if (state.simulacao.resultado) return String(Math.round(state.simulacao.resultado.investimento));
+    return '';
+  };
+
+  const preFillEconomia = () => {
+    if (state.kitSelecionado) return String(Math.round(state.kitSelecionado.economia_mensal_estimada));
+    if (state.simulacao.resultado) return String(Math.round(state.simulacao.resultado.economiaMensal));
+    return '';
+  };
+
+  const preFillSource = () => {
+    if (state.kitSelecionado) return state.kitSelecionado.nome;
+    if (state.orcamento.total > 0) return 'Orçamento';
+    if (state.simulacao.resultado) return `Simulação ${state.simulacao.resultado.potenciaKWp} kWp`;
+    return null;
+  };
 
   const [form, setForm] = useState({
-    valorSistema: '',
+    valorSistema: preFillValor(),
     entrada: '',
     taxaJurosMensal: '1.49',
     prazoMeses: '60',
-    economiaMensal: '',
+    economiaMensal: preFillEconomia(),
     descontoAVista: '5',
   });
 
@@ -53,6 +77,7 @@ export default function Financiamento() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState(null);
   const [showCronograma, setShowCronograma] = useState(false);
+  const source = preFillSource();
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -125,6 +150,26 @@ export default function Financiamento() {
           Compare financiamento com pagamento a vista e veja o impacto no retorno do investimento.
         </p>
       </div>
+
+      {/* Banner: pre-filled source */}
+      {source && (
+        <div style={{
+          padding: '12px 16px',
+          background: 'var(--gold-dim)',
+          border: '1px solid var(--gold-border)',
+          borderRadius: 'var(--r-sm)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '0.85rem',
+          color: 'var(--gold)',
+        }}>
+          <DollarSign size={16} />
+          <span>
+            Valores pré-preenchidos a partir de: <strong>{source}</strong>
+          </span>
+        </div>
+      )}
 
       {/* Formulário */}
       <Card>
